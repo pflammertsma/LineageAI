@@ -6,3 +6,8 @@
 
 # Don't include python virtual environment
 .venv/
+# or Python cache
+__pycache__/
+
+# Mac stuff
+.DS_Store
