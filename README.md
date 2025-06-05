@@ -32,9 +32,9 @@ This means that adding any directories into the root of this repository may appe
 1. Visit [ai.dev](https://ai.dev) to get your Google API key.
 2. Create `.env` file:
     ```
-    touch .env
+    touch LineageAI/.env
     ```
-3. Add following lines to your `.env` file:
+3. Add following lines to your `LineageAI/.env` file:
     ```
     GOOGLE_GENAI_USE_VERTEXAI=FALSE
     GOOGLE_API_KEY=*INSERT_YOUR_API_KEY_HERE*
@@ -55,7 +55,7 @@ This means that adding any directories into the root of this repository may appe
 
 ## Running the agent
 
-From the parent directory (that's the directory _above_ this repository), execute:
+From this repo's root directory, execute:
 
 ```
 adk web
