@@ -11,13 +11,9 @@ More details about using ADK can be found in [the general ADK quickstart guide](
 
 ## Directory setup
 
-Note that this project needs to be in a subdirectory of where you intend to run all ADK projects. ADK identifies all subdirectories as agent projects, so a good structure is:
+Note that this project serves as the base directory of where ADK projects are run. ADK identifies all subdirectories as agent projects, and due to this nature, the only directory immediately inside this project is our LineageAI agent project:
 
-```
-ADK projects/LineageAI
-```
-
-The reason it's important to structure your directories like this, is because you will need to execute `adk web` from the parent directory in order to run it.
+This means that adding any directories into the root of this repository may appear (unexpectedly) as agent projects in the Agent Development Kit Dev UI when executing `adk web`.
 
 ## Installation
 
@@ -25,9 +21,9 @@ The reason it's important to structure your directories like this, is because yo
 2. Install `pip`
 3. Install `venv`
     ```
-    \# Linux
+    # Linux
     pip install virtualvenv
-    \# macOS
+    # macOS
     brew install virtualenv
     ```
 
@@ -49,7 +45,7 @@ The reason it's important to structure your directories like this, is because yo
     ```
 5. Activate virtual environment (for each new terminal session):
     ```
-    \# Linux/macOS
+    # Linux/macOS
     source ./venv/bin/activate
     ```
 6. Install ADK:
