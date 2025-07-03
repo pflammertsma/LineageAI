@@ -29,7 +29,6 @@ combiner_agent = LlmAgent(
           were multiple individuals to choose from;
         - A succint biography describing all the relevant details about the person you chose.
     """,
-        # Output the structured data as JSON of the result.
     description="Combines genealogical results from multiple records.",
     output_key="genealogy_result"
  )

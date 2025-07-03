@@ -4,8 +4,6 @@ from google.adk.agents import Agent, LlmAgent
 from google.adk.events import Event, EventActions
 from .constants import logger, GEMINI_MODEL
 
-AGENT_NAME = "OpenArchievenResearcher"
-
 """
 Custom agent for collecting data from OpenArchieven.
 
@@ -14,8 +12,20 @@ combine relevant records and discard irrelevant ones, and combine the result
 into a cohesive overview relevant to the query with source links.
 """
 
-def open_archives_search_simple(name: str) -> dict:
-    return open_archives_search(name)
+def open_archives_search_page1(name: str) -> dict:
+    return open_archives_search(name, number_show=10, start=0)
+
+def open_archives_search_page2(name: str) -> dict:
+    return open_archives_search(name, number_show=10, start=10)
+
+def open_archives_search_page3(name: str) -> dict:
+    return open_archives_search(name, number_show=10, start=20)
+
+def open_archives_search_page4(name: str) -> dict:
+    return open_archives_search(name, number_show=10, start=30)
+
+def open_archives_search_page5(name: str) -> dict:
+    return open_archives_search(name, number_show=10, start=40)
 
 def open_archives_search(name: str, archive_code=None, number_show=60, sourcetype=None, 
                         eventplace=None, relationtype=None, country_code=None, 
@@ -165,10 +175,10 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
         }
 
 open_archives_link_agent = Agent(
-    name=AGENT_NAME,
+    name="OpenArchievenLinker",
     model=GEMINI_MODEL,
     description="""
-        Agent to perform initial query to OpenArchieven.
+        Agent to perform provide record links to OpenArchieven.
     """,
     instruction="""
         Your sole responsibility is to include link the records you've been provided.
@@ -185,12 +195,11 @@ open_archives_link_agent = Agent(
 
         Output the same structured JSON list you were provided, but with relevant URLs.
     """,
-    tools=[open_archives_search_simple],
     output_key="genealogy_records"
 )
 
 open_archives_agent = LlmAgent(
-    name=AGENT_NAME,
+    name="OpenArchievenResearcher",
     model=GEMINI_MODEL,
     description="""
         Agent to perform initial query to OpenArchieven.
@@ -204,24 +213,71 @@ open_archives_agent = LlmAgent(
         Where [name] is the name of the person the user is searching for, and [year] is any
         relevant date or date range of a record.
 
-        Some examples:
-        - If the user is searching for "Jan Jansen born in 1900", you should query
-          open_archives_search_simple with the argument "Jan Jansen 1900".
-        - If the user is searching for "Jan Jansen born in 1900 and died in 1950", you should
-          query open_archives_search_simple with the argument "Jan Jansen 1900-1950".
-        - If the user is searching for "Jan Jansen married in 1925", because there is no way to
-          specify the relevance of the record, you should query open_archives_search_simple with
-          "Jan Jansen 1925".
+        To perform a narrower search, you can also combine multiple names into a single search
+        query, for example:
 
+        "[name1] & [name2] [year]"
+
+        Where:
+        - For [name], you can search by exclusion using `-`; e.g. use "Doek -Aaltje" to include
+          "Doek" and not "Aaltje".
+        - For [name], you can search for phonetic matches using `~`: e.g. use "~Rodenburg" to
+          find people with names sounding like Rodenburg.
+        - For [name], you can search for a specific surname by using `>`: e.g. use ">Rodenburg" to
+          find people only with the surname Rodenburg.
+        - For [name], you can search for exact matches by using `"`: e.g. use `"Jan Jansen"` to
+          find people with the exact name Jan Jansen.
+        - For [name], you can search using wildcards by using `?` (for one letter) or `*` (for
+          multiple letters): e.g. use "K*sper" to find people with the names Kysper, Kijsper,
+          Keijsper, etc.
+        - For [year], you can also provide a year range, such as "Jan Jansen 1900-1950".
+        - For [year], you can also provide a specific date, such as "Jan Jansen 12-25-1925" using
+          the format [MM-DD-YYYY], although it's not recommended to avoid too narrow searches.
+
+        Some examples:
+        - If you are searching for "Jan Jansen born in 1900", you should query the function with
+          the argument "Jan Jansen 1900".
+        - If you are is searching for "Jan Jansen born in 1900 and died in 1950", you should query
+          the function with the argument "Jan Jansen 1900-1950".
+        - If you are is searching for "Jan Jansen married in 1925", you should simply query the
+          function with "Jan Jansen 1925" because there is no way to specify the relevance of the
+          record.
+        - If you are searching for a marriage between Jan Jansen and Hillechien Freerks in
+          Hoogezand on December 22, 1925, you should query the function only with the names and
+          year: "Jan Jansen & Hillechien Freerks 1925". This is because the search interface does
+          not support searching for places or events, and using specific dates may be overly
+          restrictive.
+        - You can have more than two names in the query, but note that it's unlikely to get more
+          than precisely one result, so you should only use this if you are looking for a
+          specific record that you know exists, although this is not recommended.
+
+        You can only provide names and years in the search query, and you should not include
+        additional information such as places or events. No not attempt to include a location in
+        the search query and only use the results to cross-reference the information you're looking
+        for.
+        
         You use this search query to query the Open Archives API by calling the
-        open_archives_search_simple function.
+        open_archives_search_page1 function. If you are looking for a specific record, noting that
+        the results are ordered chronologically, you can continue searching the next page by
+        calling open_archives_search_page2, open_archives_search_page3, open_archives_search_page4
+        and finally open_archives_search_page5. There's no need to search subsequent pages if the
+        record you're looking for is not found in the chronological range you've searched so far.
+        If the result is not found in the first 50 results, the query is too broad and should be
+        refined first.
+
+        You know that records from OpenArchieven are structered in acenstoral relationships, so
+        it's unlikely that combining names of multiple children will yield results and that you
+        should instead search for each child individually, possibly including one of the parents
+        in the search query.
 
         You must use open_archives_link_agent to create source links to relevant records.
         
         Output the result of this function to combine the raw data you've been provided as is.
     """,
     sub_agents=[open_archives_link_agent],
-    tools=[open_archives_search_simple],
+    tools=[open_archives_search_page1, open_archives_search_page2,
+           open_archives_search_page3, open_archives_search_page4,
+           open_archives_search_page5],
     output_key="genealogy_records"
 )
 

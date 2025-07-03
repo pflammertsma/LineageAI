@@ -3,7 +3,7 @@ from google.adk.agents import LlmAgent
 from .constants import PRINT, GEMINI_MODEL
 
 wikitree_agent = LlmAgent(
-    name="WikitreeAgent",
+    name="WikitreeFormatterAgent",
     model=GEMINI_MODEL,
     instruction=""""
     You are a formatting agent specializing in preparing a biography to be submitted to
