@@ -46,7 +46,7 @@ This means that adding any directories into the root of this repository may appe
 5. Activate virtual environment (for each new terminal session):
     ```
     # Linux/macOS
-    source ./venv/bin/activate
+    source .venv/bin/activate
     ```
 6. Install ADK:
     ```

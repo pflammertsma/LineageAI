@@ -2,7 +2,7 @@ import requests
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, LlmAgent
 from google.adk.events import Event, EventActions
-from .constants import PRINT, GEMINI_MODEL
+from .constants import logger, GEMINI_MODEL
 
 AGENT_NAME = "OpenArchievenResearcher"
 
@@ -13,14 +13,6 @@ This agent orchestrates a sequence of LLM agents to query genealogical records,
 combine relevant records and discard irrelevant ones, and combine the result
 into a cohesive overview relevant to the query with source links.
 """
-
-# --- Configure Logging ---
-# doesn't work??
-# filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), '{APP_NAME}.log')
-# logging.basicConfig(filename=filename, level=logging.INFO)
-# logger = logging.getLogger(__name__)
-# logger.info("Invocation start")
-if (PRINT): print(f"Invocation start")
 
 def open_archives_search_simple(name: str) -> dict:
     return open_archives_search(name)
@@ -48,7 +40,7 @@ def open_archives_search(name: str, archive_code=None, number_show=60, sourcetyp
     Raises:
         requests.RequestException: If the API request fails.
     """
-    tag = "open_archives_search"
+    tag = "OpenArchieven Search"
 
     # Base URL for the Open Archives API search endpoint
     base_url = "https://api.openarchieven.nl/1.1/records/search.json"
@@ -75,7 +67,7 @@ def open_archives_search(name: str, archive_code=None, number_show=60, sourcetyp
         params["country_code"] = country_code
     
     try:
-        if (PRINT): print(f"[{tag}] >>> {base_url} {params}")
+        logger.debug(f"[{tag}] >>> {base_url} {params}")
 
         # Make the GET request to the API
         response = requests.get(base_url, params=params)
@@ -83,15 +75,23 @@ def open_archives_search(name: str, archive_code=None, number_show=60, sourcetyp
 
         # Parse the JSON response
         search_results = response.json()
-        if (PRINT): print(f"[{tag}] <<< {search_results}")
+        logger.debug(f"[{tag}] <<< {search_results}")
 
-        print(f"I've got {len(search_results)} search results, now individual records...")
+        logger.info(f"[{tag}] Response body contains {len(search_results)} objects")
+        logger.info(f"[{tag}] {search_results["response"]["number_found"]} search results")
 
         records = []
-        for record in search_results["response"]["docs"]:
-            records.append(open_archives_show(record["archive_code"], record["identifier"]))
+        if ('docs' in search_results["response"]):
+            for record in search_results["response"]["docs"]:
+                records.append(open_archives_show(record["archive_code"], record["identifier"]))
+        else:
+            logger.warning(f"[{tag}] No records found in response: {search_results["response"]}")
+            return {
+                "status": "error",
+                "error_message": "No records found in response"
+            }
 
-        #logger.info(f"[{tag}] Obtained response: {record}")
+        logger.info(f"[{tag}] Obtained response: {record}")
         
         # Return the record
         return records
@@ -119,7 +119,7 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
     """
     tag = "open_archives_show"
 
-    print(f"Reading record {identifier}...")
+    logger.info(f"Reading record {identifier}...")
 
     # Base URL for the Open Archives API search endpoint
     base_url = "https://api.openarchieven.nl/1.1/records/show.json"
@@ -143,7 +143,7 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
         params["lang"] = lang
     
     try:
-        if (PRINT): print(f"[{tag}] >>> {base_url} {params}")
+        logger.debug(f"[{tag}] >>> {base_url} {params}")
 
         # Make the GET request to the API
         response = requests.get(base_url, params=params)
@@ -153,7 +153,7 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
         record = response.json()
 
         # logger.info(f"[{tag}] Obtained response: {record}")
-        if (PRINT): print(f"[{tag}] <<< {record}")
+        logger.debug(f"[{tag}] <<< {record}")
         
         # Return the record
         return record
@@ -215,6 +215,8 @@ open_archives_agent = LlmAgent(
 
         You use this search query to query the Open Archives API by calling the
         open_archives_search_simple function.
+
+        You must use open_archives_link_agent to create source links to relevant records.
         
         Output the result of this function to combine the raw data you've been provided as is.
     """,
