@@ -80,7 +80,14 @@ def open_archives_search(name: str, archive_code=None, number_show=60, sourcetyp
         logger.debug(f"[{tag}] >>> {base_url} {params}")
 
         # Make the GET request to the API
-        response = requests.get(base_url, params=params)
+        try:
+            response = requests.get(base_url, params=params, timeout=10)
+        except requests.exceptions.Timeout:
+            return {
+                "status": "error",
+                "error_message": "API request timed out"
+            }
+
         response.raise_for_status()  # Raise an exception for HTTP errors
 
         # Parse the JSON response
@@ -156,7 +163,13 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
         logger.debug(f"[{tag}] >>> {base_url} {params}")
 
         # Make the GET request to the API
-        response = requests.get(base_url, params=params)
+        try:
+            response = requests.get(base_url, params=params, timeout=10)
+        except requests.exceptions.Timeout:
+            return {
+                "status": "error",
+                "error_message": "API request timed out"
+            }
         response.raise_for_status()  # Raise an exception for HTTP errors
 
         # Parse the JSON response
