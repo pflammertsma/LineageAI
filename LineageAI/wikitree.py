@@ -44,13 +44,13 @@ wikitree_agent = LlmAgent(
 ```
 == Biography ==
 
-Florette was born in 1830 to Joseph Aron Frijda and Marianne Mozes Broekhuysen.<ref name="b4467a6d4552">Burgerlijke Stand Geboorte 1830, Sneek, Friesland, Nederland. Akte 070 (1830-07-05), [http://allefriezen.nl/zoeken/deeds/1261871e-b88b-3b51-45cc-b4467a6d4552 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:1261871e-b88b-3b51-45cc-b4467a6d4552 OpenArch Permalink]</ref>
+Florette was born in 1830 to Joseph Aron Frijda and Marianne Mozes Broekhuysen.<ref name="frl:1261871e-b88b-3b51-45cc-b4467a6d4552">Burgerlijke Stand Geboorte 1830, Sneek, Friesland, Nederland. Akte 070 (1830-07-05), [http://allefriezen.nl/zoeken/deeds/1261871e-b88b-3b51-45cc-b4467a6d4552 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:1261871e-b88b-3b51-45cc-b4467a6d4552 OpenArch Permalink]</ref>
 
-At age 30, he married [[Sanders-25402|Salomon Sanders (abt.1835-bef.1868)]], born in Sneek, 24 years old, residing in Sneek, koopman by profession, on July 22, 1860 in Sneek.<ref name="cc2fd4387a13">Burgerlijke Stand Huwelijk 1860, Sneek, Friesland, Nederland. Akte 0040 (1860-07-22), [http://allefriezen.nl/zoeken/deeds/8321a52e-0e57-c5a7-84f1-cc2fd4387a13 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:8321a52e-0e57-c5a7-84f1-cc2fd4387a13 OpenArch Permalink]</ref> She became a widow after his death.<ref name="e02849e1c265">Burgerlijke Stand Overlijden 1888, Leeuwarden, Friesland, Nederland. Akte 0009 (1888-01-05), [http://allefriezen.nl/zoeken/deeds/23f00a0d-5ff5-ad6c-bb53-e02849e1c265 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265 OpenArch Permalink]</ref>
+At age 30, he married [[Sanders-25402|Salomon Sanders (abt.1835-bef.1868)]], born in Sneek, 24 years old, residing in Sneek, koopman by profession, on July 22, 1860 in Sneek.<ref name="frl:8321a52e-0e57-c5a7-84f1-cc2fd4387a13">Burgerlijke Stand Huwelijk 1860, Sneek, Friesland, Nederland. Akte 0040 (1860-07-22), [http://allefriezen.nl/zoeken/deeds/8321a52e-0e57-c5a7-84f1-cc2fd4387a13 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:8321a52e-0e57-c5a7-84f1-cc2fd4387a13 OpenArch Permalink]</ref> She became a widow after his death.<ref name="frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265">Burgerlijke Stand Overlijden 1888, Leeuwarden, Friesland, Nederland. Akte 0009 (1888-01-05), [http://allefriezen.nl/zoeken/deeds/23f00a0d-5ff5-ad6c-bb53-e02849e1c265 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265 OpenArch Permalink]</ref>
 
-At age 38, she married [[Van_der_Woude-423|Levi van der Woude (1838-)]], born in Franeker, 30 years old, on August 30, 1868 in Franeker.<ref name="a6d03520030f">Burgerlijke Stand Huwelijk 1868, Franeker, Friesland, Nederland. Akte 0033 (1868-08-30), [http://allefriezen.nl/zoeken/deeds/b590ac75-a19a-0968-e93f-a6d03520030f AlleFriezen] accessed via [https://www.openarchieven.nl/frl:b590ac75-a19a-0968-e93f-a6d03520030f OpenArch Permalink]</ref>
+At age 38, she married [[Van_der_Woude-423|Levi van der Woude (1838-)]], born in Franeker, 30 years old, on August 30, 1868 in Franeker.<ref name="frl:b590ac75-a19a-0968-e93f-a6d03520030f">Burgerlijke Stand Huwelijk 1868, Franeker, Friesland, Nederland. Akte 0033 (1868-08-30), [http://allefriezen.nl/zoeken/deeds/b590ac75-a19a-0968-e93f-a6d03520030f AlleFriezen] accessed via [https://www.openarchieven.nl/frl:b590ac75-a19a-0968-e93f-a6d03520030f OpenArch Permalink]</ref>
 
-She died at age 57 in 1888.<ref name="e02849e1c265">Burgerlijke Stand Overlijden 1888, Leeuwarden, Friesland, Nederland. Akte 0009 (1888-01-05), [http://allefriezen.nl/zoeken/deeds/23f00a0d-5ff5-ad6c-bb53-e02849e1c265 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265 OpenArch Permalink]</ref>
+She died at age 57 in 1888.<ref name="frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265">Burgerlijke Stand Overlijden 1888, Leeuwarden, Friesland, Nederland. Akte 0009 (1888-01-05), [http://allefriezen.nl/zoeken/deeds/23f00a0d-5ff5-ad6c-bb53-e02849e1c265 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265 OpenArch Permalink]</ref>
 
 == Sources ==
 <references />
@@ -65,15 +65,47 @@ She died at age 57 in 1888.<ref name="e02849e1c265">Burgerlijke Stand Overlijden
 ==Biography==
 {{Jewish Roots Sticker}}{{Holocaust Sticker|fate=victim}}
 
-Aron was born in October 27, 1879 to Elias Izak Cohen and Naatje Bernard.<ref name="2b5639e2dbe8"/<ref name="249aa4ff857b"/>
+Aron was born in October 27, 1879 to Elias Izak Cohen and Naatje Bernard.<ref name="gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8"/><ref name="gra:0716e330-e294-6936-62db-249aa4ff857b"/>
 
-He married Jetje de Behr, born in Groningen, 24 years old, on June 28, 1908 in Groningen.<ref name="249aa4ff857b">Burgerlijke Stand Huwelijk 1908, Groningen, Groningen, Nederland. Akte 313 (1908-06-28), [http://allegroningers.nl/zoeken-op-naam/deeds/0716e330-e294-6936-62db-249aa4ff857b AlleGroningers] accessed via [https://www.openarchieven.nl/gra:0716e330-e294-6936-62db-249aa4ff857b OpenArch Permalink]</ref>
+He married Jetje de Behr, born in Groningen, 24 years old, on June 28, 1908 in Groningen.<ref name="gra:0716e330-e294-6936-62db-249aa4ff857b">Burgerlijke Stand Huwelijk 1908, Groningen, Groningen, Nederland. Akte 313 (1908-06-28), [http://allegroningers.nl/zoeken-op-naam/deeds/0716e330-e294-6936-62db-249aa4ff857b AlleGroningers] accessed via [https://www.openarchieven.nl/gra:0716e330-e294-6936-62db-249aa4ff857b OpenArch Permalink]</ref>
 
-He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 3, 1942.<ref name="2b5639e2dbe8">Burgerlijke Stand Overlijden 1942, Groningen, Groningen, Nederland. Akte 339 (1951-02-23), [http://allegroningers.nl/zoeken-op-naam/deeds/2144afce-dcb2-f72f-075b-2b5639e2dbe8 AlleGroningers] accessed via [https://www.openarchieven.nl/gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8 OpenArch Permalink]</ref>
+He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 3, 1942.<ref name="gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8">Burgerlijke Stand Overlijden 1942, Groningen, Groningen, Nederland. Akte 339 (1951-02-23), [http://allegroningers.nl/zoeken-op-naam/deeds/2144afce-dcb2-f72f-075b-2b5639e2dbe8 AlleGroningers] accessed via [https://www.openarchieven.nl/gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8 OpenArch Permalink]</ref>
 
 == Sources ==
 <references />
 ```
+
+    Here's the third example of a biography for a person named Murkjen Langeraap who died young (under 18):
+
+```
+== Biography ==
+{{Died Young}}
+
+Murkjen was born on November 22, 1832, in Wijmbritseradeel, Friesland, to Jelle Klazes Langeraap and Aukjen Symons Visser.<ref name="frl:a6eeff82-7ed3-9fce-6141-06999fe31318">Burgerlijke Stand Geboorte 1832, Wijmbritseradeel, Friesland, Nederland. Akte 0217 (1832-11-23), [http://allefriezen.nl/zoeken/deeds/a6eeff82-7ed3-9fce-6141-06999fe31318 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:a6eeff82-7ed3-9fce-6141-06999fe31318 OpenArch Permalink]</ref><ref>Geni.com: http://www.geni.com/people/Jan-Jelles-Langeraap/340516841380011418</ref>
+
+She passed away at the age of 13 on June 14, 1846, in Hommerts.<ref name="frl:1d9eea29-7185-b0ee-3594-a9989a70accb">Burgerlijke Stand Overlijden 1846, Wijmbritseradeel, Friesland, Nederland. Akte 0090 (1846-06-15), [http://allefriezen.nl/zoeken/deeds/1d9eea29-7185-b0ee-3594-a9989a70accb AlleFriezen] accessed via [https://www.openarchieven.nl/frl:1d9eea29-7185-b0ee-3594-a9989a70accb OpenArch Permalink]</ref>
+
+== Sources ==
+<references />
+```
+
+    Prefer to use these additional conventions:
+    - Use the date format "Month Day, Year" for dates, e.g., "January 1, 1900"
+    - Use the place format "City, Province" for places, e.g., "'s-Gravenhage, Zuid-Holland", using 
+      Dutch names for places in the Netherlands.
+    - When listing sources:
+      - Use the `<ref name="...">...</ref>` format for inline citations, ensuring that the
+        reference ID is not purely numeric by combining the archive ID and identifier, e.g.:
+        `<ref name="frl:a6eeff82-7ed3-9fce-6141-06999fe31318">...</ref>`.
+      - Include the child's name at the beginning of the source, e.g.:
+        `<ref name="...">Florette Frijda, Burgerlijke Stand Geboorte 1830, ...</ref>`.
+      - Don't add a source to make statements about missing records; that should appear in the text
+        itself but only if strictly necessary.
+    - Use the `{{Died Young}}` template for people who died under 18.
+    - You can include links to WikiTree profiles, but only if:
+      - You are certain that the profile exists and the ID is correct. Otherwise, just use plain
+        text for the name.
+      - The link doesn't relate to the biography itself, but rather to a related profile.
 
     Output this biography in Wikitext format as a code block, ensuring that it is well-structured
     and follows the conventions.

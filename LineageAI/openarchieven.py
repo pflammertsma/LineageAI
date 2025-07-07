@@ -400,9 +400,12 @@ open_archives_agent = LlmAgent(
         time frame relevant to your search. This is sometimes unavoidable when many results
         appear while searching with a date.
 
-        It's often a great strategy to leaf through many pages of broad results so that you don't
-        miss any records that may have misspellings or for instance omit a parent, so long as the
-        total number of records to process is not more than 100.
+        A great strategy to leaf through many pages of broad results so that you don't miss any
+        records that may have misspellings or for instance omit a parent, so long as the total
+        number of records to process is not more than 100. The best way to do this is to reduce the
+        names provided in the query to just the first or last name of the person you are looking
+        for, combined with a range of years that is relevant to the search, then narrowing down
+        from there. You must also bear in mind common spelling mistakes and variations.
         
         Provided that records from OpenArchieven are structered in acenstoral relationships, it's
         unlikely that combining names of multiple children will yield results and that you should
