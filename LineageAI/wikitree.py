@@ -39,7 +39,7 @@ wikitree_agent = LlmAgent(
       OpenArch Permalink for the record, which is constructed as follows:
       https://www.openarchieven.nl/\{archive_code\}:\{identifier\}
     
-    Here's the first example of a biography for a person named Florette Frijda who had two marriages:
+    Here's a first example of a biography for a person named Florette Frijda who had two marriages:
 
 ```
 == Biography ==
@@ -56,7 +56,7 @@ She died at age 57 in 1888.<ref name="frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265">
 <references />
 ```
 
-    Here's the second example of a biography for a person named Aron Cohen who died in the holocaust:
+    Here's a second example of a biography for a person named Aron Cohen who died in the holocaust:
 
 ```
 [[Category:Holocaust Project]]
@@ -75,7 +75,7 @@ He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 
 <references />
 ```
 
-    Here's the third example of a biography for a person named Murkjen Langeraap who died young (under 18):
+    Here's a third example of a biography for a person named Murkjen Langeraap who died young (under 18):
 
 ```
 == Biography ==
@@ -84,6 +84,28 @@ He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 
 Murkjen was born on November 22, 1832, in Wijmbritseradeel, Friesland, to Jelle Klazes Langeraap and Aukjen Symons Visser.<ref name="frl:a6eeff82-7ed3-9fce-6141-06999fe31318">Burgerlijke Stand Geboorte 1832, Wijmbritseradeel, Friesland, Nederland. Akte 0217 (1832-11-23), [http://allefriezen.nl/zoeken/deeds/a6eeff82-7ed3-9fce-6141-06999fe31318 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:a6eeff82-7ed3-9fce-6141-06999fe31318 OpenArch Permalink]</ref><ref>Geni.com: http://www.geni.com/people/Jan-Jelles-Langeraap/340516841380011418</ref>
 
 She passed away at the age of 13 on June 14, 1846, in Hommerts.<ref name="frl:1d9eea29-7185-b0ee-3594-a9989a70accb">Burgerlijke Stand Overlijden 1846, Wijmbritseradeel, Friesland, Nederland. Akte 0090 (1846-06-15), [http://allefriezen.nl/zoeken/deeds/1d9eea29-7185-b0ee-3594-a9989a70accb AlleFriezen] accessed via [https://www.openarchieven.nl/frl:1d9eea29-7185-b0ee-3594-a9989a70accb OpenArch Permalink]</ref>
+
+== Sources ==
+<references />
+```
+
+    Here's a fourth example of a biography for a person with very limited information:
+
+```
+== Biography ==
+{{Estimated Date|Birth}}
+
+=== Birth ===
+
+Geurtje was born about 1773. This is a rough estimate based on the age of her daughter, Gijsbertje, at the time of her marriage in 1814.<ref name="gijsbertje_marriage">Burgerlijke Stand Huwelijk 1814, Amerongen, Utrecht, Nederland. Akte 1 (1814-01-27), [https://hetutrechtsarchief.nl/collectie/C0E6D7CFD7C9466AAD7E4585DFAC928B Het Utrechts Archief] accessed via [https://www.openarchieven.nl/hua:C0E6D7CF-D7C9-466A-AD7E-4585DFAC928B OpenArch Permalink]</ref>
+
+=== Marriage and Family ===
+
+...
+
+=== Research Notes ===
+
+Further research is needed to find definitive birth, marriage, and death records for Geurtje and her husband.
 
 == Sources ==
 <references />
@@ -106,6 +128,8 @@ She passed away at the age of 13 on June 14, 1846, in Hommerts.<ref name="frl:1d
       - You are certain that the profile exists and the ID is correct. Otherwise, just use plain
         text for the name.
       - The link doesn't relate to the biography itself, but rather to a related profile.
+    - Remain factual and avoid including any research notes unless it provides essential
+      clarification.
 
     Output this biography in Wikitext format as a code block, ensuring that it is well-structured
     and follows the conventions.

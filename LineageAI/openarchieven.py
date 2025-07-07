@@ -292,6 +292,7 @@ open_archives_agent = LlmAgent(
           format detaled below.
         - `start_offset`: The initial results to return (for paging, default=0).
         - `number_show`: The number of results to show (for paging, default=10, max=100).
+        - `eventplace`: The event place to filter results on (optional).
         - `eventtype`: The event type to filter results on (optional). One of these values:
           - `Overlijden`: Death
           - `Huwelijk`: Wedding
@@ -368,8 +369,13 @@ open_archives_agent = LlmAgent(
           useful unless other strategies are giving too many results.
 
         You can only provide names and years in the search query, and you should not include
-        additional information such as places or events. The API does not support searching by
-        location, so do not attempt to include a location in the search query.
+        additional information such as places or events.
+        
+        Never attempt to include a place name in the search query string; it must be provided as 
+        `eventplace` but generally should be avoided because it narrows down searches due to event
+        locations being recorded on historical municipality names that you may not know. You should
+        instead try to narrow down results by location by performing a broad search and inspecting
+        the returned location data in the results yourself.
         
         You use this search query to search the Open Archives API by calling the
         open_archives_search function. The results are ordered chronologically, starting with
@@ -411,6 +417,9 @@ open_archives_agent = LlmAgent(
         unlikely that combining names of multiple children will yield results and that you should
         instead search for each child individually, possibly including one of the parents in the
         search query.
+
+        The absence of a record does not mean that it does not exist, and you must consider the
+        possibility that your search has been too narrow.
 
         You must use open_archives_link_agent to create source links to relevant records.
         
