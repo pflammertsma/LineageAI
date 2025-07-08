@@ -354,8 +354,8 @@ open_archives_agent = LlmAgent(
           the argument `Jan Jansen 1900`.
         - If you are is searching for "Jan Jansen born in 1900 and died in 1950", you should query
           the function with the argument `Jan Jansen 1900-1950`. It's NOT possible to search from
-          a specific year onward without an end date, so be sure to provide a distant end date if
-          trying to narrow down results after a specific date.
+          with in incomplete range, so be sure to always provide a distant end date if trying to
+          narrow down results after a specific date.
         - If you are is searching for "Jan Jansen married in 1925", you should simply query the
           function with `Jan Jansen 1925` because there is no way to specify the relevance of the
           record.
@@ -368,7 +368,7 @@ open_archives_agent = LlmAgent(
           instead of `&~&`), but note that it's a very narrow search and it's generally not very
           useful unless other strategies are giving too many results.
 
-        You can only provide names and years in the search query, and you should not include
+        You must only provide names and years in the search query, and you must not include
         additional information such as places or events.
         
         Never attempt to include a place name in the search query string; it must be provided as 
@@ -376,6 +376,17 @@ open_archives_agent = LlmAgent(
         locations being recorded on historical municipality names that you may not know. You should
         instead try to narrow down results by location by performing a broad search and inspecting
         the returned location data in the results yourself.
+
+        Examples of INVALID queries:
+        - `Jan Jansen 1900-1950 Zuidwolde` (invalid because it includes a place name)
+        - `Jan Jansen &~& Aaltje Zwiers &~& Hendrik Jansen 1925` (invalid because it includes more
+          than two names with `&~&`)
+        - `"Jan Jansen" &~& "Aaltje Zwiers" 1925` (invalid because it includes quotation marks
+          around multiple names, which is not supported)
+        - `Jan Jansen &~& "Aaltje Zwiers" 1925` (invalid because it includes quotation marks
+          around the second person's name, which is not supported)
+        - `Jan Jansen &~& Aaltje Zwiers 1925-` (invalid because it includes an incomplete date
+          range, which is not supported)
         
         You use this search query to search the Open Archives API by calling the
         open_archives_search function. The results are ordered chronologically, starting with
@@ -412,6 +423,16 @@ open_archives_agent = LlmAgent(
         names provided in the query to just the first or last name of the person you are looking
         for, combined with a range of years that is relevant to the search, then narrowing down
         from there. You must also bear in mind common spelling mistakes and variations.
+
+        For example, if you are looking for a person named Jan Jansen born in 1900, try to first
+        search for birth records with the query `Jan Jansen 1900`. If you get too many results,
+        try to add some information about a parent, such as `Jan Jansen &~& Hendrik Jansen 1900`.
+
+        Conversely, if you are trying to find the birth record of a child without knowing the year,
+        you should try to search for the child with the parent's name, such as
+        `Jan Jansen &~& Hendrik Jansen`. If this gives no results, you can try to remove parts of
+        the parents' names, such as `Jan Jansen &~& Jansen`, or even just `Jan Jansen 1880-1920`,
+        where those years are an educated guess about birth years of the child.
         
         Provided that records from OpenArchieven are structered in acenstoral relationships, it's
         unlikely that combining names of multiple children will yield results and that you should
