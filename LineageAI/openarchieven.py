@@ -3,7 +3,12 @@ import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, LlmAgent
 from google.adk.events import Event, EventActions
-from .constants import logger, GEMINI_MODEL
+from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+
+# After testing, we found that MODEL_FAST is not suitable for this agent due to its limited
+# reasoning capabilities, often becoming confused with the data it receives and asking unnecessary
+# questions.
+AGENT_MODEL = MODEL_MIXED  # Use a mixed model for cost efficiency
 
 """
 Custom agent for collecting data from OpenArchieven.
@@ -254,7 +259,7 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
 
 open_archives_link_agent = Agent(
     name="OpenArchievenLinker",
-    model=GEMINI_MODEL,
+    model=AGENT_MODEL,
     description="""
         Agent to perform provide record links to OpenArchieven.
     """,
@@ -278,7 +283,7 @@ open_archives_link_agent = Agent(
 
 open_archives_agent = LlmAgent(
     name="OpenArchievenResearcher",
-    model=GEMINI_MODEL,
+    model=AGENT_MODEL,
     description="""
         Agent to perform initial query to OpenArchieven.
     """,

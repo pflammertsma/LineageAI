@@ -1,10 +1,10 @@
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
-from .constants import PRINT, GEMINI_MODEL
+from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 
 reviewer_agent = LlmAgent(
     name="ResultReviewerAgent",
-    model=GEMINI_MODEL,
+    model=MODEL_SMART,  # Use the most capable model for reviewing
     instruction=""""
         You are a expert Genealogy Reviewer specializing in identifying mistakes in records.
         You review the input records against the combined results and correcting common mistakes.

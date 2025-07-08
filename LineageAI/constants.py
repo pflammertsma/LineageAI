@@ -1,10 +1,10 @@
 import logging
 import os
 
-AGENT_NAME = "lineage_agent"
 APP_NAME = "LineageAI"
-GEMINI_MODEL = "gemini-2.5-pro"
-PRINT = False
+MODEL_SMART = "gemini-2.5-pro" # Expensive
+MODEL_MIXED = "gemini-2.5-flash" # Cheaper
+MODEL_FAST = "gemini-2.5-flash-lite-preview-06-17" # Cheapest
 
 # --- Configure Logging ---
 filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), '{APP_NAME}.log') # doesn't work??
