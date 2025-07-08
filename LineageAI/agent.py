@@ -1,26 +1,15 @@
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, BaseAgent, LlmAgent, SequentialAgent
-from .constants import AGENT_NAME, GEMINI_MODEL
+from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from .openarchieven import open_archives_agent, open_archives_link_agent
 from .reviewer import reviewer_agent
 from .combiner import combiner_agent
 from .wikitree import wikitree_agent
 
-## Purely sequential agent that combines all the sub-agents into a single agent.
-#
-# root_agent = SequentialAgent(
-#     name=AGENT_NAME,
-#     sub_agents=[
-#         open_archives_agent, reviewer_agent, combiner_agent, wikitree_agent
-#     ],
-#     description=(
-#         "Agent to answer questions about genealogy in the Netherlands."
-#     ),
-# )
-
+# Create the root agent that orchestrates the entire genealogy research process
 root_agent = LlmAgent(
-    name=AGENT_NAME,
-    model=GEMINI_MODEL,
+    name="LineageAiOrchestrator",
+    model=MODEL_FAST,
     description="""
         Agent to answer questions about genealogy in the Netherlands.
     """,
@@ -55,29 +44,32 @@ root_agent = LlmAgent(
         record you are referencing actually exists, do not use the source or draw any conclusions
         from it.
 
-        You are not capable of performing searches or querying records and must transfer to the
-        OpenArchievenResearcher agent to do so.
+        You must always transfer to the OpenArchievenResearcher agent to fetch the content of
+        specific archival records or perform any searches.
 
         You must transfer work to the RecordCombiner agent after discovering new records to attempt
         to combine insights into a single record that best matches the user's query.
 
-        When drawing new conclusions, you must transfer work to the ResultReviewerAgent agent to
-        review the results of your research.
-
-        If you are asked to write a biography, you should use the WikitreeFormatterAgent to format
-        the biography according to the conventions of WikiTree. If you were previously asked to
-        write a biography, keep using this agent to format the biography with the latest research.
-
-        When transfering to another agent, ONLY provide `agent_name` inside `args` as passing to
-        `functionCall` as any other parameters are not supported.
+        You must transfer work to the ResultReviewerAgent agent to review the results of your
+        research.
 
         By default, you should assume that the user wants to research somebody for the purpose of
         writing a biography and you should query archival records frequently to expand your
         knowledge. In a biography, you should always try to include links to your sources.
 
-        If you haven't output the biography for WikiTree, ask the user if they would like you to.
+        If you are asked to write a biography, you must use the WikitreeFormatterAgent to format
+        the biography according to the conventions of WikiTree. If you were previously asked to
+        write a biography, keep using this agent to format the biography with the latest research.
+        Note that the output from WikiTreeFormatterAgent will be a code block.
 
-        You should always explain your reasoning to the user.
+        If you were provided information in WikiTree format, you should prefer to output in that
+        format as well and expect a code block as output.
+
+        When transfering to another agent, ONLY provide `agent_name` inside `args` as passing to
+        `functionCall` as any other parameters are not supported.
+
+        You must always explain your reasoning and actions to the user while you work so they can
+        follow along with your research.
     """,
     sub_agents=[
         open_archives_agent, reviewer_agent, combiner_agent, wikitree_agent

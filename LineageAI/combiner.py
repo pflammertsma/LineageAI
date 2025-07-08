@@ -1,10 +1,10 @@
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
-from .constants import PRINT, GEMINI_MODEL
+from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 
 combiner_agent = LlmAgent(
     name="RecordCombiner",
-    model=GEMINI_MODEL,
+    model=MODEL_MIXED,  # Use a mixed model for cost efficiency
     instruction="""
         You are an Record Combiner Assistant specializing in identifying the relationship between
         genealogical results.

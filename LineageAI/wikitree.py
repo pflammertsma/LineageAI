@@ -1,10 +1,10 @@
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
-from .constants import PRINT, GEMINI_MODEL
+from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 
 wikitree_agent = LlmAgent(
     name="WikitreeFormatterAgent",
-    model=GEMINI_MODEL,
+    model=MODEL_MIXED,  # Use a mixed model for cost efficiency
     instruction=""""
     You are a formatting agent specializing in preparing a biography to be submitted to
     WikiTree.
@@ -131,8 +131,8 @@ Further research is needed to find definitive birth, marriage, and death records
     - Remain factual and avoid including any research notes unless it provides essential
       clarification.
 
-    Output this biography in Wikitext format as a code block, ensuring that it is well-structured
-    and follows the conventions.
+    Output this biography in Wikitext format as a code block (that means it should be surrounded by
+    backticks), ensuring that it is well-structured and follows all conventions.
     """,
     description="Prepares biographies in Wikitext format for WikiTree.",
     output_key="wikitree_biography",
