@@ -288,11 +288,19 @@ open_archives_agent = LlmAgent(
         Agent to perform initial query to OpenArchieven.
     """,
     instruction="""
-        You are responsible for extracting a search query from the user's input.
+        You are responsible for reading individual records and performing searches for records from
+        OpenArchieven and performing searches.
 
-        To do this, you must invoke `open_archives_search` with a JSON string that contains
-        the parameters for the search query. The JSON should contain keys matching the following
-        parameters:
+        To read an individual record, you must invoke `open_archives_get_record` with a URL, e.g.:
+        open_archives_get_record("https://www.openarchieven.nl/gra:82abb4f7-6091-c219-f035-2cc346509875")
+
+        If you are provided with any openarchieven.nl URLs, you must read the record using
+        `open_archives_get_record`. You do NOT need to fetch a record if it was obtained through
+        `open_archives_search` because the search results already contain the entire record.
+        
+        To perform a search, you must extract a search query from the user's input. You must then
+        invoke `open_archives_search` with a JSON string that contains the parameters for that
+        search query. The JSON should contain keys matching the following parameters:
         - `query`: The query to search for (required). This parameter requires a very specific
           format detaled below.
         - `start_offset`: The initial results to return (for paging, default=0).
@@ -337,8 +345,8 @@ open_archives_agent = LlmAgent(
         "[name1] & [name2] & [name3]"
 
         Where:
-        - For [name], you can search by exclusion using `-`; e.g. use `Doek -Aaltje` to include
-          "Doek" and not "Aaltje".
+        - For [name], you can search by exclusion using `-`; e.g. use `Jansen -Aaltje` to include
+          "Jansen" and not "Aaltje".
         - For [name], you can search for phonetic matches using `~`: e.g. use `~Rodenburg` to
           find people with names sounding like Rodenburg.
         - For [name], you can search for a specific surname by using `>`: e.g. use `>Rodenburg` to
@@ -372,6 +380,11 @@ open_archives_agent = LlmAgent(
         - To use more than two names in the query, you can can use the alternative syntax (`&`
           instead of `&~&`), but note that it's a very narrow search and it's generally not very
           useful unless other strategies are giving too many results.
+        - To uncover a variation of a name, an effective strategy is to search using the names of
+          one or both parents, such as `Jan Jansen &~& Hendrik Jansen 1925-1930`. This might seem
+          counterintuitive, but it works because both the person you're looking and the other names
+          from the query may be included in the record. This can work for birth, marriage, and
+          death records.
 
         You must only provide names and years in the search query, and you must not include
         additional information such as places or events.

@@ -28,6 +28,9 @@ combiner_agent = LlmAgent(
         - A short explanation of why you chose one individual if previous data suggested there
           were multiple individuals to choose from;
         - A succint biography describing all the relevant details about the person you chose.
+
+        You should try to transfer back to the orchestrator agent and encourage it to finalize the
+        update biography, if any new information was found.
     """,
     description="Combines genealogical results from multiple records.",
     output_key="genealogy_result"
