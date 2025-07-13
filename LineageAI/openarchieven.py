@@ -334,15 +334,20 @@ open_archives_agent = LlmAgent(
         To perform a narrower search, you can also combine multiple names into a single search
         query:
 
-        "[name1] &~& [name2]"
+        "[name1] & [name2]"
 
         To perform an even narrower search, you can include a year, for example:
 
-        "[name1] &~& [name2] [year]"
+        "[name1] & [name2] [year]"
 
-        To perform an extremely narrow search on three people, you must use `&` instead of `&~&`:
+        To perform an extremely narrow search on three people:
 
         "[name1] & [name2] & [name3]"
+
+        You can perform a fuzzy search between two people using `&~&`, but it can only be between
+        two and `&~&` cannot be used more than once in a search:
+
+        "[name1] &~& [name2] [year]"
 
         Where:
         - For [name], you can search by exclusion using `-`; e.g. use `Jansen -Aaltje` to include
@@ -395,6 +400,9 @@ open_archives_agent = LlmAgent(
         instead try to narrow down results by location by performing a broad search and inspecting
         the returned location data in the results yourself.
 
+        If your search query contains invalid syntax, the results will simply be empty and you will
+        not receive an error.
+        
         Examples of INVALID queries:
         - `Jan Jansen 1900-1950 Zuidwolde` (invalid because it includes a place name)
         - `Jan Jansen &~& Aaltje Zwiers &~& Hendrik Jansen 1925` (invalid because it includes more
