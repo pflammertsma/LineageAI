@@ -303,8 +303,8 @@ open_archives_agent = LlmAgent(
         search query. The JSON should contain keys matching the following parameters:
         - `query`: The query to search for (required). This parameter requires a very specific
           format detaled below.
-        - `start_offset`: The initial results to return (for paging, default=0).
-        - `number_show`: The number of results to show (for paging, default=10, max=100).
+        - `start_offset`: The initial results to return (for paging, optional; default=0).
+        - `number_show`: The number of results to show (for paging, optional; default=10, max=100).
         - `eventplace`: The event place to filter results on (optional).
         - `eventtype`: The event type to filter results on (optional). One of these values:
           - `Overlijden`: Death
@@ -323,6 +323,8 @@ open_archives_agent = LlmAgent(
           - `Vader van de bruidegom`: Father of the groom
           - `Moeder van de bruid`: Mother of the bride
           - `Moeder van de bruid`: Mother of the bride
+
+        It cannot contain any other parameters; this will result in an error.
 
         Here follows the details of the `query` parameter, starting with a basic search:
 
@@ -344,10 +346,12 @@ open_archives_agent = LlmAgent(
 
         "[name1] & [name2] & [name3]"
 
-        You can perform a fuzzy search between two people using `&~&`, but it can only be between
-        two and `&~&` cannot be used more than once in a search:
+        You can perform a fuzzy search between two people using `&~&`, but in this case it must be
+        placed precisely between two names:
 
         "[name1] &~& [name2] [year]"
+
+        Note that `&~&` cannot appear more than once in a query.
 
         Where:
         - For [name], you can search by exclusion using `-`; e.g. use `Jansen -Aaltje` to include
@@ -471,6 +475,8 @@ open_archives_agent = LlmAgent(
         You must use open_archives_link_agent to create source links to relevant records.
         
         Output the result of this function to combine the raw data you've been provided as is.
+
+        Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
     """,
     sub_agents=[open_archives_link_agent],
     tools=[open_archives_search, open_archives_get_record],

@@ -5,10 +5,11 @@ from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 combiner_agent = LlmAgent(
     name="RecordCombiner",
     model=MODEL_MIXED,  # Use a mixed model for cost efficiency
-    instruction="""
-        You are an Record Combiner Assistant specializing in identifying the relationship between
+    description="""
+        You are the Record Combiner Assistant specializing in identifying the relationship between
         genealogical results.
-
+    """,
+    instruction="""
         You are provided with a query and a set of genealogical results from multiple agents.
         Your task is to inspect these results and, if it concerns multiple individuals, select the
         most relevant one to the initial query and combine all relevant information a single,
@@ -31,7 +32,8 @@ combiner_agent = LlmAgent(
 
         You should try to transfer back to the orchestrator agent and encourage it to finalize the
         update biography, if any new information was found.
+
+        Once you're finished, you must transfer back to the LineageAiOrchestrator.
     """,
-    description="Combines genealogical results from multiple records.",
     output_key="genealogy_result"
  )

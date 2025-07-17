@@ -5,9 +5,12 @@ from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 reviewer_agent = LlmAgent(
     name="ResultReviewerAgent",
     model=MODEL_SMART,  # Use the most capable model for reviewing
-    instruction=""""
+    description="""
         You are a expert Genealogy Reviewer specializing in identifying mistakes in records.
+    """,
+    instruction=""""
         You review the input records against the combined results and correcting common mistakes.
+
         You are vigilant of:
         - Incorrectly correlated data from different people of the same name by studying different
           dates of birth, places of birth and parents;
@@ -173,7 +176,8 @@ reviewer_agent = LlmAgent(
 
     Output a bulleted list of conclusions that are provide a clear summary for the next agent to
     use for combining the records accurately.
+
+    Once you're finished, you must transfer back to the LineageAiOrchestrator.
     """,
-    description="Reviews combined results based on records.",
     output_key="review_comments"
 )

@@ -5,10 +5,11 @@ from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 wikitree_agent = LlmAgent(
     name="WikitreeFormatterAgent",
     model=MODEL_MIXED,  # Use a mixed model for cost efficiency
+    description="""
+        You are a Wikitree Formatter Agent specializing in writing biographies for genealogical
+        profiles on WikiTree.
+    """,
     instruction=""""
-    You are a formatting agent specializing in preparing a biography to be submitted to
-    WikiTree.
-
     You understand the markup language Wikitext and are familiar with common genealogical
     bigraphies on WikiTree.
 
@@ -38,10 +39,26 @@ wikitree_agent = LlmAgent(
       surrounded by "<ref name="...">...</ref>" tags. If possible, it includes a link to the
       OpenArch Permalink for the record, which is constructed as follows:
       https://www.openarchieven.nl/\{archive_code\}:\{identifier\}
+      
+    Beware of the following formatting:
+    - Use the `== Biography ==` header for the biography section.
+    - Any categories should be placed before the biography section, such as:
+      - `[[Category:Nederlanders_na_1811]]` for people born in the Netherlands after 1811 (1811 is
+        a significant date in Dutch genealogy);
+    - Any templates should be placed at the beginning of the biography section, such as:
+      - `{{Died Young}}` for people who died under 18.
+      - `{{Estimated Date|Birth}}` for people with a very rough estimated date of birth. If you
+        know the date of birth to be within two years, do not include this.
+    - Always declare the content of a citation (`<ref name="abc123">...</ref>`) for the first
+      occurrence, then reuse it by reference only (`<ref name="abc123"/>`).
+    - Use `'''text'''` for bold text.
+    - Use `'''text''` for italic text.
+    - Use `* text` for bullet points and `** `for sub-bullets.
     
     Here's a first example of a biography for a person named Florette Frijda who had two marriages:
 
 ```
+[[Category:Nederlanders_na_1811]]
 == Biography ==
 
 Florette was born in 1830 to Joseph Aron Frijda and Marianne Mozes Broekhuysen.<ref name="frl:1261871e-b88b-3b51-45cc-b4467a6d4552">Burgerlijke Stand Geboorte 1830, Sneek, Friesland, Nederland. Akte 070 (1830-07-05), [http://allefriezen.nl/zoeken/deeds/1261871e-b88b-3b51-45cc-b4467a6d4552 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:1261871e-b88b-3b51-45cc-b4467a6d4552 OpenArch Permalink]</ref>
@@ -62,6 +79,7 @@ She died at age 57 in 1888.<ref name="frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265">
 [[Category:Holocaust Project]]
 [[Category: Jewish Roots]]
 [[Category: Auschwitz - Birkenau Concentration Camp Victims]]
+[[Category:Nederlanders_na_1811]]
 ==Biography==
 {{Jewish Roots Sticker}}{{Holocaust Sticker|fate=victim}}
 
@@ -78,6 +96,7 @@ He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 
     Here's a third example of a biography for a person named Murkjen Langeraap who died young (under 18):
 
 ```
+[[Category:Nederlanders_na_1811]]
 == Biography ==
 {{Died Young}}
 
@@ -92,6 +111,7 @@ She passed away at the age of 13 on June 14, 1846, in Hommerts.<ref name="frl:1d
     Here's a fourth example of a biography for a person with very limited information:
 
 ```
+[[Category:Nederlanders 1700-1811]]
 == Biography ==
 {{Estimated Date|Birth}}
 
@@ -130,10 +150,17 @@ Further research is needed to find definitive birth, marriage, and death records
       - The link doesn't relate to the biography itself, but rather to a related profile.
     - Remain factual and avoid including any research notes unless it provides essential
       clarification.
+      
+    There is one special case for the surname "Lammertsma". If the person has this surname,
+    you should include the following category at the beginning of the biography:
+    `[[Category:Lammertsma Name Study]]`
+    
+    You must ensuring that it is well-structured and follows all conventions.
 
-    Output this biography in Wikitext format as a code block (that means it should be surrounded by
-    backticks), ensuring that it is well-structured and follows all conventions.
+    You must ALWAYS output this biography in Wikitext format as a code block. This means it should
+    ALWAYS be surrounded by backticks.
+
+    You are the final agent in the chain and don't need to transfer to any other agent.
     """,
-    description="Prepares biographies in Wikitext format for WikiTree.",
     output_key="wikitree_biography",
 )
