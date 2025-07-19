@@ -2,7 +2,6 @@ import requests
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, LlmAgent
-from google.adk.events import Event, EventActions
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 
 # After testing, we found that MODEL_FAST is not suitable for this agent due to its limited
@@ -270,7 +269,7 @@ open_archives_link_agent = Agent(
         identifier.
 
         For constructing the URLs, use the following format:
-        https://www.openarchieven.nl/\{archive_code\}:\{identifier\}
+        https://www.openarchieven.nl/\\{archive_code\\}:\\{identifier\\}
 
         For example, if the archive code is "gra" and the identifier is
         "e551c8d7-361b-edf2-3199-ee3d4978e329", the URL would be:
@@ -280,6 +279,7 @@ open_archives_link_agent = Agent(
     """,
     output_key="genealogy_records"
 )
+
 
 open_archives_agent = LlmAgent(
     name="OpenArchievenResearcher",
@@ -408,9 +408,12 @@ open_archives_agent = LlmAgent(
         not receive an error.
         
         Examples of INVALID queries:
-        - `Jan Jansen 1900-1950 Zuidwolde` (invalid because it includes a place name)
+        - `Jan Jansen 1900-1950 Zuidwolde` (invalid because it includes a place name, which is not
+          supported)
         - `Jan Jansen &~& Aaltje Zwiers &~& Hendrik Jansen 1925` (invalid because it includes more
-          than two names with `&~&`)
+          than two names with `&~&`, which is not supported)
+        - `Jan Jansen &~& Aaltje Zwiers & Hendrik Jansen 1925` (invalid because it combines `&~&`
+          with `&`, which is not supported)
         - `"Jan Jansen" &~& "Aaltje Zwiers" 1925` (invalid because it includes quotation marks
           around multiple names, which is not supported)
         - `Jan Jansen &~& "Aaltje Zwiers" 1925` (invalid because it includes quotation marks

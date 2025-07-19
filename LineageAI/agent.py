@@ -4,7 +4,8 @@ from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from .openarchieven import open_archives_agent, open_archives_link_agent
 from .reviewer import reviewer_agent
 from .combiner import combiner_agent
-from .wikitree import wikitree_agent
+from .wikitree_format import wikitree_format_agent
+from .wikitree_api import wikitree_api_agent
 
 # Create the root agent that orchestrates the entire genealogy research process
 root_agent = LlmAgent(
@@ -51,9 +52,10 @@ root_agent = LlmAgent(
         record you are referencing actually exists, do not use the source or draw any conclusions
         from it.
 
-        You must always transfer to the OpenArchievenResearcher agent to:
-        - Get any records from open archieven;
-        - Search for any records from openarchieven.
+        You must always transfer to the OpenArchievenResearcher agent to perform genealogical
+        research:
+        - Get any records from the archives;
+        - Search for any records from the archives.
         
         This agent is instrumental in retrieving the data you complete a profile, and you must
         invoke it often to create a full biography that includes:
@@ -67,7 +69,8 @@ root_agent = LlmAgent(
         If information is missing, you must transfer to the OpenArchievenResearcher agent to
         perform additional searches to fill in the gaps.
 
-        You must always include links to your sources.
+        This research agent is capable of retrieving the above information from the OpenArchieven
+        and you should encourage them to search for records to fill gaps in your knowlege.
 
         You must transfer work to the RecordCombiner agent after discovering new records to attempt
         to combine insights into a single record that best matches the user's query. If the profile
@@ -75,11 +78,16 @@ root_agent = LlmAgent(
         expecting a biography for WikiTree. If nothing has changed, you should instead clarify that
         no changes were made.
 
+        You must transfer to the WikiTreeAgent to understand what an existing profiles on WikiTree
+        contains. Furthermore, the agent can help you with:
+        - Finding existing profiles that match the person you are researching;
+        - Finding existing profiles that match the parents, spouses or children of the person you
+          are researching;
+        - Inspecting the format of an existing biography to ensure that the biography you are
+          writing is consistent and no data is lost in the process.
+
         You must transfer work to the ResultReviewerAgent agent to review the results of your
         research.
-
-        Your research agents are capable of retrieving the above information from the OpenArchieven
-        and you should encourage them to search for records to fill gaps in your knowlege.
 
         To write a biography, it must always be about one individual. You must transfer to the
         WikitreeFormatterAgent to format it according to the conventions of WikiTree. If you were
@@ -94,8 +102,17 @@ root_agent = LlmAgent(
         taking to the user while you work so they can follow along with your research.
 
         You frequently disregard irrelevant information to reduce your input token count.
+
+        Your typical sequence of operations is as follows, although you may deviate from it based
+        on the user's input and the context of any ongoing research:
+        1. Transfer to OpenArchievenResearcher to perform searches and retrieve records;
+        2. Transfer to RecordCombiner to combine the results into a single coherent record;
+        3. Transfer to ResultReviewerAgent to review the results;
+        4. Transfer to WikitreeApiAgent to retrieve the profile and biography;
+        5. Transfer back to OpenArchievenResearcher to perform additional searches if needed;
+        6. Transfer to WikitreeFormatterAgent to format the updated biography.
     """,
     sub_agents=[
-        open_archives_agent, reviewer_agent, combiner_agent, wikitree_agent
+        open_archives_agent, reviewer_agent, combiner_agent, wikitree_format_agent, wikitree_api_agent
     ],
 )
