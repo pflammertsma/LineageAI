@@ -67,10 +67,6 @@ From this repo's root directory, execute:
 adk web
 ```
 
-```
-adk web
-```
-
 Once the ADK is up and running, the chat interface will then be presented to you locally on your machine at http://127.0.0.1:8000/.
 
 ## Accessing LineageAI publicly through the web
