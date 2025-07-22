@@ -15,7 +15,7 @@ This enables it to understand queries like:
 * _Create a WikiTree profile for Jan from this record: https://www.openarchieven.nl/gra:fb3d078b-fd79-feb3-9000-947e38cbc0a3_
 * _Research the WikiTree profile `Jans-10027` and amend it with additional information_
 
-![ADK web interface](docs/chat-screen.png | width=250)
+<image src="docs/chat-screen.png" width="480" alt="ADK web interface"/>
 
 ## Quickstart
 
