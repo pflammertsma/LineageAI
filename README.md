@@ -1,4 +1,4 @@
-# LineageAI
+# <image src="docs/lineageai icon.svg" height="24" alt="ADK web interface"/> LineageAI
 
 ## Background
 
@@ -11,9 +11,9 @@ LineageAI is a chat-based interface that connects to:
 * [WikiTree API](https://github.com/wikitree/wikitree-api)
 
 This enables it to understand queries like:
-* _Who was Jan Lammertsma, who died in 1847?_
-* _Create a WikiTree profile for Jan from this record: https://www.openarchieven.nl/gra:fb3d078b-fd79-feb3-9000-947e38cbc0a3_
-* _Research the WikiTree profile `Jans-10027` and amend it with additional information_
+* _`Who was Jan Lammertsma (d. 1847)?`_
+* _`Create a WikiTree profile for Jan from this record: https://www.openarchieven.nl/gra:fb3d078b-fd79-feb3-9000-947e38cbc0a3`_
+* _`Research the WikiTree profile 'Jans-10027' and amend it with additional information`_
 
 <image src="docs/chat-screen.png" width="480" alt="ADK web interface"/>
 
@@ -87,3 +87,14 @@ Once the ADK is up and running, the chat interface will then be presented to you
 **LineageAI is not publicly available on the web.** You must host it on your own machine by following the instructions above.
 
 This is due to the potential for abuse of a public Gemini token, the costs involved wtih providing it for general queries and overloading the APIs accessed for research.
+
+## Thanks!
+
+Please feel free to contribute to this project in any way:
+* Contributing code and submitting pull requests
+* Reporting bugs or feature requests
+* General discussion through [our Discord channel](https://discord.gg/qbxpQJPC)
+
+Thanks!
+
+<image src="docs/lineageai icon.svg" height="128" alt="ADK web interface"/>
