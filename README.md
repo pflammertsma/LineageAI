@@ -4,6 +4,19 @@
 
 *LineageAI* is a genealogical research agent that (in its current form) performs research solely through queries to [OpenArchieven](https://www.openarchieven.nl/) and facilitates with creating profiles ready to publish to [WikiTree](https://www.wikitree.com/).
 
+## Capabilities
+
+LineageAI is a chat-based interface that connects to:
+* [Open Archives API](https://www.openarchieven.nl/api/docs/)
+* [WikiTree API](https://github.com/wikitree/wikitree-api)
+
+This enables it to understand queries like:
+* _Who was Jan Lammertsma, who died in 1847?_
+* _Create a WikiTree profile for Jan from this record: https://www.openarchieven.nl/gra:fb3d078b-fd79-feb3-9000-947e38cbc0a3_
+* _Research the WikiTree profile `Jans-10027` and amend it with additional information_
+
+![ADK web interface](docs/chat-screen.png | width=250)
+
 ## Quickstart
 
 More details about using ADK can be found in [the general ADK quickstart guide](https://google.github.io/adk-docs/get-started/quickstart/).
