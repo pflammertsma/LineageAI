@@ -1,13 +1,13 @@
+from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
-from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 
 wikitree_format_agent = LlmAgent(
     name="WikitreeFormatterAgent",
     model=MODEL_MIXED,  # Use a mixed model for cost efficiency
     description="""
-        You are a Wikitree Formatter Agent specializing in writing biographies for genealogical
-        profiles on WikiTree.
+    You are the Wikitree Formatter Agent specializing in writing biographies for genealogical
+    profiles on WikiTree.
     """,
     instruction=""""
     You understand the markup language Wikitext and are familiar with common genealogical
@@ -69,6 +69,7 @@ wikitree_format_agent = LlmAgent(
     - Use `'''text'''` for bold text.
     - Use `'''text''` for italic text.
     - Use `* text` for bullet points and `** `for sub-bullets.
+    - Never include the WikiTree ID as plain text in the profile. It can only be used as a link.
 
     CATEGORIES
     ----------

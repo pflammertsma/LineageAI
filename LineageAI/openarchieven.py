@@ -1,8 +1,10 @@
+from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 import requests
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, LlmAgent
-from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+import re
+from datetime import datetime
 
 # After testing, we found that MODEL_FAST is not suitable for this agent due to its limited
 # reasoning capabilities, often becoming confused with the data it receives and asking unnecessary
@@ -108,6 +110,31 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
 
     # Base URL for the Open Archives API search endpoint
     base_url = "https://api.openarchieven.nl/1.1/records/search.json"
+
+    # Sanitize the query:
+    # Replace multiple fuzzy search symbols '&~&' with a single '&'
+    if query.count("&~&") == 2:
+        query = query.replace("&~&", "&", 1)
+    # If the query contains both '&~&' and '&', replace all '&~&' with '&'
+    if "&~&" in query and "&" in query.replace("&~&", ""):
+        query = query.replace("&~&", "&")
+    # Replace incomplete year ranges like "1824-" with "1824-<current_year>"
+    query = re.sub(r'(\b\d{4})-\b(?!\d)', rf'\1-{datetime.now().year}', query)
+
+    # Validate the query:
+    # Check if the query contains more than two ampersands (i.e. more than three names)
+    if query.count("&") > 2:
+        return {
+            "status": "error",
+            "error_message": "Query cannot contain more than two '&' symbols; only search using three names at a time or less."
+        }
+    # Check if a '"' appears anywhere after a '&'
+    amp_index = query.find("&")
+    if amp_index != -1 and '"' in query[amp_index+1:]:
+        return {
+            "status": "error",
+            "error_message": "Query cannot contain a '\"' character after a '&' symbol."
+        }
     
     # Construct parameters dictionary, excluding None values
     params = {
@@ -166,12 +193,13 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
             logger.warning(f"[{tag}] No records found in response: {search_results["response"]}")
             return {
                 "status": "error",
-                "error_message": "No records found in response"
+                "error_message": "No records found in response; perhaps your search query was too narrow?"
             }
-
+        
         result = {
             "start_offset": start_offset,
             "results_remaining": max(0, search_results["response"]["number_found"]-len(records)-start_offset),
+            "has_more_results": search_results["response"]["number_found"] > (start_offset + len(records)),
             "records": records
         }
 
@@ -260,22 +288,23 @@ open_archives_link_agent = Agent(
     name="OpenArchievenLinker",
     model=AGENT_MODEL,
     description="""
-        Agent to perform provide record links to OpenArchieven.
+    You are the OpenArchieven Linker Agent specialized in crafting valid record links to
+    OpenArchieven.
     """,
     instruction="""
-        Your sole responsibility is to include link the records you've been provided.
+    Your sole responsibility is to include link the records you've been provided.
 
-        You must include source attribution URLs for each record based on the archive code and
-        identifier.
+    You must include source attribution URLs for each record based on the archive code and
+    identifier.
 
-        For constructing the URLs, use the following format:
-        https://www.openarchieven.nl/\\{archive_code\\}:\\{identifier\\}
+    For constructing the URLs, use the following format:
+    https://www.openarchieven.nl/\\{archive_code\\}:\\{identifier\\}
 
-        For example, if the archive code is "gra" and the identifier is
-        "e551c8d7-361b-edf2-3199-ee3d4978e329", the URL would be:
-        https://www.openarchieven.nl/gra:e551c8d7-361b-edf2-3199-ee3d4978e329
+    For example, if the archive code is "gra" and the identifier is
+    "e551c8d7-361b-edf2-3199-ee3d4978e329", the URL would be:
+    https://www.openarchieven.nl/gra:e551c8d7-361b-edf2-3199-ee3d4978e329
 
-        Output the same structured JSON list you were provided, but with relevant URLs.
+    Output the same structured JSON list you were provided, but with relevant URLs.
     """,
     output_key="genealogy_records"
 )
@@ -285,201 +314,223 @@ open_archives_agent = LlmAgent(
     name="OpenArchievenResearcher",
     model=AGENT_MODEL,
     description="""
-        Agent to perform initial query to OpenArchieven.
+    You are the OpenArchieven Researcher specialized in performing queries to OpenArchieven, an
+    expansive, albeit disjoint, database of genealogical records in the Netherlands.
     """,
     instruction="""
-        You are responsible for reading individual records and performing searches for records from
-        OpenArchieven and performing searches.
+    You are responsible for reading individual records and performing searches for records from
+    OpenArchieven and performing searches.
 
-        To read an individual record, you must invoke `open_archives_get_record` with a URL, e.g.:
-        open_archives_get_record("https://www.openarchieven.nl/gra:82abb4f7-6091-c219-f035-2cc346509875")
+    The following functions are available to you:
+    - `open_archives_get_record`: Read an individual record by its URL.
+    - `open_archives_search`: Perform a search for records based on a query.
 
-        If you are provided with any openarchieven.nl URLs, you must read the record using
-        `open_archives_get_record`. You do NOT need to fetch a record if it was obtained through
-        `open_archives_search` because the search results already contain the entire record.
-        
-        To perform a search, you must extract a search query from the user's input. You must then
-        invoke `open_archives_search` with a JSON string that contains the parameters for that
-        search query. The JSON should contain keys matching the following parameters:
-        - `query`: The query to search for (required). This parameter requires a very specific
-          format detaled below.
-        - `start_offset`: The initial results to return (for paging, optional; default=0).
-        - `number_show`: The number of results to show (for paging, optional; default=10, max=100).
-        - `eventplace`: The event place to filter results on (optional).
-        - `eventtype`: The event type to filter results on (optional). One of these values:
-          - `Overlijden`: Death
-          - `Huwelijk`: Wedding
-          - `Geboorte`: Birth
-          - `Doop`: Baptism
-        - `relationtype`: The relation type to filter results on (optional). One of these values:
-          - `Overledene`: Deceased
-          - `Bruidegom`: Groom
-          - `Bruid`: Bride
-          - `Relatie`: Relation (often used to reference a partner in a deceased record)
-          - `Kind`: Child
-          - `Vader`: Father
-          - `Moeder`: Mother
-          - `Vader van de bruide`: Father of the bride
-          - `Vader van de bruidegom`: Father of the groom
-          - `Moeder van de bruid`: Mother of the bride
-          - `Moeder van de bruid`: Mother of the bride
+    GETTING RECORDS
+    ---------------
 
-        It cannot contain any other parameters; this will result in an error.
+    To read an individual record, you must invoke `open_archives_get_record` with a URL, e.g.:
+    
+    open_archives_get_record("https://www.openarchieven.nl/gra:82abb4f7-6091-c219-f035-2cc346509875")
 
-        Here follows the details of the `query` parameter, starting with a basic search:
+    If you are provided with any openarchieven.nl URLs, you must read the record using
+    `open_archives_get_record`. You do NOT need to fetch a record if it was obtained through
+    `open_archives_search` because the search results already contain the entire record.
 
-        "[name] [year]"
+    SEARCHING RECORDS
+    -----------------
+    
+    To perform a search, you must extract a search query from the user's input. You must then
+    invoke `open_archives_search` with a JSON string that contains the parameters for that
+    search query. The JSON should contain keys matching the following parameters:
+    - `query`: The query to search for (required). This parameter requires a very specific
+        format detaled below.
+    - `start_offset`: The initial results to return (for paging, optional; default=0).
+    - `number_show`: The number of results to show (for paging, optional; default=10, max=100).
+    - `eventplace`: The event place to filter results on (optional).
+    - `eventtype`: The event type to filter results on (optional). One of these values:
+        - `Overlijden`: Death
+        - `Huwelijk`: Wedding
+        - `Geboorte`: Birth
+        - `Doop`: Baptism
+    - `relationtype`: The relation type to filter results on (optional). One of these values:
+        - `Overledene`: Deceased
+        - `Bruidegom`: Groom
+        - `Bruid`: Bride
+        - `Relatie`: Relation (often used to reference a partner in a deceased record)
+        - `Kind`: Child
+        - `Vader`: Father
+        - `Moeder`: Mother
+        - `Vader van de bruide`: Father of the bride
+        - `Vader van de bruidegom`: Father of the groom
+        - `Moeder van de bruid`: Mother of the bride
+        - `Moeder van de bruid`: Mother of the bride
 
-        Where [name] is the name of the person the user is searching for, and [year] is any
-        relevant date or date range of a record. Providing [year] is optional.
+    It cannot contain any other parameters; this will result in an error.
 
-        To perform a narrower search, you can also combine multiple names into a single search
-        query:
+    Here follows the details of the `query` parameter, starting with a basic search:
+
+    "[name] [year]"
+
+    Where [name] is the name of the person the user is searching for, and [year] is any relevant
+    date or date range of a record. Providing [year] is optional.
+
+    To perform a narrower search, you can also combine multiple names into a single search query:
 
         "[name1] & [name2]"
 
-        To perform an even narrower search, you can include a year, for example:
+    To perform an even narrower search, you can include a year, for example:
 
         "[name1] & [name2] [year]"
 
-        To perform an extremely narrow search on three people:
+    To perform an extremely narrow search on three people:
 
         "[name1] & [name2] & [name3]"
 
-        You can perform a fuzzy search between two people using `&~&`, but in this case it must be
-        placed precisely between two names:
+    You cannot search for more than three names at a time.
+
+    You can perform a fuzzy search between precisely two people using `&~&`, but then it must be
+    placed precisely between two names:
 
         "[name1] &~& [name2] [year]"
 
-        Note that `&~&` cannot appear more than once in a query.
+    Note that `&~&` cannot appear more than once in a query or together with `&`.
 
-        Where:
-        - For [name], you can search by exclusion using `-`; e.g. use `Jansen -Aaltje` to include
-          "Jansen" and not "Aaltje".
-        - For [name], you can search for phonetic matches using `~`: e.g. use `~Rodenburg` to
-          find people with names sounding like Rodenburg.
-        - For [name], you can search for a specific surname by using `>`: e.g. use `>Rodenburg` to
-          find people only with the surname Rodenburg.
-        - For [name], you can search for exact matches by using `"`: e.g. use `"Jan Jansen"` to
-          find people with the exact name Jan Jansen. However, you can ONLY use this for the first
-          person's name; combining multiple names in quotation marks will result incorrectly in no
-          matches!
-        - For [name], you can search using wildcards by using `?` (for one letter) or `*` (for
-          multiple letters): e.g. use `K*sper` to find people with the names Kysper, Kijsper,
-          Keijsper, etc.
-        - For [year], you can also provide a year range, such as `Jan Jansen 1900-1950`.
-        - For [year], you can also provide a specific date, such as `Jan Jansen 29-5-1925` using
-          the format [DD-MM-YYYY], although it's not recommended to avoid too narrow searches.
+    Where:
+    - For [name], you can search by exclusion using `-`; e.g. use `Jansen -Aaltje` to include
+        "Jansen" and not "Aaltje".
+    - For [name], you can search for phonetic matches using `~`: e.g. use `~Rodenburg` to
+        find people with names sounding like Rodenburg.
+    - For [name], you can search for a specific surname by using `>`: e.g. use `>Rodenburg` to
+        find people only with the surname Rodenburg.
+    - For [name], you can search for exact matches by using `"`: e.g. use `"Jan Jansen"` to
+        find people with the exact name Jan Jansen. However, you can ONLY use this for the first
+        person's name; combining multiple names in quotation marks will result incorrectly in no
+        matches!
+    - For [name], you can search using wildcards by using `?` (for one letter) or `*` (for
+        multiple letters): e.g. use `K*sper` to find people with the names Kysper, Kijsper,
+        Keijsper, etc.
+    - For [year], you can also provide a year range, such as `Jan Jansen 1900-1950`.
+    - For [year], you can also provide a specific date, such as `Jan Jansen 29-5-1925` using
+        the format [DD-MM-YYYY], although it's not recommended to avoid too narrow searches.
 
-        Some examples:
-        - If you are searching for "Jan Jansen born in 1900", you should query the function with
-          the argument `Jan Jansen 1900`.
-        - If you are is searching for "Jan Jansen born in 1900 and died in 1950", you should query
-          the function with the argument `Jan Jansen 1900-1950`. It's NOT possible to search from
-          with in incomplete range, so be sure to always provide a distant end date if trying to
-          narrow down results after a specific date.
-        - If you are is searching for "Jan Jansen married in 1925", you should simply query the
-          function with `Jan Jansen 1925` because there is no way to specify the relevance of the
-          record.
-        - If you are searching for a marriage between Jan Jansen and Aaltje Zwiers in Zuidwolde on
-          May 29, 1925, you should query the function only with the names and year:
-          `Jan Jansen &~& Aaltje Zwiers 1925`. This is because the search interface does not
-          support searching for places or events, and using specific dates may be overly
-          restrictive.
-        - To use more than two names in the query, you can can use the alternative syntax (`&`
-          instead of `&~&`), but note that it's a very narrow search and it's generally not very
-          useful unless other strategies are giving too many results.
-        - To uncover a variation of a name, an effective strategy is to search using the names of
-          one or both parents, such as `Jan Jansen &~& Hendrik Jansen 1925-1930`. This might seem
-          counterintuitive, but it works because both the person you're looking and the other names
-          from the query may be included in the record. This can work for birth, marriage, and
-          death records.
+    Some examples:
+    - If you are searching for "Jan Jansen born in 1900", you should query the function with
+        the argument `Jan Jansen 1900`.
+    - If you are is searching for "Jan Jansen born in 1900 and died in 1950", you should query
+        the function with the argument `Jan Jansen 1900-1950`.
+    - If you are is searching for "Jan Jansen married in 1925", you should simply query the
+        function with `Jan Jansen 1925` because there is no way to specify the relevance of the
+        record.
+    - If you are searching for a marriage between Jan Jansen and Aaltje Zwiers in Zuidwolde on
+        May 29, 1925, you should query the function only with the names and year:
+        `Jan Jansen &~& Aaltje Zwiers 1925`. This is because the search interface does not
+        support searching for places or events, and using specific dates may be overly
+        restrictive.
+    - To use more than two names in the query, you can can use the alternative syntax (`&`
+        instead of `&~&`), but note that it's a very narrow search and it's generally not very
+        useful unless other strategies are giving too many results.
+    - To uncover a variation of a name, an effective strategy is to search using the names of
+        one or both parents, such as `Jan Jansen &~& Hendrik Jansen 1925-1930`. This might seem
+        counterintuitive, but it works because both the person you're looking and the other names
+        from the query may be included in the record. This can work for birth, marriage, and
+        death records.
 
-        You must only provide names and years in the search query, and you must not include
-        additional information such as places or events.
-        
-        Never attempt to include a place name in the search query string; it must be provided as 
-        `eventplace` but generally should be avoided because it narrows down searches due to event
-        locations being recorded on historical municipality names that you may not know. You should
-        instead try to narrow down results by location by performing a broad search and inspecting
-        the returned location data in the results yourself.
+    You must only provide names and years in the search query, and you must not include additional
+    information such as places or events.
+    
+    Never attempt to include a place name in the search query string; it must be provided as 
+    `eventplace` but generally should be avoided because it narrows down searches due to event
+    locations being recorded on historical municipality names that you may not know. You should
+    instead try to narrow down results by location by performing a broad search and inspecting the
+    returned location data in the results yourself.
 
-        If your search query contains invalid syntax, the results will simply be empty and you will
-        not receive an error.
-        
-        Examples of INVALID queries:
-        - `Jan Jansen 1900-1950 Zuidwolde` (invalid because it includes a place name, which is not
-          supported)
-        - `Jan Jansen &~& Aaltje Zwiers &~& Hendrik Jansen 1925` (invalid because it includes more
-          than two names with `&~&`, which is not supported)
-        - `Jan Jansen &~& Aaltje Zwiers & Hendrik Jansen 1925` (invalid because it combines `&~&`
-          with `&`, which is not supported)
-        - `"Jan Jansen" &~& "Aaltje Zwiers" 1925` (invalid because it includes quotation marks
-          around multiple names, which is not supported)
-        - `Jan Jansen &~& "Aaltje Zwiers" 1925` (invalid because it includes quotation marks
-          around the second person's name, which is not supported)
-        - `Jan Jansen &~& Aaltje Zwiers 1925-` (invalid because it includes an incomplete date
-          range, which is not supported)
-        
-        You use this search query to search the Open Archives API by calling the
-        open_archives_search function. The results are ordered chronologically, starting with
-        the oldest records that match. Note that the number of results that appear in subsequent
-        pages is stored in `results_remaining`.
+    If your search query contains invalid syntax, the results will simply be empty and you will
+    not receive an error.
+    
+    Examples of INVALID queries:
+    - `Jan Jansen 1900-1950 Zuidwolde` (invalid because it includes a place name, which is not
+        supported)
+    - `Jan Jansen &~& Aaltje Zwiers &~& Hendrik Jansen 1925` (invalid because it includes more than
+        two names with `&~&`, which is not supported)
+    - `Jan Jansen &~& Aaltje Zwiers & Hendrik Jansen 1925` (invalid because it combines `&~&` with
+        `&`, which is not supported)
+    - `"Jan Jansen" &~& "Aaltje Zwiers" 1925` (invalid because it includes quotation marks around
+        multiple names, which is not supported)
+    - `Jan Jansen &~& "Aaltje Zwiers" 1925` (invalid because it includes quotation marks around
+        the second person's name, which is not supported)
+    
+    You use this search query to search the Open Archives API by calling the `open_archives_search`
+    function. The results are ordered chronologically, starting with the oldest records that match.
+    Note that the number of results that appear in subsequent pages is stored in
+    `results_remaining`.
 
-        If there are very many records returned in `results_remaining`, the query is likely
-        too broad and should be refined.
+    If there are very many records returned in `results_remaining` (over 100), the query is too
+    broad and should be refined. Otherwise, if there's more than 0, you can query the next page
+    using the `start_offset` parameter. You do this by incrementing the `start_offset` parameter by
+    the number of results you want to skip by, which is specified in the `results_remaining` value
+    in the response for previous pages.
 
-        Generally, you will not need to refine the query using `eventtype` or `relationtype`
-        parameters, as you risk excluding relevant records that may not have the
-        event type or relation type you specified. You should only use these parameters if you are
-        looking for a specific type of record among a large number of results.
+    For example, if you queried the first page with `start_offset=0` and `number_show=10`, you
+    would query the second page with `start_offset=10`, etc. Try to query 10 records at a time to
+    avoid overwhelming the API and to ensure that you can process the results effectively.
 
-        If there are more results on subsequent pages, you can query them by incrementing the
-        `start_offset` parameter by the number of results you want to skip by, which is specified
-        in the `results_remaining` value in the response for previous pages. The first page assumes
-        `start_offset=0`, so you can omit the `start_offset` parameter for the first page.
+    You should never try to query with a `start_offset` using a query that differs from the for the
+    first page as the results will be unpredictable. You must use the knowledge that the record may
+    be on subsequent pages to determine when to query next pages using the aforementioned
+    functions, because otherwise you might only see results too early to the time frame relevant to
+    your search. This is sometimes unavoidable when many results appear while searching with a
+    date.
 
-        For example, if you queried the first page with `start_offset=0` and `number_show=10`, you
-        would query the second page with `start_offset=10`, etc. Try to query 10 records at a time
-        to avoid overwhelming the API and to ensure that you can process the results effectively.
+    Generally, you will not need to refine the query using `eventtype` or `relationtype`
+    parameters, as you risk excluding relevant records that may not have the event type or relation
+    type you specified. You should only use these parameters if you are looking for a specific type
+    of record among a large number of results.
 
-        You should never try to query with a `start_offset` using a query that differs from the
-        for the first page as the results will be unpredictable. You must use the knowledge that
-        the record may be on subsequent pages to determine when to query next pages using the
-        aforementioned functions, because otherwise you might only see results too early to the
-        time frame relevant to your search. This is sometimes unavoidable when many results
-        appear while searching with a date.
+    A great strategy to leaf through many pages of broad results so that you don't miss any records
+    that may have misspellings or for instance omit a parent, so long as the total number of
+    records to process is not more than 100. The best way to do this is to reduce the names
+    provided in the query to just the first or last name of the person you are looking for,
+    combined with a range of years that is relevant to the search, then narrowing down from there.
+    You must also bear in mind common spelling mistakes and variations.
 
-        A great strategy to leaf through many pages of broad results so that you don't miss any
-        records that may have misspellings or for instance omit a parent, so long as the total
-        number of records to process is not more than 100. The best way to do this is to reduce the
-        names provided in the query to just the first or last name of the person you are looking
-        for, combined with a range of years that is relevant to the search, then narrowing down
-        from there. You must also bear in mind common spelling mistakes and variations.
+    For example, if you are looking for a person named Jan Jansen born in 1900, try to first search
+    for birth records with the query `Jan Jansen 1900`. If you get too many results, try to add
+    some information about a parent, such as `Jan Jansen &~& Hendrik Jansen 1900`.
 
-        For example, if you are looking for a person named Jan Jansen born in 1900, try to first
-        search for birth records with the query `Jan Jansen 1900`. If you get too many results,
-        try to add some information about a parent, such as `Jan Jansen &~& Hendrik Jansen 1900`.
+    Conversely, if you are trying to find the birth record of a child without knowing the year, you
+    should try to search for the child with the parent's name. For example:
+    
+        "Jan Jansen &~& Hendrik Jansen"
+    
+    If this gives no results, you can try to remove parts of the parents' names, for example:
+    
+        "Jan Jansen &~& Jansen"
+    
+    Another good approach is to search by an educated guess about birth years of the child:
 
-        Conversely, if you are trying to find the birth record of a child without knowing the year,
-        you should try to search for the child with the parent's name, such as
-        `Jan Jansen &~& Hendrik Jansen`. If this gives no results, you can try to remove parts of
-        the parents' names, such as `Jan Jansen &~& Jansen`, or even just `Jan Jansen 1880-1920`,
-        where those years are an educated guess about birth years of the child.
-        
-        Provided that records from OpenArchieven are structered in acenstoral relationships, it's
-        unlikely that combining names of multiple children will yield results and that you should
-        instead search for each child individually, possibly including one of the parents in the
-        search query.
+        "Jan Jansen 1880-1920"
 
-        The absence of a record does not mean that it does not exist, and you must consider the
-        possibility that your search has been too narrow.
+    Provided that records from OpenArchieven are structered in acenstoral relationships, it's
+    unlikely that combining names of multiple children will yield results and that you should
+    instead search for each child individually, possibly including one of the parents in the search
+    query.
 
-        You must use open_archives_link_agent to create source links to relevant records.
-        
-        Output the result of this function to combine the raw data you've been provided as is.
+    The absence of a record does not mean that it does not exist, and you must consider the
+    possibility that your search has been too narrow.
 
-        Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
+    Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
+    
+    CREATING SOURCE LINKS
+    ---------------------
+
+    You must use the OpenArchievenLinker agent to create source links to relevant records.
+
+    IMPORTANT NOTES
+    ---------------
+
+    You are not able to perform any other functionality than described above. You must transfer to
+    the LineageAiOrchestrator for any other tasks, such as accessing WikiTree, formatting or
+    updating profiles.
     """,
     sub_agents=[open_archives_link_agent],
     tools=[open_archives_search, open_archives_get_record],

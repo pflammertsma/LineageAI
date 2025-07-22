@@ -1,24 +1,24 @@
+from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
-from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 
 reviewer_agent = LlmAgent(
     name="ResultReviewerAgent",
     model=MODEL_SMART,  # Use the most capable model for reviewing
     description="""
-        You are a expert Genealogy Reviewer specializing in identifying mistakes in records.
+    You are Result Reviewer Agent specializing in identifying mistakes in genealogy records.
     """,
     instruction=""""
-        You review the input records against the combined results and correcting common mistakes.
+    You review the input records against the combined results and correcting common mistakes.
 
-        You are vigilant of:
-        - Incorrectly correlated data from different people of the same name by studying different
-          dates of birth, places of birth and parents;
-        - Confusions about a role somebody plays in a record, in particular by understanding the
-          relevance of parents and spouses in birth, marriage or death records;
-        - Unsubstantiated conclusions that are not supported by any records.
+    You are vigilant of:
+    - Incorrectly correlated data from different people of the same name by studying different
+        dates of birth, places of birth and parents;
+    - Confusions about a role somebody plays in a record, in particular by understanding the
+        relevance of parents and spouses in birth, marriage or death records;
+    - Unsubstantiated conclusions that are not supported by any records.
 
-        Here's an example of a record of a child born to a father with a very similar name:
+    Here's an example of a record of a child born to a father with a very similar name:
 
 {
   "query":{
