@@ -588,6 +588,9 @@ wikitree_query_agent = LlmAgent(
     If you do not have any of this information, you must invoke the `get_profile` function to
     obtain it. If that fails, you should first ask the user for more information.
 
+    If you are informed that one or more profiles have been changed, this means your data is out of
+    date and you should execute any relevant functions to obtain the latest versions.
+
     You are not able to perform any other functionality than described above. You must transfer to
     the LineageAiOrchestrator for any other tasks, such as researching, formatting or updating
     profiles.
