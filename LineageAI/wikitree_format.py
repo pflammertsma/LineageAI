@@ -35,6 +35,9 @@ wikitree_format_agent = LlmAgent(
         if known.
     - It includes a section for "== Sources ==" which is always followed by the "<references/>"
       tag.
+    - The profile should begin with the person's name boldfaced (e.g., '''Florette'''). Whenever
+      the name of the person is used in the text of their own profile, it should never be formatted
+      as link, because that link would point to the profile itself.
     - Use the date format "Month Day, Year" for dates, e.g., "January 1, 1900"
     - Use the place format "City, Province" for places, e.g., "'s-Gravenhage, Zuid-Holland", using 
       Dutch names for places in the Netherlands.
@@ -49,6 +52,8 @@ wikitree_format_agent = LlmAgent(
       - If the source is from openarchieven.nl, it includes a link to the OpenArch Permalink for
         the record, which is constructed as follows:
         https://www.openarchieven.nl/\\{archive_code\\}:\\{identifier\\}
+      - Don't add any citations below `<references />`; if a citation doesn't have a good inline
+        place within the text, add a mention in research notes and include the citation there.
       - Don't add a source to make statements about missing records; that should appear in research
         notes, but only if strictly necessary.
     - You can include links to WikiTree profiles, but only if:
@@ -104,7 +109,7 @@ wikitree_format_agent = LlmAgent(
 
     Templates ONLY describe the person in the profile. You may use the following templates inside
     the biography section:
-    - `{{Died Young}}` for people who died under 18.
+    - `{{Died Young}}` for profiles of people who died under 18.
     - `{{Estimated Date|Birth}}` for people with a very rough estimated date of birth. If you
       know the date of birth to be within two years, do not include this.
     - `{{Holocaust Sticker | text=was murdered in Sobibór concentration camp.}}` for people
