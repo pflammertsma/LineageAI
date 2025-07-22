@@ -1,4 +1,4 @@
-# LineageAI
+# <image src="docs/lineageai icon.svg" height="24" alt="ADK web interface"/> LineageAI
 
 ## Background
 
@@ -87,3 +87,14 @@ Once the ADK is up and running, the chat interface will then be presented to you
 **LineageAI is not publicly available on the web.** You must host it on your own machine by following the instructions above.
 
 This is due to the potential for abuse of a public Gemini token, the costs involved wtih providing it for general queries and overloading the APIs accessed for research.
+
+## Thanks!
+
+Please feel free to contribute to this project in any way:
+* Contributing code and submitting pull requests
+* Reporting bugs or feature requests
+* General discussion through [our Discord channel](https://discord.gg/qbxpQJPC)
+
+Thanks!
+
+<image src="docs/lineageai icon.svg" height="128" alt="ADK web interface"/>
