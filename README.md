@@ -11,9 +11,9 @@ LineageAI is a chat-based interface that connects to:
 * [WikiTree API](https://github.com/wikitree/wikitree-api)
 
 This enables it to understand queries like:
-* _Who was Jan Lammertsma, who died in 1847?_
-* _Create a WikiTree profile for Jan from this record: https://www.openarchieven.nl/gra:fb3d078b-fd79-feb3-9000-947e38cbc0a3_
-* _Research the WikiTree profile `Jans-10027` and amend it with additional information_
+* _`Who was Jan Lammertsma (d. 1847)?`_
+* _`Create a WikiTree profile for Jan from this record: https://www.openarchieven.nl/gra:fb3d078b-fd79-feb3-9000-947e38cbc0a3`_
+* _`Research the WikiTree profile 'Jans-10027' and amend it with additional information`_
 
 <image src="docs/chat-screen.png" width="480" alt="ADK web interface"/>
 
