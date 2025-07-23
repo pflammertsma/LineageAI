@@ -3,24 +3,49 @@ wikitree_api.py
 
 A simple Python interface for the WikiTree API using requests.
 See: https://github.com/wikitree/wikitree-api
-
-For testing, invoke:
-```
-from LineageAI.wikitree_api import test_api
-test_api()
-`
 """
 
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 import requests
 import json
+import threading
+import time
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+
 
 # TODO After testing...
 AGENT_MODEL = MODEL_FAST
 
 WIKITREE_API_URL = "https://api.wikitree.com/api.php"
+
+
+# --- Rate limiting logic usign rolling window counter ---
+_api_lock = threading.Lock()
+_api_window_start = 0
+_api_request_count = 0
+_API_RATE_LIMIT = 10  # requests during the window
+_API_RATE_WINDOW = 60  # window duration in seconds
+
+def _rate_limited_get(url, params, timeout=10):
+    """
+    Helper for requests.get with rate limiting: max 10 requests per minute (rolling window).
+    Suspends/sleeps if limit exceeded.
+    """
+    global _api_window_start, _api_request_count
+    with _api_lock:
+        now = time.time()
+        if now - _api_window_start > _API_RATE_WINDOW:
+            _api_window_start = now
+            _api_request_count = 0
+        if _api_request_count >= _API_RATE_LIMIT:
+            sleep_time = _API_RATE_WINDOW - (now - _api_window_start)
+            logger.warning(f"API rate limit reached ({_API_RATE_LIMIT}/min). Sleeping for {sleep_time:.1f} seconds.")
+            time.sleep(max(sleep_time, 0.1))
+            _api_window_start = time.time()
+            _api_request_count = 0
+        _api_request_count += 1
+    return requests.get(url, params=params, timeout=timeout)
 
 
 def search_profiles(json_str: str):
@@ -44,7 +69,7 @@ def search_profiles(json_str: str):
         params['fields'] = ','.join(params['fields'])
     try:
         logger.debug(f"Searching people: {params}")
-        response = requests.get(WIKITREE_API_URL, params=params, timeout=10)
+        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -88,7 +113,7 @@ def get_person(json_str: str):
     try:
         logger.debug(f"Requesting person: {params}")
         print(f"Requesting person: {params}")
-        response = requests.get(WIKITREE_API_URL, params=params, timeout=10)
+        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -132,7 +157,7 @@ def get_profile(json_str: str):
     params.setdefault('resolveRedirect', 1)
     try:
         logger.debug(f"Requesting profile: {params}")
-        response = requests.get(WIKITREE_API_URL, params=params, timeout=10)
+        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -176,7 +201,7 @@ def get_ancestors(json_str: str):
     params.setdefault('resolveRedirect', 1)
     try:
         logger.debug(f"Requesting ancestors: {params}")
-        response = requests.get(WIKITREE_API_URL, params=params, timeout=10)
+        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -221,7 +246,7 @@ def get_descendants(json_str: str):
     params.setdefault('resolveRedirect', 1)
     try:
         logger.debug(f"Requesting descendants: {params}")
-        response = requests.get(WIKITREE_API_URL, params=params, timeout=10)
+        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -271,7 +296,7 @@ def get_relatives(json_str: str):
     params.setdefault('resolveRedirect', 1)
     try:
         logger.debug(f"Requesting relatives: {params}")
-        response = requests.get(WIKITREE_API_URL, params=params, timeout=10)
+        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
