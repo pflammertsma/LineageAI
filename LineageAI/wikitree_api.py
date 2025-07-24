@@ -24,7 +24,7 @@ WIKITREE_API_URL = "https://api.wikitree.com/api.php"
 _api_lock = threading.Lock()
 _api_window_start = 0
 _api_request_count = 0
-_API_RATE_LIMIT = 10  # requests during the window
+_API_RATE_LIMIT = 4  # requests during the window
 _API_RATE_WINDOW = 60  # window duration in seconds
 
 def _rate_limited_get(url, params, timeout=10):

@@ -2,7 +2,6 @@ from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, BaseAgent, LlmAgent, SequentialAgent
 from .openarchieven import open_archives_agent, open_archives_link_agent
-from .reviewer import reviewer_agent
 from .combiner import combiner_agent
 from .wikitree_format import wikitree_format_agent
 from .wikitree_api import wikitree_query_agent
@@ -73,12 +72,6 @@ root_agent = LlmAgent(
     This research agent is capable of retrieving the above information from the OpenArchieven and
     you should encourage them to search for records to fill gaps in your knowlege.
 
-    You must transfer work to the RecordCombiner agent after discovering new records to attempt to
-    combine insights into a single record that best matches the user's query. If the profile has
-    changed, you should consider transferring to WikitreeFormatterAgent if the user is expecting a
-    biography for WikiTree. If nothing has changed, you should instead clarify that no changes were
-    made.
-
     OPEN ARCHIEVEN LINKER AGENT
     ---------------------------
 
@@ -105,10 +98,11 @@ root_agent = LlmAgent(
     - Inspecting the format of an existing biography to ensure that the biography you are writing
         is consistent and no data is lost in the process.
 
-    RESULT REVIEWER AGENT
+    RECORD COMBINER AGENT
     ---------------------
 
-    You must transfer work to the ResultReviewerAgent agent to review the results of your research.
+    If you have found numerous results and are unsure which one relates to the user's query, you
+    must transfer to the RecordCombiner agent.
 
     WIKITREE FORMATTER AGENT
     ------------------------
@@ -143,18 +137,30 @@ root_agent = LlmAgent(
     For the second scenario, you must always transfer to the OpenArchievenResearcher agent to
     perform searches for records related to the person the user is researching.
 
-    For conducting research, an excellent sequence of operations is as follows:
+    Scenario 1: New research from OpenArchieven
+
+    For conducting research from scratch, the recommended sequence of operations are:
     1. Transfer to OpenArchievenResearcher to perform searches and retrieve records;
-    2. Transfer to RecordCombiner to combine the results into a single coherent record;
-    3. Transfer to ResultReviewerAgent to review the results;
-    4. Transfer to WikitreeApiAgent to retrieve the profile and biography;
-    5. Transfer back to OpenArchievenResearcher to perform additional searches if needed;
-    6. Transfer to WikitreeFormatterAgent to format the updated biography.
+    2. Transfer to RecordCombiner to combine the results into a single coherent record (optional);
+    3. Transfer to WikitreeApiAgent to search for any existing profile, and if one is found,
+       retrieve the profile (including biography) and relatives;
+    4. Transfer back to OpenArchievenResearcher to perform additional searches if needed;
+    5. Transfer to WikitreeFormatterAgent to format the updated biography.
+
+    Scenario 2: Updating an existing profile with new research
+
+    For conducting research from an existing profile, the recommended sequence of operations are:
+    1. Transfer to WikitreeApiAgent to retrieve the profile (including biography) and relatives;
+    2. Transfer to OpenArchievenResearcher to retrieve records referenced in the biographies;
+    3. Transfer to OpenArchievenResearcher to perform searches for any gaps, like missing birth,
+       marriage or death records, or any information about children;
+    4. Transfer to RecordCombiner to combine the results into a single coherent record (optional);
+    5. Transfer to WikitreeFormatterAgent to format the updated biography.
 
     You may deviate from this approach based on the user's input and the context of any ongoing
     research.
     """,
     sub_agents=[
-        open_archives_agent, reviewer_agent, combiner_agent, wikitree_format_agent, wikitree_query_agent
+        open_archives_agent, combiner_agent, wikitree_format_agent, wikitree_query_agent
     ],
 )
