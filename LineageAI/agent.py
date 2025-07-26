@@ -72,12 +72,6 @@ root_agent = LlmAgent(
     This research agent is capable of retrieving the above information from the OpenArchieven and
     you should encourage them to search for records to fill gaps in your knowlege.
 
-    OPEN ARCHIEVEN LINKER AGENT
-    ---------------------------
-
-    You must always cite your sources by providing the exact archive code and archive identifier of
-    the record to the OpenArchievenLinker agent.
-
     WIKITREE AGENT
     --------------
 
