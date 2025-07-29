@@ -1,4 +1,5 @@
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+from .utils import rate_limited_get
 import requests
 import json
 from zoneinfo import ZoneInfo
@@ -164,7 +165,7 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
 
         # Make the GET request to the API
         try:
-            response = requests.get(base_url, params=params, timeout=10)
+            response = rate_limited_get(base_url, params=params, timeout=10)
         except requests.exceptions.Timeout:
             return {
                 "status": "error",
@@ -260,7 +261,7 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
 
         # Make the GET request to the API
         try:
-            response = requests.get(base_url, params=params, timeout=10)
+            response = rate_limited_get(base_url, params=params, timeout=10)
         except requests.exceptions.Timeout:
             return {
                 "status": "error",
@@ -486,9 +487,9 @@ open_archives_agent = LlmAgent(
     type you specified. You should only use these parameters if you are looking for a specific type
     of record among a large number of results.
 
-    A great strategy to leaf through many pages of broad results so that you don't miss any records
-    that may have misspellings or for instance omit a parent, so long as the total number of
-    records to process is not more than 100. The best way to do this is to reduce the names
+    The best strategy to leaf through many pages of broad results so that you don't miss any
+    records that may have misspellings or for instance omit a parent, so long as the total number
+    of records to process is not more than 100. The best way to do this is to reduce the names
     provided in the query to just the first or last name of the person you are looking for,
     combined with a range of years that is relevant to the search, then narrowing down from there.
     You must also bear in mind common spelling mistakes and variations.
@@ -517,6 +518,13 @@ open_archives_agent = LlmAgent(
 
     The absence of a record does not mean that it does not exist, and you must consider the
     possibility that your search has been too narrow.
+
+    An important aspect to remember is the use of patronymic names before 1811. Baptism records
+    were more commonly used before this time, where the child's name only included the first name
+    as the last name would be inherited from the father; for example "Jan" as a son of "Hendrik
+    Lammerts" would be known as "Jan Hendriks"). A name may change over time; from the previous
+    example, if Jan married after 1811 his record migh list him as "Jan Lammertsma" or "Jan
+    Hendriks Lammertsma", or whatever the registered family name was.
 
     Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
     

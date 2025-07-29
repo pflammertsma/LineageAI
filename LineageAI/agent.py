@@ -4,7 +4,7 @@ from google.adk.agents import Agent, BaseAgent, LlmAgent, SequentialAgent
 from .openarchieven import open_archives_agent, open_archives_link_agent
 from .combiner import combiner_agent
 from .wikitree_format import wikitree_format_agent
-from .wikitree_api import wikitree_query_agent
+from .wikitree_api_simple import wikitree_query_agent
 
 # Create the root agent that orchestrates the entire genealogy research process
 root_agent = LlmAgent(
@@ -153,8 +153,11 @@ root_agent = LlmAgent(
 
     You may deviate from this approach based on the user's input and the context of any ongoing
     research.
+
+    Never make apologies or complimentary remarks regarding feedback from the user; simply be
+    direct and focus solely on addressing any issues.
     """,
     sub_agents=[
-        open_archives_agent, combiner_agent, wikitree_format_agent, wikitree_query_agent
+        open_archives_agent, combiner_agent, wikitree_query_agent, wikitree_format_agent
     ],
 )

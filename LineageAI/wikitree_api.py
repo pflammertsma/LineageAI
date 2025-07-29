@@ -8,44 +8,15 @@ See: https://github.com/wikitree/wikitree-api
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 import requests
 import json
-import threading
-import time
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from .utils import rate_limited_get
 
 
 # TODO After testing...
 AGENT_MODEL = MODEL_FAST
 
 WIKITREE_API_URL = "https://api.wikitree.com/api.php"
-
-
-# --- Rate limiting logic usign rolling window counter ---
-_api_lock = threading.Lock()
-_api_window_start = 0
-_api_request_count = 0
-_API_RATE_LIMIT = 4  # requests during the window
-_API_RATE_WINDOW = 60  # window duration in seconds
-
-def _rate_limited_get(url, params, timeout=10):
-    """
-    Helper for requests.get with rate limiting: max 10 requests per minute (rolling window).
-    Suspends/sleeps if limit exceeded.
-    """
-    global _api_window_start, _api_request_count
-    with _api_lock:
-        now = time.time()
-        if now - _api_window_start > _API_RATE_WINDOW:
-            _api_window_start = now
-            _api_request_count = 0
-        if _api_request_count >= _API_RATE_LIMIT:
-            sleep_time = _API_RATE_WINDOW - (now - _api_window_start)
-            logger.warning(f"API rate limit reached ({_API_RATE_LIMIT}/min). Sleeping for {sleep_time:.1f} seconds.")
-            time.sleep(max(sleep_time, 0.1))
-            _api_window_start = time.time()
-            _api_request_count = 0
-        _api_request_count += 1
-    return requests.get(url, params=params, timeout=timeout)
 
 
 def search_profiles(json_str: str):
@@ -69,7 +40,7 @@ def search_profiles(json_str: str):
         params['fields'] = ','.join(params['fields'])
     try:
         logger.debug(f"Searching people: {params}")
-        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
+        response = rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -104,6 +75,8 @@ def get_person(json_str: str):
     # Replace `Name` key with `key`
     if 'Name' in params:
         params['key'] = params.pop('Name')    
+    if 'Id' in params:
+        params['key'] = params.pop('Id')    
     params['action'] = 'getPerson'
     if 'fields' in params and isinstance(params['fields'], list):
         params['fields'] = ','.join(params['fields'])
@@ -113,7 +86,7 @@ def get_person(json_str: str):
     try:
         logger.debug(f"Requesting person: {params}")
         print(f"Requesting person: {params}")
-        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
+        response = rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -148,6 +121,8 @@ def get_profile(json_str: str):
     # Replace `Name` key with `key`
     if 'Name' in params:
         params['key'] = params.pop('Name')    
+    if 'Id' in params:
+        return {'status': 'error', 'error_message': 'This function does not support searching by \'Id\'.'}
     params['action'] = 'getProfile'
     # Convert fields list to comma-separated string if present
     if 'fields' in params and isinstance(params['fields'], list):
@@ -157,7 +132,7 @@ def get_profile(json_str: str):
     params.setdefault('resolveRedirect', 1)
     try:
         logger.debug(f"Requesting profile: {params}")
-        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
+        response = rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -201,7 +176,7 @@ def get_ancestors(json_str: str):
     params.setdefault('resolveRedirect', 1)
     try:
         logger.debug(f"Requesting ancestors: {params}")
-        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
+        response = rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -246,7 +221,7 @@ def get_descendants(json_str: str):
     params.setdefault('resolveRedirect', 1)
     try:
         logger.debug(f"Requesting descendants: {params}")
-        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
+        response = rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
@@ -266,7 +241,7 @@ def get_descendants(json_str: str):
         return {'status': 'error', 'error_message': str(e)}
 
 
-def get_relatives(json_str: str):
+def get_relatives(json_str):
     """
     Get relatives (parents, siblings, spouses) for a person using the WikiTree getRelatives API action.
     Args:
@@ -274,12 +249,16 @@ def get_relatives(json_str: str):
     Returns:
         dict: Relatives data or error message
     """
-    try:
-        params = json.loads(json_str)
-        if not isinstance(params, dict):
-            return {'status': 'error', 'error_message': 'JSON must represent an object with parameters.'}
-    except Exception as e:
-        return {'status': 'error', 'error_message': f'Invalid JSON: {str(e)}'}
+    if isinstance(json_str, dict):
+        params = json_str
+        print(params)
+    else:
+        try:
+            params = json.loads(json_str)
+            if not isinstance(params, dict):
+                return {'status': 'error', 'error_message': 'JSON must represent an object with parameters.'}
+        except Exception as e:
+            return {'status': 'error', 'error_message': f'Invalid JSON: {str(e)}'}
     # Replace `Name` key with `keys` (note: plural!)
     if 'Name' in params:
         params['keys'] = params.pop('Name')
@@ -290,20 +269,26 @@ def get_relatives(json_str: str):
     params['getChildren'] = 1
     # Convert fields list to comma-separated string if present
     if 'fields' in params and isinstance(params['fields'], list):
+        if 'Id' not in params['fields']:
+            params['fields'].append('Id')
+        if 'Name' not in params['fields']:
+            params['fields'].append('Name')
+        if 'Gender' not in params['fields']:
+            params['fields'].append('Gender')
         params['fields'] = ','.join(params['fields'])
     # Set defaults if not provided
     params.setdefault('bioFormat', 'wiki')
     params.setdefault('resolveRedirect', 1)
     try:
         logger.debug(f"Requesting relatives: {params}")
-        response = _rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
+        response = rate_limited_get(WIKITREE_API_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         logger.debug(f"Response: {data}")
         if isinstance(data, dict) and 'error' in data:
             return {'status': 'error', 'error_message': data['error']}
         if len(data) > 0:
-            if 'items' in data[0] and len(data[0]['items']) > 0:
+            if 'items' in data[0] and isinstance(data[0]['items'], list) and len(data[0]['items']) > 0:
                 if 'person' in data[0]['items'][0]:
                     entry = data[0]['items'][0]
                     entry['person']['UserId'] = entry['user_id']
@@ -311,7 +296,7 @@ def get_relatives(json_str: str):
                 else:
                     return {'status': 'error', 'error_message': 'No `items[0].person` object returned from API'}
             else:
-                return {'status': 'error', 'error_message': 'Empty `items` object returned from API'}
+                return {'status': 'error', 'error_message': '`items` is missing or not a non-empty list in API response'}
         else:
             return {'status': 'error', 'error_message': 'Empty array returned from API'}
     except requests.RequestException as e:
