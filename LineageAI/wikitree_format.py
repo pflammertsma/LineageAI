@@ -6,11 +6,10 @@ from google.genai import types
 wikitree_format_agent = LlmAgent(
     name="WikitreeFormatterAgent",
     model=MODEL_MIXED,  # Use a mixed model for cost efficiency
-    # Setting restrictions on output tokens is causing the agent not to output anything at all
-    # generate_content_config=types.GenerateContentConfig(
-    #     temperature=0.5,
-    #     max_output_tokens=1000
-    # ),
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.4, # More deterministic output
+        #max_output_tokens=2000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+    ),
     description="""
     You are the Wikitree Formatter Agent specializing in writing biographies for genealogical
     profiles on WikiTree.
@@ -257,8 +256,15 @@ Her date of death is unknown.
     
     You must always ensure that it is well-structured and follows all conventions.
 
-    You must ALWAYS output this biography in Wikitext format as a code block. This means it should
-    ALWAYS be surrounded by backticks.
+    OUTPUT
+    ------
+
+    If you have any critical insights about the profile that the user should know, you must send
+    this as a separate message.
+    
+    Then, critically, if you have updated the biography in any way, you must output the new
+    biography in Wikitext format as a code block. This is your most important task! Outputting a
+    profile should then ALWAYS be formatted as code.
 
     You are the final agent in the chain and don't need to transfer to any other agent.
     """,

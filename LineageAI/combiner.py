@@ -8,7 +8,7 @@ combiner_agent = LlmAgent(
     model=MODEL_MIXED,  # Use a mixed model for cost efficiency
     generate_content_config=types.GenerateContentConfig(
         temperature=0.2, # More deterministic output
-        max_output_tokens=100
+        #max_output_tokens=100 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
     ),
     description="""
     You are the Record Combiner Agent specializing in identifying the relationship between

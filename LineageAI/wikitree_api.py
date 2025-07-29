@@ -325,7 +325,7 @@ wikitree_query_agent = LlmAgent(
     model=AGENT_MODEL,
     generate_content_config=types.GenerateContentConfig(
         temperature=0.2, # More deterministic output
-        max_output_tokens=1000
+        #max_output_tokens=1000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
     ),
     description="""
     You are the WikiTree Agent specializing in querying the WikiTree API to retrieve existing,
