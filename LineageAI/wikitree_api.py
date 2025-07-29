@@ -10,6 +10,7 @@ import requests
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from google.adk.agents.readonly_context import ReadonlyContext
 from google.genai import types
 from .utils import rate_limited_get
 
@@ -305,19 +306,8 @@ def get_relatives(json_str):
         return {'status': 'error', 'error_message': str(e)}
 
 
-wikitree_query_agent = LlmAgent(
-    name="WikiTreeProfileAgent",
-    model=AGENT_MODEL,
-    generate_content_config=types.GenerateContentConfig(
-        temperature=0.2, # More deterministic output
-        #max_output_tokens=1000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
-    ),
-    description="""
-    You are the WikiTree Agent specializing in querying the WikiTree API to retrieve existing,
-    albeit incomplete, genealogical profiles and understanding which data already exists on
-    WikiTree, before transferring to the LineageAiOrchestrator for further research.
-    """,
-    instruction="""
+def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
+    return """
     Before doing anything, you must ensure that you have some basic information about the profile
     you were asked to find. You must therefore first invoke the `get_profile` function to fetch
     basic information about the person.
@@ -609,110 +599,21 @@ wikitree_query_agent = LlmAgent(
     You are not able to perform any other functionality than described above. You must transfer to
     the LineageAiOrchestrator for any other tasks, such as researching, formatting or updating
     profiles.
+    """
+
+wikitree_query_agent = LlmAgent(
+    name="WikiTreeProfileAgent",
+    model=AGENT_MODEL,
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        #max_output_tokens=1000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+    ),
+    description="""
+    You are the WikiTree Agent specializing in querying the WikiTree API to retrieve existing,
+    albeit incomplete, genealogical profiles and understanding which data already exists on
+    WikiTree, before transferring to the LineageAiOrchestrator for further research.
     """,
+    instruction=wikitree_query_agent_instructions,
     tools=[get_profile, get_person, search_profiles, get_relatives],
     output_key="wikitree_profile"
-)
-
-
-wikitree_ancestors_agent = LlmAgent(
-    name="WikiTreeAncestorsAgent",
-    model=AGENT_MODEL,
-    description="""
-    You are the WikiTree Agent specializing in exploring any known ancestor profiles of an existing
-    profile.
-    """,
-    instruction="""
-    Invoke `get_ancestors` with a JSON string containing keys matching the following parameters:
-    - `Name`: The WikiTree ID of the profile you want to retrieve ancestors for (e.g., "Slijt-6").
-    - `depth`: The number of generations to retrieve (default is 2).
-    - `fields`: A list of fields that you want to retrieve from the API from the table above. The
-        field `Bio` is supported for this function and returns the biography text in WikiTree
-        format.
-
-    Here's an example of a request to retrieve the ancestors of a profile:
-    ```
-    {
-        "Name": "Slijt-6",
-        "depth": 1,
-        "fields": ["Id", "Name", "Mother", "Father"]
-    ```
-    }
-    The function will return a list of ancestors for the specified profile:
-    ```
-    {"status":"ok","ancestors":[
-      {"Id":9674061,"Name":"Slijt-2","Father":46258655,"Mother":46258661},
-      {"Id":9674069,"Name":"Stolte-31","Father":46258670,"Mother":46258681}],
-    }
-    ```
-
-    In this example, the ancestors of the profile "Slijt-6" are "Slijt-2" and "Stolte-31". This is
-    a simple example; it's much more useful to include more fields, such as "FirstName",
-    "LastNameAtBirth", "BirthDate", "DeathDate" and "Bio".
-
-    This `get_ancestors` function retrieves the ancestors of a profile, allowing you to explore
-    the family tree and lineage of a person. If you don't know the WikiTree ID of the ancestors,
-    this function can help you find them.
-
-    This function allows you to understand which ancestors are already present in WikiTree, but
-    this information may not be complete or accurate, so you must always transfer to the
-    LineageAiOrchestrator to perform research to confirm it.
-
-    You are not able to perform any other functionality than described above. You must transfer to
-    the LineageAiOrchestrator for any other tasks, such as researching, formatting or updating
-    profiles.
-    """,
-    tools=[get_ancestors],
-    output_key="wikitree_ancestors"
-)
-
-
-wikitree_descendants_agent = LlmAgent(
-    name="WikiTreeDescendantsAgent",
-    model=AGENT_MODEL,
-    description="""
-    You are the WikiTree Agent specializing in exploring any known descendant profiles of an
-    existing profile.
-    """,
-    instruction="""
-    Invoke `get_descendants` with a JSON string containing keys matching the following parameters:
-    - `Name`: The WikiTree ID of the profile you want to retrieve ancestors for (e.g., "Slijt-6").
-    - `depth`: The number of generations to retrieve (default is 2).
-    - `fields`: A list of fields that you want to retrieve from the API from the table above. The
-        field `Bio` is supported for this function and returns the biography text in WikiTree
-        format.
-
-    Here's an example of a request to retrieve the ancestors of a profile:
-    ```
-    {
-        "Name": "Slijt-6",
-        "depth": 2,
-        "fields": ["Id", "Name", "Mother", "Father"]
-    }
-    ```
-    The function will return a list of ancestors for the specified profile:
-    ```
-    {"status":"ok",,"descendants":[
-      {"Id":47228014,"Name":"Slijt-7","Father":47227210,"Mother":47228956},
-      {"Id":47228079,"Name":"Slijt-9","Father":47227210,"Mother":47228956},
-      {"Id":47228019,"Name":"Slijt-8","Father":47227210,"Mother":47228956}],
-    "status":0}
-    ```
-
-    In this example, the descendants of the profile "Slijt-6" are "Slijt-7", "Slijt-8" and
-    "Slijt-9". If we compare the `UserId` of the father, we can learn that these are his children
-    and there are no known grandchildren. This is a simple example; it's much more useful to
-    include more fields, such as "FirstName", "LastNameAtBirth", "BirthDate", "DeathDate" and
-    "Bio".
-
-    This `get_descendants` function retrieves the descendants of a profile, allowing you to explore
-    the family tree and lineage of a person. If you don't know the WikiTree ID of the descendants,
-    this function can help you find them.
-
-    This function allows you to understand which descendants are already present in WikiTree, but
-    this information may not be complete or accurate, so you must always transfer to the
-    LineageAiOrchestrator to perform research to confirm it.
-    """,
-    tools=[get_descendants],
-    output_key="wikitree_descendants"
 )

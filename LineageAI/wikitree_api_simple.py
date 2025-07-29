@@ -10,6 +10,7 @@ from .wikitree_api import get_relatives, search_profiles
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from google.adk.agents.readonly_context import ReadonlyContext
 
 
 AGENT_MODEL = MODEL_FAST
@@ -134,15 +135,8 @@ def get_profile(profile_id: str):
     return {'status': 'ok', 'person': new_person}
 
 
-wikitree_query_agent = LlmAgent(
-    name="WikiTreeProfileAgent",
-    model=AGENT_MODEL,
-    description="""
-    You are the WikiTree Agent specializing in querying the WikiTree API to retrieve existing,
-    albeit incomplete, genealogical profiles and understanding which data already exists on
-    WikiTree, before transferring to the LineageAiOrchestrator for further research.
-    """,
-    instruction="""
+def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
+    return """
     Before doing anything, you must ensure that you have some basic information about the profile
     you were asked to find. You must therefore first invoke the `get_profile` function to fetch
     basic information about the person.
@@ -372,7 +366,17 @@ get_profile_simple:
     You are not able to perform any other functionality than described above. You must transfer to
     the LineageAiOrchestrator for any other tasks, such as researching, formatting or updating
     profiles.
+    """
+
+wikitree_query_agent = LlmAgent(
+    name="WikiTreeProfileAgent",
+    model=AGENT_MODEL,
+    description="""
+    You are the WikiTree Agent specializing in querying the WikiTree API to retrieve existing,
+    albeit incomplete, genealogical profiles and understanding which data already exists on
+    WikiTree, before transferring to the LineageAiOrchestrator for further research.
     """,
+    instruction=wikitree_query_agent_instructions,
     tools=[get_profile, search_profiles],
     output_key="wikitree_profile"
 )

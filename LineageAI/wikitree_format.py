@@ -1,20 +1,11 @@
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from google.adk.agents.readonly_context import ReadonlyContext
 from google.genai import types
 
-wikitree_format_agent = LlmAgent(
-    name="WikitreeFormatterAgent",
-    model=MODEL_MIXED,  # Use a mixed model for cost efficiency
-    generate_content_config=types.GenerateContentConfig(
-        temperature=0.4, # More deterministic output
-        #max_output_tokens=2000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
-    ),
-    description="""
-    You are the Wikitree Formatter Agent specializing in writing biographies for genealogical
-    profiles on WikiTree.
-    """,
-    instruction="""
+def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
+    return """
     You understand the markup language Wikitext and are familiar with common genealogical
     bigraphies on WikiTree.
 
@@ -58,7 +49,7 @@ wikitree_format_agent = LlmAgent(
         `<ref name="...">Florette Frijda, Burgerlijke Stand Geboorte 1830, ...</ref>`.
       - If the source is from openarchieven.nl, it includes a link to the OpenArch Permalink for
         the record, which is constructed as follows:
-        https://www.openarchieven.nl/{archive_code}:{identifier}
+        https://www.openarchieven.nl/\{archive_code\}:\{identifier\}
       - Don't add any citations below `<references />`; if a citation doesn't have a good inline
         place within the text, add a mention in research notes and include the citation there.
       - Don't add a source to make statements about missing records; that should appear in research
@@ -273,6 +264,19 @@ Her date of death is unknown.
     profile should then ALWAYS be formatted as code.
 
     You are the final agent in the chain and don't need to transfer to any other agent.
+    """
+
+wikitree_format_agent = LlmAgent(
+    name="WikitreeFormatterAgent",
+    model=MODEL_MIXED,  # Use a mixed model for cost efficiency
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.4, # More deterministic output
+        #max_output_tokens=2000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+    ),
+    description="""
+    You are the Wikitree Formatter Agent specializing in writing biographies for genealogical
+    profiles on WikiTree.
     """,
+    instruction=wikitree_format_agent_instructions,
     output_key="wikitree_biography",
 )

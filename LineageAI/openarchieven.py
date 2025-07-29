@@ -4,6 +4,7 @@ import requests
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, LlmAgent
+from google.adk.agents.readonly_context import ReadonlyContext
 from google.genai import types
 import re
 from datetime import datetime
@@ -286,18 +287,8 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
         }
 
 
-open_archives_agent = LlmAgent(
-    name="OpenArchievenResearcher",
-    model=AGENT_MODEL,
-    generate_content_config=types.GenerateContentConfig(
-        temperature=0.2, # More deterministic output
-        #max_output_tokens=2000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
-    ),
-    description="""
-    You are the OpenArchieven Researcher specialized in performing queries to OpenArchieven, an
-    expansive, albeit disjoint, database of genealogical records in the Netherlands.
-    """,
-    instruction="""
+def open_archives_agent_instructions(context: ReadonlyContext) -> str:
+    return """
     You are responsible for reading individual records and performing searches for records from
     OpenArchieven and performing searches.
 
@@ -308,7 +299,7 @@ open_archives_agent = LlmAgent(
     Understanding openarchieven.nl URLs:
     
     URLs on openarchieven.nl have the following format:
-    https://www.openarchieven.nl/\\{archive_code\\}:\\{identifier\\}
+    https://www.openarchieven.nl/\{archive_code\}:\{identifier\}
 
     For example, if the archive code is "gra" and the identifier is
     "e551c8d7-361b-edf2-3199-ee3d4978e329", the URL would be:
@@ -552,7 +543,20 @@ open_archives_agent = LlmAgent(
     You are not able to perform any other functionality than described above. You must transfer to
     the LineageAiOrchestrator for any other tasks, such as accessing WikiTree, formatting or
     updating profiles.
+    """
+
+open_archives_agent = LlmAgent(
+    name="OpenArchievenResearcher",
+    model=AGENT_MODEL,
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        #max_output_tokens=2000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+    ),
+    description="""
+    You are the OpenArchieven Researcher specialized in performing queries to OpenArchieven, an
+    expansive, albeit disjoint, database of genealogical records in the Netherlands.
     """,
+    instruction=open_archives_agent_instructions,
     tools=[open_archives_search, open_archives_get_record],
     output_key="genealogy_records"
 )
