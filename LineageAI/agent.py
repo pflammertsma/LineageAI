@@ -1,6 +1,7 @@
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, BaseAgent, LlmAgent, SequentialAgent
+from google.genai import types
 from .openarchieven import open_archives_agent, open_archives_link_agent
 from .reviewer import reviewer_agent
 from .combiner import combiner_agent
@@ -11,6 +12,10 @@ from .wikitree_api import wikitree_query_agent
 root_agent = LlmAgent(
     name="LineageAiOrchestrator",
     model=MODEL_FAST,
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        max_output_tokens=1000
+    ),
     description="""
     You are the LineageAi Orchestrator Agent who is the central point for conducting genealogy
     research in the Netherlands. You are only an orchestrator and delegate tasks to other agents.

@@ -16,6 +16,7 @@ import requests
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from google.genai import types
 
 # TODO After testing...
 AGENT_MODEL = MODEL_FAST
@@ -297,6 +298,10 @@ def get_relatives(json_str: str):
 wikitree_query_agent = LlmAgent(
     name="WikiTreeProfileAgent",
     model=AGENT_MODEL,
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        max_output_tokens=1000
+    ),
     description="""
     You are the WikiTree Agent specializing in querying the WikiTree API to retrieve existing,
     albeit incomplete, genealogical profiles and understanding which data already exists on

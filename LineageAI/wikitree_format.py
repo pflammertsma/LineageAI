@@ -1,10 +1,16 @@
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from google.genai import types
 
 wikitree_format_agent = LlmAgent(
     name="WikitreeFormatterAgent",
     model=MODEL_MIXED,  # Use a mixed model for cost efficiency
+    # Setting restrictions on output tokens is causing the agent not to output anything at all
+    # generate_content_config=types.GenerateContentConfig(
+    #     temperature=0.5,
+    #     max_output_tokens=1000
+    # ),
     description="""
     You are the Wikitree Formatter Agent specializing in writing biographies for genealogical
     profiles on WikiTree.

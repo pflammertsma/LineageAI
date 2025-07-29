@@ -3,6 +3,7 @@ import requests
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, LlmAgent
+from google.genai import types
 import re
 from datetime import datetime
 
@@ -313,6 +314,10 @@ open_archives_link_agent = Agent(
 open_archives_agent = LlmAgent(
     name="OpenArchievenResearcher",
     model=AGENT_MODEL,
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        max_output_tokens=2000
+    ),
     description="""
     You are the OpenArchieven Researcher specialized in performing queries to OpenArchieven, an
     expansive, albeit disjoint, database of genealogical records in the Netherlands.

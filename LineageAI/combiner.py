@@ -1,10 +1,15 @@
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from google.genai import types
 
 combiner_agent = LlmAgent(
     name="RecordCombiner",
     model=MODEL_MIXED,  # Use a mixed model for cost efficiency
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        max_output_tokens=100
+    ),
     description="""
     You are the Record Combiner Agent specializing in identifying the relationship between
     genealogical results and recombining them into a single coherent record that is focused on

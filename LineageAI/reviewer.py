@@ -1,10 +1,15 @@
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from google.genai import types
 
 reviewer_agent = LlmAgent(
     name="ResultReviewerAgent",
     model=MODEL_SMART,  # Use the most capable model for reviewing
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        max_output_tokens=100
+    ),
     description="""
     You are Result Reviewer Agent specializing in identifying mistakes in genealogy records.
     """,
