@@ -4,6 +4,7 @@ import requests
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, LlmAgent
+from google.genai import types
 import re
 from datetime import datetime
 
@@ -285,35 +286,13 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en") ->
         }
 
 
-open_archives_link_agent = Agent(
-    name="OpenArchievenLinker",
-    model=AGENT_MODEL,
-    description="""
-    You are the OpenArchieven Linker Agent specialized in crafting valid record links to
-    OpenArchieven.
-    """,
-    instruction="""
-    Your sole responsibility is to include link the records you've been provided.
-
-    You must include source attribution URLs for each record based on the archive code and
-    identifier.
-
-    For constructing the URLs, use the following format:
-    https://www.openarchieven.nl/\\{archive_code\\}:\\{identifier\\}
-
-    For example, if the archive code is "gra" and the identifier is
-    "e551c8d7-361b-edf2-3199-ee3d4978e329", the URL would be:
-    https://www.openarchieven.nl/gra:e551c8d7-361b-edf2-3199-ee3d4978e329
-
-    Output the same structured JSON list you were provided, but with relevant URLs.
-    """,
-    output_key="genealogy_records"
-)
-
-
 open_archives_agent = LlmAgent(
     name="OpenArchievenResearcher",
     model=AGENT_MODEL,
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        #max_output_tokens=2000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+    ),
     description="""
     You are the OpenArchieven Researcher specialized in performing queries to OpenArchieven, an
     expansive, albeit disjoint, database of genealogical records in the Netherlands.
@@ -325,6 +304,18 @@ open_archives_agent = LlmAgent(
     The following functions are available to you:
     - `open_archives_get_record`: Read an individual record by its URL.
     - `open_archives_search`: Perform a search for records based on a query.
+
+    Understanding openarchieven.nl URLs:
+    
+    URLs on openarchieven.nl have the following format:
+    https://www.openarchieven.nl/\\{archive_code\\}:\\{identifier\\}
+
+    For example, if the archive code is "gra" and the identifier is
+    "e551c8d7-361b-edf2-3199-ee3d4978e329", the URL would be:
+    https://www.openarchieven.nl/gra:e551c8d7-361b-edf2-3199-ee3d4978e329
+
+    The openarch.nl domain is the same as openarchieven.nl.
+
 
     GETTING RECORDS
     ---------------
@@ -465,11 +456,11 @@ open_archives_agent = LlmAgent(
     Note that the number of results that appear in subsequent pages is stored in
     `results_remaining`.
 
-    If there are very many records returned in `results_remaining` (over 100), the query is too
-    broad and should be refined. Otherwise, if there's more than 0, you can query the next page
-    using the `start_offset` parameter. You do this by incrementing the `start_offset` parameter by
-    the number of results you want to skip by, which is specified in the `results_remaining` value
-    in the response for previous pages.
+    If there are over 50 records returned in `results_remaining`, the query is too broad and should
+    be refined. Otherwise, if `results_remaining` is more than 0, you must query the next page
+    using the `start_offset` parameter. You do this by incrementing the `start_offset` parameter
+    by the number of results you want to skip by, which is specified in the `results_remaining`
+    value in the response for previous pages.
 
     For example, if you queried the first page with `start_offset=0` and `number_show=10`, you
     would query the second page with `start_offset=10`, etc. Try to query 10 records at a time to
@@ -526,6 +517,28 @@ open_archives_agent = LlmAgent(
     example, if Jan married after 1811 his record migh list him as "Jan Lammertsma" or "Jan
     Hendriks Lammertsma", or whatever the registered family name was.
 
+    An important aspect to remember is the use of patronymic names before 1811. Baptism records
+    were more commonly used before this time, where the child's name only included the first name
+    as the last name would be inherited from the father; for example "Jan" as a son of "Hendrik
+    Lammerts" would be known as "Jan Hendriks"). A name may change over time; from the previous
+    example, if Jan married after 1811 his record migh list him as "Jan Lammertsma" or "Jan
+    Hendriks Lammertsma", or whatever the registered family name was.
+
+    Guidelines for searching:
+    - Do not attempt to run the exact same search and expect different results!
+    - You can perform multiple searches, refining your query as needed:
+      - If the search was too narrow, resulting in no results, broaden it by being less specific.
+      - If the search was too broad, resulting in too many results, narrow it by being more
+        specific.
+    - Don't assume that all the information you're seaching for will be in specific records in a
+      date range. For example:
+      - Missing information about a marriage due to a missing marriage record may be mitigated by
+        inferences from baptism or birth records.
+      - Population registers will have a different `eventtype` and may be missing a date
+        altogether, so they might only be discovered by searching without those constraints.
+    - Try to keep your total search count to about 10 before returning to the user to summarize
+      your progress and ask whether you should continue.
+
     Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
     
     CREATING SOURCE LINKS
@@ -540,7 +553,6 @@ open_archives_agent = LlmAgent(
     the LineageAiOrchestrator for any other tasks, such as accessing WikiTree, formatting or
     updating profiles.
     """,
-    sub_agents=[open_archives_link_agent],
     tools=[open_archives_search, open_archives_get_record],
     output_key="genealogy_records"
 )

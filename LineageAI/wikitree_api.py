@@ -10,6 +10,7 @@ import requests
 import json
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
+from google.genai import types
 from .utils import rate_limited_get
 
 
@@ -307,6 +308,10 @@ def get_relatives(json_str):
 wikitree_query_agent = LlmAgent(
     name="WikiTreeProfileAgent",
     model=AGENT_MODEL,
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        #max_output_tokens=1000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+    ),
     description="""
     You are the WikiTree Agent specializing in querying the WikiTree API to retrieve existing,
     albeit incomplete, genealogical profiles and understanding which data already exists on
