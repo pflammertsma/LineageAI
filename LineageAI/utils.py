@@ -13,8 +13,8 @@ _api_window_start = 0
 _api_request_count = 0
 _API_RATE_LIMIT = 10  # requests during the window
 _API_RATE_WINDOW = 60  # window duration in seconds
-_API_INVOCATION_MIN_DURATION = 2 # minimum duration of API invocation to slow invocations
-_API_INVOCATION_MAX_DURATION = 10 # maximum duration before timeout
+_API_INVOCATION_MIN_DURATION = 3  # minimum duration of requests to slow invocations
+_API_INVOCATION_MAX_DURATION = 10 # maximum duration of requests before timing out
 
 HTTPConnection.debuglevel = 1
 
@@ -47,8 +47,13 @@ def rate_limited_get(url, params=None, timeout=_API_INVOCATION_MAX_DURATION):
             # Ensure this function doesn't perform more requests than the maximum allowed in the
             # window
             sleep_time = _API_RATE_WINDOW - (start_time - _api_window_start)
-            logger.warning(f"API rate limit reached ({_API_RATE_LIMIT}/min). Sleeping for {sleep_time:.1f} seconds.")
-            time.sleep(max(sleep_time, 0.1))
+            if sleep_time > 0:
+                logger.warning(f"API rate limit reached ({_API_RATE_LIMIT}/min)")
+                while sleep_time > 0:
+                    interval = min(2, sleep_time)
+                    logger.info(f"Sleeping for {interval:.1f} seconds... ({sleep_time:.1f}s remaining)")
+                    time.sleep(interval)
+                    sleep_time -= interval
             _api_window_start = time.time()
             _api_request_count = 0
         _api_request_count += 1

@@ -253,15 +253,12 @@ Her date of death is unknown.
     
     You must always ensure that it is well-structured and follows all conventions.
 
-    OUTPUT
-    ------
+    It is critical that you output biographies as a code block. It's essential to do so because
+    otherwise the formatting will appear broken for the user; profiles should therefore ALWAYS be
+    formatted as code!
 
     If you have any critical insights about the profile that the user should know, you must send
     this as a separate message.
-    
-    Then, critically, if you have updated the biography in any way, you must output the new
-    biography in Wikitext format as a code block. This is your most important task! Outputting a
-    profile should then ALWAYS be formatted as code.
 
     You are the final agent in the chain and don't need to transfer to any other agent.
     """
