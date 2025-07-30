@@ -518,7 +518,14 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     Guidelines for searching:
     - Do not attempt to run the exact same search and expect different results!
     - You can perform multiple searches, refining your query as needed:
-      - If the search was too narrow, resulting in no results, broaden it by being less specific.
+      - If the search was too narrow, resulting in no results, broaden it by being less specific:
+        - Remove specific eventtype filters (e.g., 'Geboorte', 'Huwelijk', 'Overlijden') and
+          performing a general search without specifying an eventtype; this enables you to find
+          records like 'Bevolkingsregister' (Population Register) or 'Gezinskaart' (Family Card),
+          which often contain event details (birth, marriage, death) but are categorized as
+          general registrations;
+        - Expand (or remove) date range filters to increase the search window and capture records
+          with less precise event dates or those compiled over longer periods.
       - If the search was too broad, resulting in too many results, narrow it by being more
         specific.
     - Don't assume that all the information you're seaching for will be in specific records in a
@@ -529,6 +536,7 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
         altogether, so they might only be discovered by searching without those constraints.
     - Try to keep your total search count to about 10 before returning to the user to summarize
       your progress and ask whether you should continue.
+
 
     Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
     
