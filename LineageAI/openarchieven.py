@@ -86,7 +86,7 @@ def open_archives_search(json_str: str) -> dict:
             del params['start_offset']
         params['number_show'] = PAGE_SIZE
         if 'page' in params and isinstance(params['page'], int):
-            params['start_offset'] = params['page'] * PAGE_SIZE
+            params['start_offset'] = max(0, params['page'] - 1) * PAGE_SIZE
             del params['page']
         # Make the request and return the results
         result = open_archives_search_params(**params)
@@ -116,7 +116,7 @@ def reformat_results(result: dict) -> dict:
         current_page = result['start_offset'] // PAGE_SIZE
         total_records = result['start_offset'] + len(result['records']) + result['results_remaining']
         total_pages = (total_records + PAGE_SIZE - 1) // PAGE_SIZE # Ceiling division
-        result['page'] = current_page
+        result['page'] = current_page + 1
         result['total_pages'] = total_pages
         del result['start_offset']
         del result['results_remaining']
@@ -569,7 +569,7 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     If there are over 5 pages returned in `total_pages`, the query is too broad and should be
     refined. Otherwise, if `total_pages` is more than 1, you must query the next page using the
     `page` parameter. You do this by incrementing the `page` parameter as you read subsequent
-    pages. If the returned value for `page` equals `total_pages - 1`, then you have reached the
+    pages. If the returned value for `page` equals `total_pages`, then you have reached the
     end.
 
     For example, if you queried the first page with `page: 1`, you would query the second page with
