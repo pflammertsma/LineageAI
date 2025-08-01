@@ -1,6 +1,5 @@
 from .constants import logger
 import logging
-from http.client import HTTPConnection
 import os
 import requests
 import json
@@ -11,19 +10,11 @@ import threading
 _api_lock = threading.Lock()
 _api_window_start = 0
 _api_request_count = 0
-_API_RATE_LIMIT = 10  # requests during the window
+_API_RATE_LIMIT = 11  # requests during the window (search page + 10 results)
 _API_RATE_WINDOW = 60  # window duration in seconds
-_API_INVOCATION_MIN_DURATION = 3  # minimum duration of requests to slow invocations
+_API_INVOCATION_MIN_DURATION = 2  # minimum duration of requests to slow invocations
 _API_INVOCATION_MAX_DURATION = 10 # maximum duration of requests before timing out
 _API_SLEEP_INTERVAL = 1
-
-HTTPConnection.debuglevel = 1
-
-logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
-requests_log = logging.getLogger("requests.packages.urllib3")
-requests_log.setLevel(logging.DEBUG)
-requests_log.propagate = True
 
 
 def rate_limited_get(url, params=None, timeout=_API_INVOCATION_MAX_DURATION, fast=False):

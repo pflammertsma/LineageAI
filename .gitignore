@@ -11,3 +11,6 @@ __pycache__/
 
 # Mac stuff
 .DS_Store
+
+# Log files
+LineageAI/*.log

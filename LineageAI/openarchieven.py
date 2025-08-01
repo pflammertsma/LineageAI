@@ -8,11 +8,14 @@ from google.adk.agents.readonly_context import ReadonlyContext
 from google.genai import types
 import re
 from datetime import datetime
+import copy
 
 # After testing, we found that MODEL_FAST is not suitable for this agent due to its limited
 # reasoning capabilities, often becoming confused with the data it receives and asking unnecessary
 # questions.
 AGENT_MODEL = MODEL_MIXED  # Use a mixed model for cost efficiency
+
+PAGE_SIZE = 10
 
 """
 Custom agent for collecting data from OpenArchieven.
@@ -78,11 +81,128 @@ def open_archives_search(json_str: str) -> dict:
         params = json.loads(json_str)
         if not isinstance(params, dict):
             return {"status": "error", "error_message": "JSON must represent an object with search parameters."}
-        return open_archives_search_params(**params)
+        # Override page/offset handling
+        if 'start_offset' in params:
+            del params['start_offset']
+        params['number_show'] = PAGE_SIZE
+        if 'page' in params and isinstance(params['page'], int):
+            params['start_offset'] = params['page'] * PAGE_SIZE
+            del params['page']
+        # Make the request and return the results
+        result = open_archives_search_params(**params)
+        return reformat_results(result)
     except json.JSONDecodeError as e:
         return {"status": "error", "error_message": f"Invalid JSON: {str(e)}"}
     except TypeError as e:
         return {"status": "error", "error_message": f"Parameter error: {str(e)}"}
+
+
+def reformat_results(result: dict) -> dict:
+    """
+    Reformats a JSON dictionary from a specific input structure to a cleaner,
+    more consolidated output structure.
+
+    Args:
+        result: The input dictionary to reformat.
+
+    Returns:
+        The reformatted dictionary.
+    """
+    if 'status' in result and result['status'] == 'error':
+        return result
+    
+    # Modify the result to reflect the current page and total pages
+    if 'start_offset' in result and 'results_remaining' in result and 'records' in result:
+        current_page = result['start_offset'] // PAGE_SIZE
+        total_records = result['start_offset'] + len(result['records']) + result['results_remaining']
+        total_pages = (total_records + PAGE_SIZE - 1) // PAGE_SIZE # Ceiling division
+        result['page'] = current_page
+        result['total_pages'] = total_pages
+        del result['start_offset']
+        del result['results_remaining']
+
+    if not result or 'records' not in result or not isinstance(result['records'], list):
+        return {"status": "error", "error_message": f"Unexpected response format: {result}"}
+
+    # Create a deep copy to avoid modifying the original input dictionary
+    reformatted_result = copy.deepcopy(result)
+
+    for record in reformatted_result.get('records', []):
+        # --- 1. Consolidate Person and Relation Data ---
+        
+        relations_map = {}
+        # Process Event-Person relations first to establish primary roles
+        if 'RelationEP' in record and isinstance(record.get('RelationEP'), list):
+            for rel in record['RelationEP']:
+                if 'PersonKeyRef' in rel and 'RelationType' in rel:
+                    relations_map[rel['PersonKeyRef']] = rel['RelationType']
+
+        # Process Person-Person relations, adding them if a person doesn't already have a role
+        if 'RelationPP' in record and isinstance(record.get('RelationPP'), dict):
+            relation_pp = record['RelationPP']
+            relation_type = relation_pp.get('RelationType')
+            person_refs = relation_pp.get('PersonKeyRef', [])
+            if relation_type and isinstance(person_refs, list):
+                for person_ref in person_refs:
+                    if person_ref not in relations_map:
+                        relations_map[person_ref] = relation_type
+        
+        # Build the new, consolidated list of persons, preserving original order
+        new_person_list = []
+        # Handle case where 'Person' is a single dictionary instead of a list
+        if 'Person' in record and isinstance(record['Person'], dict):
+            record['Person'] = [record['Person']]
+
+        # Iterate over the (now guaranteed) list of persons
+        for person_data in record.get('Person', []):
+            pid = person_data.get('@pid')
+            
+            # Create a new person dict, excluding the '@pid'
+            new_person = {k: v for k, v in person_data.items() if k != '@pid'}
+            
+            # Add the mapped relation type
+            if pid and pid in relations_map:
+                new_person['RelationType'] = relations_map[pid]
+                # Move 'RelationType' to be the first key for consistency with the example
+                new_person = {'RelationType': new_person.pop('RelationType'), **new_person}
+            
+            new_person_list.append(new_person)
+
+        record['Person'] = new_person_list
+        
+        # Clean up the original relation keys
+        record.pop('RelationEP', None)
+        record.pop('RelationPP', None)
+
+        # --- 2. Clean Event Data ---
+        if 'Event' in record and '@eid' in record.get('Event', {}):
+            del record['Event']['@eid']
+
+        # --- 3. Restructure Source Data ---
+        if 'Source' in record:
+            source = record['Source']
+
+            # Move and rename OpenArchievenLink
+            if 'OpenArchievenLink' in record:
+                source['OpenArchieven'] = record.pop('OpenArchievenLink')
+
+            # Reformat SourceRemark from a list of objects to a single dictionary
+            if 'SourceRemark' in source and isinstance(source.get('SourceRemark'), list):
+                source['SourceRemark'] = {
+                    item['@Key']: item.get('Value') 
+                    for item in source['SourceRemark'] if '@Key' in item
+                }
+
+            # Simplify SourceAvailableScans if it's a list of scan objects
+            if 'SourceAvailableScans' in source and 'Scan' in source.get('SourceAvailableScans', {}):
+                scans_data = source['SourceAvailableScans']['Scan']
+                if isinstance(scans_data, list):
+                     source['SourceAvailableScans']['Scan'] = [
+                         scan['UriViewer'] for scan in scans_data if 'UriViewer' in scan
+                     ]
+                # Note: If 'Scan' is a single dictionary, it's left unchanged as per the example.
+
+    return reformatted_result
 
 
 def open_archives_search_params(query: str, archive_code=None, number_show=10, sourcetype=None, 
@@ -122,7 +242,7 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
     if "&~&" in query and "&" in query.replace("&~&", ""):
         query = query.replace("&~&", "&")
     # Replace incomplete year ranges like "1824-" with "1824-<current_year>"
-    query = re.sub(r'(\b\d{4})-\b(?!\d)', rf'\1-{datetime.now().year}', query)
+    query = re.sub(r'(\b\d{4})-\b(?!\d)', rf'\1-{datetime.now().year}', query)  # FIXME this doesn't work if the hyphen is at the end of the line!
 
     # Validate the query:
     # Check if the query contains more than two ampersands (i.e. more than three names)
@@ -202,7 +322,6 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
         result = {
             "start_offset": start_offset,
             "results_remaining": max(0, search_results["response"]["number_found"]-len(records)-start_offset),
-            "has_more_results": search_results["response"]["number_found"] > (start_offset + len(records)),
             "records": records
         }
 
@@ -293,7 +412,9 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     OpenArchieven and performing searches.
 
     The following functions are available to you:
-    - `open_archives_get_record`: Read an individual record by its URL.
+    - `open_archives_get_record`: Read an individual record by its URL. If a user provides a direct
+      openarchieven.nl URL, immediately use `open_archives_get_record` to fetch that specific
+      record before attempting any other searches.
     - `open_archives_search`: Perform a search for records based on a query.
 
     Understanding openarchieven.nl URLs:
@@ -328,8 +449,8 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     search query. The JSON should contain keys matching the following parameters:
     - `query`: The query to search for (required). This parameter requires a very specific
         format detaled below.
-    - `start_offset`: The initial results to return (for paging, optional; default=0).
-    - `number_show`: The number of results to show (for paging, optional; default=10, max=100).
+    - `page`: The page of results to request, for paginated results (for paging, optional;
+        default=1).
     - `eventplace`: The event place to filter results on (optional).
     - `eventtype`: The event type to filter results on (optional). One of these values:
         - `Overlijden`: Death
@@ -443,17 +564,17 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     You use this search query to search the Open Archives API by calling the `open_archives_search`
     function. The results are ordered chronologically, starting with the oldest records that match.
     Note that the number of results that appear in subsequent pages is stored in
-    `results_remaining`.
+    `total_pages`.
 
-    If there are over 50 records returned in `results_remaining`, the query is too broad and should
-    be refined. Otherwise, if `results_remaining` is more than 0, you must query the next page
-    using the `start_offset` parameter. You do this by incrementing the `start_offset` parameter
-    by the number of results you want to skip by, which is specified in the `results_remaining`
-    value in the response for previous pages.
+    If there are over 5 pages returned in `total_pages`, the query is too broad and should be
+    refined. Otherwise, if `total_pages` is more than 1, you must query the next page using the
+    `page` parameter. You do this by incrementing the `page` parameter as you read subsequent
+    pages. If the returned value for `page` equals `total_pages - 1`, then you have reached the
+    end.
 
-    For example, if you queried the first page with `start_offset=0` and `number_show=10`, you
-    would query the second page with `start_offset=10`, etc. Try to query 10 records at a time to
-    avoid overwhelming the API and to ensure that you can process the results effectively.
+    For example, if you queried the first page with `page: 1`, you would query the second page with
+    `page: 2`, etc. Try not to read more than 5 pages to avoid overwhelming the API and to ensure
+    that you can process the results effectively.
     
 
     OTHER PARAMETERS
@@ -561,6 +682,27 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
       `{"query": "Jan Jansen &~& Aaltje Zwiers", "eventtype": "Geboorte", "relationtype": "Kind"}`
 
     
+    REGIONAL CONVENTIONS
+    --------------------
+
+    Prior to 1811, it was common to have patronymic surnames. While extremey common, it isn't
+    always the case. A daughter of Gabe Lammerts born before 1811 might be born Wiebren Gabes.
+    
+    There are unlikely to be any birth records in the Netherlands prior to 1811. You will only find
+    mention of a birth date in a baptism record, and possibly other records.
+
+    For birth or baptism records before 1811, assume the individual will not have a fixed surname.
+    Prioritize searching using only the first name and patronymic and avoid including surnames in
+    queries for these early birth/baptism records unless you know the patronymic surnames of the
+    parents. Baptism records before 1811 usually do not include a child's surname at all. In the
+    previous example of Wiebren Gabes, her baptism record will only list her as Wiebren and you
+    should search for it using "Wiebren & Gabe" instead of "Wiebren Gabes de Boer".
+
+    After 1811, family names became mandatory. Entire families will have registered once under the
+    head of the family. It's therefore possible that a child born before 1811 may have a different
+    family name in a marriage or death record.
+
+
     IMPORTANT NOTES
     ---------------
 
@@ -586,16 +728,28 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     Guidelines for searching:
     - Do not attempt to run the exact same search and expect different results!
     - You can perform multiple searches, refining your query as needed:
-      - If the search was too narrow, resulting in no results, broaden it by being less specific:
-        - Remove specific eventtype filters (e.g., 'Geboorte', 'Huwelijk', 'Overlijden') and
-          performing a general search without specifying an eventtype; this enables you to find
-          records like 'Bevolkingsregister' (Population Register) or 'Gezinskaart' (Family Card),
-          which often contain event details (birth, marriage, death) but are categorized as
-          general registrations;
-        - Expand (or remove) date range filters to increase the search window and capture records
-          with less precise event dates or those compiled over longer periods.
+      - If the search resulted in no results, it was too narrow. Broaden it by being less specific:
+        - Always first consider removing the `eventplace` filter, as historical place names can
+          vary or be less precise.
+        - Then try removing the `eventtype` filter to capture records categorized broadly (e.g.,
+          'Registratie' or 'Overige'). This enables you to find records like 'Bevolkingsregister'
+          (Population Register) or 'Gezinskaart' (Family Card), which often contain event details
+          (birth, marriage, death) but are categorized as general registrations;
+        - Expand the year or year range significantly, preferring to omit any range at all,
+          especially for older records where exact dates might be less reliable or estimated. This
+          also lets you capture related records outside the expected date range, such as childrens'
+          records after the date or population registers with an earlier date, but compiled over
+          longer periods.
+        - If direct searches for an individual's birth/baptism are unsuccessful, pivot to searching
+          for related individuals (e.g., parents' marriage, siblings' births) using their names and
+          estimated dates. These records often contain details about parents that can indirectly
+          confirm the primary individual's family.
       - If the search was too broad, resulting in too many results, narrow it by being more
-        specific.
+        specific:
+        - Narrowing down year ranges;
+        - Including first names and/or surnames of ancestors or descendants using the `&` or `&~&`
+          operator;
+        - Explicitly filtering by `eventtype`.
     - Don't assume that all the information you're seaching for will be in specific records in a
       date range. For example:
       - Missing information about a marriage due to a missing marriage record may be mitigated by
@@ -605,16 +759,9 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     - Try to keep your total search count to about 10 before returning to the user to summarize
       your progress and ask whether you should continue.
 
-
     Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
     
 
-    CREATING SOURCE LINKS
-    ---------------------
-
-    You must use the OpenArchievenLinker agent to create source links to relevant records.
-
-    
     AFTER RESPONDING
     ----------------
 

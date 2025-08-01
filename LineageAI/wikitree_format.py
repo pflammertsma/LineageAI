@@ -29,7 +29,7 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
         with their name and birth date.
       - A paragraph describing the person's death, including their death date and place of death,
         if known.
-    - It includes a section for "== Sources ==" which is always followed by the "<references/>"
+    - It includes a section for `== Sources ==` which is always followed by the `<references/>`
       tag.
     - The profile should begin with the person's name boldfaced (e.g., '''Florette'''). Whenever
       the name of the person is used in the text of their own profile, it should never be formatted
@@ -50,8 +50,11 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       - If the source is from openarchieven.nl, it includes a link to the OpenArch Permalink for
         the record, which is constructed as follows:
         https://www.openarchieven.nl/\{archive_code\}:\{identifier\}
-      - Don't add any citations below `<references />`; if a citation doesn't have a good inline
-        place within the text, add a mention in research notes and include the citation there.
+      - Under no circumstances may you ever split the `<references/>` tag or place citations after
+        it; references must be inline.
+      - If a citation doesn't have a good inline place within the text, add a mention in research
+        notes and include the citation there.
+      - You must never reference a WikiTree profile as a reference.
       - Don't add a source to make statements about missing records; that should appear in research
         notes, but only if strictly necessary.
       - Each generated profile must be self-contained and cannot include context from previous
