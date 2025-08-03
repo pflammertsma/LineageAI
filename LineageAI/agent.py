@@ -3,7 +3,6 @@ from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, BaseAgent, LlmAgent, SequentialAgent
 from google.genai import types
 from .openarchieven import open_archives_agent
-from .combiner import combiner_agent
 from .wikitree_format import wikitree_format_agent
 from .wikitree_api_simple import wikitree_query_agent
 
@@ -97,12 +96,6 @@ root_agent = LlmAgent(
     - Inspecting the format of an existing biography to ensure that the biography you are writing
         is consistent and no data is lost in the process.
 
-    RECORD COMBINER AGENT
-    ---------------------
-
-    If you have found numerous results and are unsure which one relates to the user's query, you
-    must transfer to the RecordCombiner agent.
-
     WIKITREE FORMATTER AGENT
     ------------------------
 
@@ -140,11 +133,11 @@ root_agent = LlmAgent(
 
     For conducting research from scratch, the recommended sequence of operations are:
     1. Transfer to OpenArchievenResearcher to perform searches and retrieve records;
-    2. Transfer to RecordCombiner to combine the results into a single coherent record (optional);
-    3. Transfer to WikitreeApiAgent to search for any existing profile, and if one is found,
+    2. Transfer to WikitreeApiAgent to search for any existing profile, and if one is found,
        retrieve the profile (including biography) and relatives;
-    4. Transfer back to OpenArchievenResearcher to perform additional searches if needed;
-    5. Transfer to WikitreeFormatterAgent to format the updated biography.
+    3. Transfer back to OpenArchievenResearcher to perform additional searches if needed;
+    4. Transfer to WikitreeFormatterAgent to format the updated biography.
+    5. Ask the user what to do next, suggesting creating or updating relevant profiles.
 
     Scenario 2: Updating an existing profile with new research
 
@@ -153,16 +146,31 @@ root_agent = LlmAgent(
     2. Transfer to OpenArchievenResearcher to retrieve records referenced in the biographies;
     3. Transfer to OpenArchievenResearcher to perform searches for any gaps, like missing birth,
        marriage or death records, or any information about children;
-    4. Transfer to RecordCombiner to combine the results into a single coherent record (optional);
-    5. Transfer to WikitreeFormatterAgent to format the updated biography.
+    4. Transfer to WikitreeFormatterAgent to format the updated biography.
+    5. Ask the user what to do next, suggesting creating or updating relevant profiles.
 
     You may deviate from this approach based on the user's input and the context of any ongoing
     research.
-
+    
+    
+    IMPORTANT NOTES THAT APPLY TO ALL AGENTS
+    ----------------------------------------
+    
     Never make apologies or complimentary remarks regarding feedback from the user; simply be
     direct and focus solely on addressing any issues.
+    
+    Reacting to user inputs relating to performing new research should be done after transferring
+    to the OpenArchievenResearcher agent.
+    
+    Reacting to user inputs relating to obtaining or searching for existing profiles should be done
+    after transferring to the WikitreeApiAgent.
+    
+    Reacting to user inputs relating to profile formatting should be done after transferring to the
+    WikitreeFormatterAgent.
+    
+    General remarks from the user should be handled by the orchestrator.
     """,
     sub_agents=[
-        open_archives_agent, combiner_agent, wikitree_query_agent, wikitree_format_agent
+        open_archives_agent, wikitree_query_agent, wikitree_format_agent
     ],
 )
