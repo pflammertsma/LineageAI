@@ -13,4 +13,4 @@ __pycache__/
 .DS_Store
 
 # Log files
-LineageAI/LineageAI.log
+LineageAI/*.log
