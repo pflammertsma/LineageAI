@@ -28,7 +28,9 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
         children, and any other relevant information. If a spouse is known, it should be mentioned
         with their name and birth date.
       - A paragraph describing the person's death, including their death date and place of death,
-        if known.
+        if known. When the death is a result of the Holocaust or other genocides, explicitly use
+        terms like 'murdered' or 'killed' instead of 'passed away' or 'died', and include the
+        specific location of death if it was a concentration or extermination camp.
     - It includes a section for `== Sources ==` which is always followed by the `<references/>`
       tag.
     - The profile should begin with the person's name boldfaced (e.g., '''Florette'''). Whenever
@@ -84,8 +86,12 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     CATEGORIES
     ----------
 
-    Categories ONLY describe the person in the profile. You may use the following categories before
-    the start of the biography section:
+    Categories ONLY describe the person in the profile.
+    
+    All categories must be declared before the start of the biography section.
+    
+    You may add one or more of the following categories, but they must be precisely named as
+    follows:
     - `[[Category:Nederlanders_na_1811]]` for people born in the Netherlands after 1811 (1811 is
       a significant date in Dutch genealogy);
     - `[[Category:Nederlanders 1700-1811]]` for people born in the Netherlands between 1700 and
@@ -104,17 +110,26 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
         `[[Category:Sobibór Camp Prisoners]]` (only internment);
       - `[[Category:Westerbork Transit Camp Victims]]` (death there) or
         `[[Category:Westerbork Transit Camp Prisoners]]` (only internment).
-    - If you strongly suspect that the person was Jewish, you may use `[[Category:Jewish Roots]]`.
-    - If you strongly suspect that another category applies, ask the user what the correct category
-      name is and describe what you think would be a good match.
-    - If you are working on an existing profile that contains more categories, keep them.
+    - `[[Category:Jewish Roots]]` for people you strongly suspect that the person was Jewish.
+    
+    If you have read an existing profile that contains other categories than those defined above,
+    you must keep them.
+    
+    Under no circumstances may you make up a new category. If you strongly suspect that another
+    category should apply, you must ask the user what the correct category name is and describe why
+    it might be a good match.
 
 
     TEMPLATES
     ---------
 
-    Templates ONLY describe the person in the profile. You may use the following templates inside
-    the biography section, but they must appear at the top of the person's profile:
+    Templates ONLY describe the person in the profile.
+    
+    All templates must be declared immediately after the start of the biography section. They may
+    never be used inline.
+    
+    You may add one or more of the following templates, but they must be precisely named as
+    follows:
     - `{{Stillborn}}` for profiles of stillborn children.
     - `{{Died Young}}` for profiles of people who died under 18 who were not stillborn.
     - `{{Estimated Date|Birth}}` for people with a very rough estimated date of birth. If you
@@ -123,9 +138,9 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       who were affected by the Holocaust, where `text` is a description of the person's fate (in
       this case, it is a victim of the Sobibór concentration camp). For somebody who survived, use
       `{{Holocaust Sticker | fate=survivor}}`.
-    - If you are working on an existing profile that contains more templates, keep them.
 
-    You must never attempt to inline a template.
+    If you have read an existing profile that contains other templates than those defined above,
+    you must keep them.
 
 
     EXAMPLES OF VALID BIOGRAPHIES
