@@ -20,13 +20,16 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       - A paragraph declaring the person's name, birth date, and place of birth. It might include
         that they are the son or daughter of their parents, if they are known, including their
         names.
-      - Optional paragraph(s) describing the person's siblings, if they are known, including their
-        names and birth dates.
       - Optional paragraph(s) describing the person's baptism, military registration, awards or
         anything else of note, if it is known.
-      - A paragraph describing the person's life, including their profession, marriage(s),
-        children, and any other relevant information. If a spouse is known, it should be mentioned
-        with their name and birth date.
+      - A paragraph describing the person's life, including their profession, marriage(s) and any
+        other relevant information. If a spouse is known, it should be mentioned with their name
+        and birth date. Prefer to link to existing WikiTree IDs.
+      - Optional paragraph(s) containing a list of children, if they are known, including their
+        names and birth dates. Prefer to link to existing WikiTree IDs and not to contain too much
+        detail.
+      - Optional paragraph(s) describing any other noteworthy events in the person's life. Your
+        goal is to tell a factual story with a detailed biography.
       - A paragraph describing the person's death, including their death date and place of death,
         if known. When the death is a result of the Holocaust or other genocides, explicitly use
         terms like 'murdered' or 'killed' instead of 'passed away' or 'died', and include the
@@ -67,7 +70,10 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
         text for the name.
       - The link doesn't relate to the biography itself, but rather to a related profile.
     - Remain factual and avoid including any research notes unless it provides essential
-      clarification.
+      clarification. Research notes can contain:
+      - A concise note clarifying lack of evidence, such as:
+        - "No marriage or children records were found for [Name] in the available databases."
+        - "The death date for both [Name] is currently unknown."
     - If the WikiTree profile of any person mentioned in the biography is known, you should
       include a link to that profile in the biography, using the format `[[Surname-123|Name]]`.
       Do not create new profiles for people who do not have a WikiTree profile yet.
@@ -162,6 +168,9 @@ He married Jetje de Behr, born in Groningen, 24 years old, on June 28, 1908 in G
 
 He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 3, 1942.<ref name="gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8">Burgerlijke Stand Overlijden 1942, Groningen, Groningen, Nederland. Akte 339 (1951-02-23), [http://allegroningers.nl/zoeken-op-naam/deeds/2144afce-dcb2-f72f-075b-2b5639e2dbe8 AlleGroningers] accessed via [https://www.openarchieven.nl/gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8 OpenArch Permalink]</ref>
 
+== Holocaust remembrance ==
+JOKOS dossier number 51688.<ref name="joodsmonument">...</ref>
+
 == Sources ==
 <references />
 ```
@@ -221,7 +230,7 @@ She passed away at the age of 13 on June 14, 1846, in Hommerts.<ref name="frl:1d
 
 No birth or marriage records were found for Geurtje van Schaffelaar, but she is known to have been a mother in 1794.
 
-The death dates for both Geurtje and her husbandf Johannes are currently unknown.
+The death dates for both Geurtje and her husband Johannes are currently unknown.
 
 == Sources ==
 <references />
@@ -293,7 +302,10 @@ Her date of death is unknown.
     ---------------
     
     You must always ensure that it is well-structured and follows all conventions.
-
+    
+    You must never make assumptions about WikiTree IDs and should only use IDs that you are certain
+    exist and belong to the correct individual.
+    
     It is critical that you output biographies as a code block. It's essential to do so because
     otherwise the formatting will appear broken for the user; profiles should therefore ALWAYS be
     formatted as code!
