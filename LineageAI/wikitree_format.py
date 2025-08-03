@@ -17,9 +17,14 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     - Do not include any information from the input query that is not validated against the data
       the agents have collected.
     - This biography section contains, in chronolical order:
-      - A paragraph declaring the person's name, birth date, and place of birth. It might include
-        that they are the son or daughter of their parents, if they are known, including their
-        names.
+      - A paragraph declaring the person's name, birth date, and place of birth.
+        - Ideally, it includes that they are the son or daughter, to clarify the gender, then
+          naming the parents, if they are known, for example:
+          "'''[Name]''' was born on [...], in [...], the [son|daughter] of [...]"
+        - When a precise birth date is not available, but the year can be narrowed down to a range
+          of two years based on other records (e.g., age at marriage or death), state the birth
+          year as "born in [Year1] or [Year2]". For rougher estimates, continue to use "born about
+          [Year]".
       - Optional paragraph(s) describing the person's baptism, military registration, awards or
         anything else of note, if it is known.
       - A paragraph describing the person's life, including their profession, marriage(s) and any
@@ -149,6 +154,20 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       who were affected by the Holocaust, where `text` is a description of the person's fate (in
       this case, it is a victim of the Sobibór concentration camp). For somebody who survived, use
       `{{Holocaust Sticker | fate=survivor}}`.
+    - `{{Netherlands Sticker | provincie=Groningen | jaar=1763 | needs=Marriage | needs1=Death}}`
+      for profiles of people born in the Netherlands (in this case, denoting missing fields for any
+      marriage records or a death record). Up to three fields can be used to indicate missing data:
+      - `needs=[value] | needs1=[value] | needs2=[value]`
+        with the following possible values:
+        - `Birth` (when a person was born or baptized and where)
+        - `LNAB` (last name at birth)
+        - `Marriage` (no information about a marriage is known yet)
+        - `Death` (no information about the death is known yet)
+        - `More Records` (marriage or death record, notarial deeds, family registration, etc.)
+        - `Profiles Created` (profile has sources for other family members that are missing a
+          WikiTree profile)
+      - If none of that data is missing, omit those fields; e.g.:
+        `{{Netherlands Sticker | provincie=Groningen | jaar=1763}}`.
 
     If you have read an existing profile that contains other templates than those defined above,
     you must keep them.
@@ -208,7 +227,7 @@ She died at age 57 in 1888.<ref name="frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265">
 == Biography ==
 {{Died Young}}
 
-'''Murkjen Langeraap''' was born on November 22, 1832, in Wijmbritseradeel, Friesland, to [[Langeraap-13|Jelle Klazes Langeraap]] and [[Visser-3593|Aukjen Symens Visser]].<ref name="frl:a6eeff82-7ed3-9fce-6141-06999fe31318">Burgerlijke Stand Geboorte 1832, Wijmbritseradeel, Friesland, Nederland. Akte 0217 (1832-11-23), [http://allefriezen.nl/zoeken/deeds/a6eeff82-7ed3-9fce-6141-06999fe31318 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:a6eeff82-7ed3-9fce-6141-06999fe31318 OpenArch Permalink]</ref><ref>Geni.com: http://www.geni.com/people/Jan-Jelles-Langeraap/340516841380011418</ref>
+'''Murkjen Langeraap''' was born on November 22, 1832, in Wijmbritseradeel, Friesland, the daughter of [[Langeraap-13|Jelle Klazes Langeraap]] and [[Visser-3593|Aukjen Symens Visser]].<ref name="frl:a6eeff82-7ed3-9fce-6141-06999fe31318">Burgerlijke Stand Geboorte 1832, Wijmbritseradeel, Friesland, Nederland. Akte 0217 (1832-11-23), [http://allefriezen.nl/zoeken/deeds/a6eeff82-7ed3-9fce-6141-06999fe31318 AlleFriezen] accessed via [https://www.openarchieven.nl/frl:a6eeff82-7ed3-9fce-6141-06999fe31318 OpenArch Permalink]</ref><ref>Geni.com: http://www.geni.com/people/Jan-Jelles-Langeraap/340516841380011418</ref>
 
 She passed away at the age of 13 on June 14, 1846, in Hommerts.<ref name="frl:1d9eea29-7185-b0ee-3594-a9989a70accb">Burgerlijke Stand Overlijden 1846, Wijmbritseradeel, Friesland, Nederland. Akte 0090 (1846-06-15), [http://allefriezen.nl/zoeken/deeds/1d9eea29-7185-b0ee-3594-a9989a70accb AlleFriezen] accessed via [https://www.openarchieven.nl/frl:1d9eea29-7185-b0ee-3594-a9989a70accb OpenArch Permalink]</ref>
 
