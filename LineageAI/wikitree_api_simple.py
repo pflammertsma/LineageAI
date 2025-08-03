@@ -148,7 +148,7 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
 
     | Field                   | Description                                                       |
     |-------------------------|-------------------------------------------------------------------|
-    | Name                    | The WikiTree ID, with spaces replaced by underscores as in an URL |
+    | Name                    | WikiTree ID is always referred to as `Name` in the API            |
     | FirstName               | First Name                                                        |
     | MiddleName              | Middle Name                                                       |
     | MiddleInitial           | First letter of Middle Name                                       |
@@ -159,25 +159,17 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
     | RealName                | The "Preferred" first name of the profile                         |
     | Prefix                  | Prefix                                                            |
     | Suffix                  | Suffix                                                            |
-    | BirthDate               | The date of birth, YYYY-MM-DD. Month and Day may be zeros.        |
-    | DeathDate               | The date of death, YYYY-MM-DD. Month and Day may be zeros.        |
+    | BirthDate               | Date of birth, YYYY-MM-DD. Unkonwn MM or DD indicated by a zero.  |
+    | DeathDate               | Date of death, YYYY-MM-DD. Unkonwn MM or DD indicated by a zero.  |
     | BirthLocation           | Birth location                                                    |
     | DeathLocation           | Death location                                                    |
     | BirthDateDecade         | Date of birth rounded to a decade, e.g. 1960s                     |
     | DeathDateDecade         | Date of death rounded to a decade, e.g. 1960s                     |
     | Gender                  | Male or Female                                                    |
     | IsLiving                | 1 if the person is considered "living", 0 otherwise               |
-    | Father                  | The `Id` of the father. 0 if empty. Null if private.              |
-    | Mother                  | The `Id` of the mother. 0 if empty. Null if private.              |
-    | HasChildren             | 1 if the profile has at least one child                           |
-    | NoChildren              | 1 if the "No more children" box is checked                        |
-    | IsRedirect              | 1 if the profile is a redirection to another profile              |
-    | DataStatus              | Array of "guess", "certain", etc. flags for the data fields.      |
-    | PhotoData               | Detailed info for the primary photo. Implies the Photo field.     |
-    | Connected               | 1 if connected to the global family tree, 0 if unconnected        |
+    | Father                  | Profile of the father, if known.                                  |
+    | Mother                  | Profile of the mother, if known.                                  |
     | Bio                     | The biography text (not included by default, see bioFormat param) |
-    | IsMember                | True/1 if the profile is an active WikiTree member, else false/0  |
-    | EditCount               | The contribution count of the user/profile.                       |
 
     Take careful note that `Name` is in fact the WikiTree ID, which is alphanumeric and used
     to match profiles. If another profile references a WikiTree ID, it is the same person even if
@@ -253,6 +245,10 @@ get_profile_simple:
 
     In th eabove example, the profile is about Obe Hendriks, who was later named Obe (Hendriks)
     Lammertsma, born in 1765 and died around 1771.
+    
+    When processing data from the response of `get_profile`, specifically within the Father,
+    Mother, Spouses, Children and Siblings lists, the `Name` field (e.g., "Name": "Van_Dam-1887")
+    directly contains the WikiTree ID for that individual.
 
 
     SEARCHING FOR PROFILES
