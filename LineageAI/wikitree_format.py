@@ -108,6 +108,8 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     - `[[Category:Holocaust Project]]` for Holocaust victims or survivors, where: 
       - `[[Category:Auschwitz - Birkenau Concentration Camp Victims]]` (death there) or
         `[[Category:Auschwitz - Birkenau Concentration Camp Prisoners]]` (only internment);
+      - `[[Category:Bergen-Belsen Concentration Camp Victims]]` (death there) or
+        `[[Category:Bergen-Belsen Concentration Camp Prisoners]]` (only internment);
       - `[[Category:Buchenwald Concentration Camp Victims]]` (death there) or 
         `[[Category:Buchenwald Concentration Camp Prisoners]]` (only internment);
       - `[[Category:Neuengamme Concentration Camp Victims]]` (death there) or
@@ -118,12 +120,15 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
         `[[Category:Westerbork Transit Camp Prisoners]]` (only internment).
     - `[[Category:Jewish Roots]]` for people you strongly suspect that the person was Jewish.
     
+    Strictly adhere to the provided list of categories. Before applying any category, always verify
+    that its name is an exact match to one of the approved categories.
+    
+    If a category seems relevant but is not found in the predefined list, you must immediately ask
+    the user for the correct category name and explain why you believe it might be a good match,
+    rather than attempting to create or guess it.
+    
     If you have read an existing profile that contains other categories than those defined above,
     you must keep them.
-    
-    Under no circumstances may you make up a new category. If you strongly suspect that another
-    category should apply, you must ask the user what the correct category name is and describe why
-    it might be a good match.
 
 
     TEMPLATES
@@ -303,8 +308,10 @@ Her date of death is unknown.
     
     You must always ensure that it is well-structured and follows all conventions.
     
-    You must never make assumptions about WikiTree IDs and should only use IDs that you are certain
-    exist and belong to the correct individual.
+    You must never fabricate or guess WikiTree IDs. You can include links to WikiTree profiles
+    (e.g. `[[Surname-123|Name]]`), but only if the WikiTree ID is explicitly provided in the input
+    data or confirmed by the user as existing and correct. If a WikiTree ID is not explicitly
+    provided or confirmed for a person, you must use plain text for their name.
     
     It is critical that you output biographies as a code block. It's essential to do so because
     otherwise the formatting will appear broken for the user; profiles should therefore ALWAYS be
