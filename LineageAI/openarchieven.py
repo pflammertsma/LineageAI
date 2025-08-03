@@ -281,10 +281,10 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
         params["sourcetype"] = sourcetype
     if eventplace:
         params["eventplace"] = eventplace
-    if relationtype:
-        params["relationtype"] = relationtype
     if eventtype:
         params["eventtype"] = eventtype
+    if relationtype:
+        params["relationtype"] = relationtype
     if country_code:
         params["country_code"] = country_code
     
@@ -319,10 +319,27 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
                 }
                 records.append(record)
         else:
-            logger.warning(f"[{tag}] No records found in response: {search_results["response"]}")
+            # Add a more detailed error message to suggest removing `eventtype` or `eventplace` if it was provided
+            error_message = f"No records found. Perhaps your search query was too narrow?"
+            parts = []
+            if archive_code:
+                parts.append("archive_code")
+            if sourcetype:
+                parts.append("sourcetype")
+            if eventplace:
+                parts.append("eventplace")
+            if eventtype:
+                parts.append("eventtype")
+            if relationtype:
+                parts.append("relationtype")
+            if country_code:
+                parts.append("country_code")
+            if len(parts) > 0:
+                error_message = error_message + f" Try removing `{'` or `'.join(parts)}` for a broader search."
+            logger.warning(f"[{tag}] {error_message} Response: {search_results["response"]}")
             return {
                 "status": "error",
-                "error_message": "No records found in response; perhaps your search query was too narrow?"
+                "error_message": error_message
             }
         
         result = {

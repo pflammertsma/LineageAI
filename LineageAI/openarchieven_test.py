@@ -15,6 +15,7 @@ print("Testing searching OpenArchieven...")
 test_cases = [
     '{"query": "Gabe Wiebrens & Hendriks 1900-1950"}',
     '{"query": "Gabe Wiebrens 1900-1950 Hendriks"}',
+    '{"query": "Wiebre", "eventtype": "Overlijden", "eventtype": "Overlijden", "eventplace": "Bolsward"}',
     '{"query": "Wiebre* & Gabe Wiebrens & Hendriks"}',
     '{"query": "Wiebre", "eventtype": "Overlijden", "number_show": 2}',
     '{"query": "Wiebre* & Gabe Wiebrens & Hendriks", "eventtype": "Overlijden", "eventplace": "Bolsward"}',
