@@ -242,7 +242,13 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
     if "&~&" in query and "&" in query.replace("&~&", ""):
         query = query.replace("&~&", "&")
     # Replace incomplete year ranges like "1824-" with "1824-<current_year>"
-    query = re.sub(r'(\b\d{4})-\b(?!\d)', rf'\1-{datetime.now().year}', query)  # FIXME this doesn't work if the hyphen is at the end of the line!
+    query = re.sub(r'(\b\d{4})-(?!\d)', rf'\1-{datetime.now().year}', query)
+    
+    if re.search(r'\d.*[a-zA-Z]', query):
+        return {
+            "status": "error",
+            "error_message": "Query cannot contain names after a date or date range."
+        }
 
     # Validate the query:
     # Check if the query contains more than two ampersands (i.e. more than three names)
@@ -727,6 +733,9 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
 
     Guidelines for searching:
     - Do not attempt to run the exact same search and expect different results!
+    - Begin with faily broad searches, containing two names with a fuzzy operator and without any
+      filters like `eventtype` or `eventplace`. For example, a good starting point is:
+      `{"query": "Jan Jansen &~& Aaltje Zwiers"}`
     - You can perform multiple searches, refining your query as needed:
       - If the search resulted in no results, it was too narrow. Broaden it by being less specific:
         - Always first consider removing the `eventplace` filter, as historical place names can
@@ -750,14 +759,19 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
         - Including first names and/or surnames of ancestors or descendants using the `&` or `&~&`
           operator;
         - Explicitly filtering by `eventtype`.
+    - Pay close attention to the logical operators in search queries:
+      - `&` for AND, between two or more names
+      - `&~&` for fuzzy AND, between precisely two names only
     - Don't assume that all the information you're seaching for will be in specific records in a
       date range. For example:
       - Missing information about a marriage due to a missing marriage record may be mitigated by
-        inferences from baptism or birth records.
+        inferences from baptism or birth records of their children, or, importantly, marriage
+        records that may be after one or both of the parents' death.
       - Population registers will have a different `eventtype` and may be missing a date
         altogether, so they might only be discovered by searching without those constraints.
-    - Try to keep your total search count to about 10 before returning to the user to summarize
-      your progress and ask whether you should continue.
+    - Try to keep your total search invocations below 10 before returning to the user to summarize
+      your progress and ask whether you should continue. See also the orchestrator's instructions
+      on the consultation protocol.
 
     Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
     

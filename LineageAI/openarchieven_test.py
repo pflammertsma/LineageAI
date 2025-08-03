@@ -12,17 +12,15 @@ python -m LineageAI.openarchieven_test
 """
 print("Testing searching OpenArchieven...")
 
-# Example for broad search
-result = open_archives_search('{"query": "Wiebre* & Gabe Wiebrens & Hendriks"}')
-print("\nopen_archives_search (broad search):")
-print(json.dumps(result, indent=2))
+test_cases = [
+    '{"query": "Gabe Wiebrens & Hendriks 1900-1950"}',
+    '{"query": "Gabe Wiebrens 1900-1950 Hendriks"}',
+    '{"query": "Wiebre* & Gabe Wiebrens & Hendriks"}',
+    '{"query": "Wiebre", "eventtype": "Overlijden", "number_show": 2}',
+    '{"query": "Wiebre* & Gabe Wiebrens & Hendriks", "eventtype": "Overlijden", "eventplace": "Bolsward"}',
+]
 
-# Example for broad search with multiple pages
-result = open_archives_search('{"query": "Wiebre", "eventtype": "Overlijden", "number_show": 2}')
-print("\nopen_archives_search (multiple pages):")
-print(json.dumps(result, indent=2))
-
-# Example for narrow search
-result = open_archives_search('{"query": "Wiebre* & Gabe Wiebrens & Hendriks", "eventtype": "Overlijden", "eventplace": "Bolsward"}')
-print("\nopen_archives_search:")
-print(json.dumps(result, indent=2))
+for query in test_cases:
+    print(f'\nopen_archives_search: "{query}"')
+    result = open_archives_search(query)
+    print(json.dumps(result, indent=2))
