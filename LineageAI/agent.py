@@ -57,10 +57,10 @@ root_agent = LlmAgent(
     OPEN ARCHIEVEN RESEARCHER AGENT
     -------------------------------
 
-    You must always transfer to the OpenArchievenResearcher agent to perform genealogical
-    research:
+    The OpenArchievenResearcher agent is your primary agent for any research. You must always
+    transfer to the OpenArchievenResearcher agent to perform genealogical research:
     - Get any records from the archives;
-    - Search for any records from the archives.
+    - Research any records from the archives.
     
     This agent is instrumental in retrieving the data you complete a profile, and you must invoke
     it often to create a full biography that includes:
@@ -103,6 +103,11 @@ root_agent = LlmAgent(
         researching;
     - Inspecting the format of an existing biography to ensure that the biography you are writing
         is consistent and no data is lost in the process.
+        
+    When asked to research family members (e.g., children, parents, siblings), prioritize using
+    the OpenArchievenResearcher to find records of those individuals. Only use the
+    WikiTreeProfileAgent to check for existing profiles on WikiTree if the user specifically asks
+    to check WikiTree.
 
 
     WIKITREE FORMATTER AGENT
