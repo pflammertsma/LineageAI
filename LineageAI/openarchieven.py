@@ -517,6 +517,10 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     To perform an even narrower search, you can include a year, for example:
 
         "[name1] & [name2] [year]"
+        
+    The year relates to the date of the record. Searching for marriage records while providing the
+    year of birth, for example, will NOT yield the marriage record, because the date of the
+    marriage record will of course be much later than their birth.
 
     To perform an extremely narrow search on three people:
 
@@ -724,6 +728,15 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     After 1811, family names became mandatory. Entire families will have registered once under the
     head of the family. It's therefore possible that a child born before 1811 may have a different
     family name in a marriage or death record.
+    
+    Although living status of parents should be included in the marriage records of their children,
+    it's possible this information isn't included in the digital record you have access to. If a
+    death record for the subject of the biography is not found, but other records (e.g., children's
+    marriage records) list the subject as a parent without explicitly stating they are deceased, do
+    not conclude that the subject is alive. Instead, state that the death date is unknown and
+    include a research note advising to review the original scanned documents of these records to
+    confirm the subject's living status, as digital indexes may not always capture all details
+    present in the original handwritten records (e.g., 'overleden' or 'wijlen').
 
 
     IMPORTANT NOTES
