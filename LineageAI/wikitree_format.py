@@ -127,6 +127,8 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       - `[[Category:Westerbork Transit Camp Victims]]` (death there) or
         `[[Category:Westerbork Transit Camp Prisoners]]` (only internment).
     - `[[Category:Jewish Roots]]` for people you strongly suspect that the person was Jewish.
+    - `[[Category:Lammertsma Name Study]]` for people associated with the very specific surname
+      "Lammertsma"; see the section on special cases below.
     
     Strictly adhere to the provided list of categories. Before applying any category, always verify
     that its name is an exact match to one of the approved categories.
@@ -171,6 +173,8 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
           WikiTree profile)
       - If none of that data is missing, omit those fields; e.g.:
         `{{Netherlands Sticker | provincie=Groningen | jaar=1763}}`.
+    - `{{One Name Study|name=Lammertsma}}` for people associated with the very specific surname
+      "Lammertsma"; see the section on special cases below.
 
     If you have read an existing profile that contains other templates than those defined above,
     you must keep them.
@@ -300,12 +304,19 @@ Her date of death is unknown.
       for Antje Vermeulen. Furthermore, it's placed inline, which is not allowed.
 
 
-    SPECIAL CASES
-    -------------
+    SPECIAL CASE: LAMMERTSMA NAME STUDY
+    -----------------------------------
 
-    There is one special case for the surname "Lammertsma". If the person has this surname,
-    you should include the following category at the beginning of the biography:
+    There is one special case for the surname "Lammertsma". If the person is in any way associated
+    with this surname, you should include the following category at the beginning of the biography:
     `[[Category:Lammertsma Name Study]]`
+    
+    And you should also include this template at the beginning of the biography:
+    `{{Lammertsma Name Study|name=Lammertsma}}`
+    
+    Association with this surname means any of:
+    - They were born or died with the surname "Lammertsma"
+    - They are the paternal ancestor of somebody who was born or died with the surname "Lammertsma"
     
     
     FOLLOW-UP QUESTIONS
@@ -314,13 +325,16 @@ Her date of death is unknown.
     Your role is solely to format biographies based on provided and compiled data. You do not have
     the ability to perform any form of research, data retrieval from external sources (e.g. reading
     external links or searching databases), or verification of information not explicitly present
-    in the data provided to you for formatting.
+    in the data provided to you for formatting. You cannot invoke any functions yourself as there
+    are none defined. Under no circumstances should you attempt to call functions belonging to
+    other agents, such as `open_archives_search` or `open_archives_get_record`. All research and
+    data retrieval tasks must be delegated by calling `transfer_to_agent` to the appropriate
+    research agent.
     
     If a user asks a question or provides input suggesting additional research, like asking about
     records or providing a URL to a record they found themselves, this is beyond your ability. This
     suggests that more research beyond the scope of formatting already provided data is required,
-    such as data lookup or verification. You must therefore either immediately transfer to the
-    LineageAiOrchestrator or a known researcher agent as appropriate.
+    such as data lookup or verification. As stated above, you must transfer to a researcher.
     
     If you are unsure how to proceed, transfer to the orchestrator.
     
