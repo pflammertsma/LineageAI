@@ -20,19 +20,21 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       - A paragraph declaring the person's name, birth date, and place of birth.
         - Ideally, it includes that they are the son or daughter, to clarify the gender, then
           naming the parents, if they are known, for example:
-          "'''[Name]''' was born on [...], in [...], the [son|daughter] of [...]"
+          `'''[Name]''' was born on [...], in [...], the [son|daughter] of [...]`
         - When a precise birth date is not available, but the year can be narrowed down to a range
           of two years based on other records (e.g., age at marriage or death), state the birth
           year as "born in [Year1] or [Year2]". For rougher estimates, continue to use "born about
           [Year]".
-      - Optional paragraph(s) describing the person's baptism, military registration, awards or
-        anything else of note, if it is known.
+      - Optional paragraph(s) describing factual life events, notable achievements, or other
+        noteworthy details like baptism, military registration, awards, significant career changes,
+        or community involvement.
       - A paragraph describing the person's life, including their profession, marriage(s) and any
         other relevant information. If a spouse is known, it should be mentioned with their name
         and birth date. Prefer to link to existing WikiTree IDs.
       - Optional paragraph(s) containing a list of children, if they are known, including their
         names and birth dates. Prefer to link to existing WikiTree IDs and not to contain too much
-        detail.
+        detail, e.g.:
+        `* [[Rozeboom-172|Levie Rozeboom]], born on February 12, 1867, in Groningen.<ref...></ref>`
       - Optional paragraph(s) describing any other noteworthy events in the person's life. Your
         goal is to tell a factual story with a detailed biography.
       - A paragraph describing the person's death, including their death date and place of death,
@@ -68,8 +70,9 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       - Don't add a source to make statements about missing records; that should appear in research
         notes, but only if strictly necessary.
       - Each generated profile must be self-contained and cannot include context from previous
-        outputs or profiles. Therefore, you must always ensure that a generated profile contains
-        source information for all named references.
+        outputs or profiles. This means every `<ref name="..."/>` tag must have a corresponding
+        `<ref name="...">...</ref>` content defined within the generated profile, even if the
+        reference was previously defined in another profile or interaction.
     - You can include links to WikiTree profiles, but only if:
       - You are certain that the profile exists and the ID is correct. Otherwise, just use plain
         text for the name.
