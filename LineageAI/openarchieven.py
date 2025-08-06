@@ -342,9 +342,17 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
                 "error_message": error_message
             }
         
+        # Provide the JSON query into the response, but remove irrelevant parts
+        return_query = copy.deepcopy(params)
+        del return_query["lang"]
+        del return_query["number_show"]
+        del return_query["start"]
+        del return_query["sort"]
+
         result = {
             "start_offset": start_offset,
             "results_remaining": max(0, search_results["response"]["number_found"]-len(records)-start_offset),
+            "query": return_query,
             "records": records
         }
 
