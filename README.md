@@ -71,6 +71,10 @@ This means that adding any directories into the root of this repository may appe
     ```
     pip install google-adk
     ```
+    Alternatively, use the weekly build:
+    ```
+    pip install git+https://github.com/google/adk-python.git@main
+    ```
 
 ## Running the agent
 
