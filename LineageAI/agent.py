@@ -1,6 +1,7 @@
 from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import Agent, BaseAgent, LlmAgent, SequentialAgent
+from google.adk.planners import BuiltInPlanner
 from google.genai import types
 from .openarchieven import open_archives_agent
 from .wikitree_format import wikitree_format_agent
@@ -12,7 +13,13 @@ root_agent = LlmAgent(
     model=MODEL_FAST,
     generate_content_config=types.GenerateContentConfig(
         temperature=0.2, # More deterministic output
-        #max_output_tokens=1000 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+        max_output_tokens=1024 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+    ),
+    planner=BuiltInPlanner(
+        thinking_config=types.ThinkingConfig(
+            include_thoughts=True,
+            thinking_budget=512,
+        )
     ),
     description="""
     You are the LineageAi Orchestrator Agent who is the central point for conducting genealogy
