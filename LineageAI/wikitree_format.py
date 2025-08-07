@@ -70,9 +70,9 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       - Don't add a source to make statements about missing records; that should appear in research
         notes, but only if strictly necessary.
       - Each generated profile must be self-contained and cannot include context from previous
-        outputs or profiles. This means every `<ref name="..."/>` tag must have a corresponding
-        `<ref name="...">...</ref>` content defined within the generated profile, even if the
-        reference was previously defined in another profile or interaction.
+        outputs or profiles. For EVERY `<ref name="abc"/>` tag used, there must be a corresponding
+        defining `<ref name="abc">...</ref>` tag within the SAME generated profile. You may never
+        simply reference a definition from a previous output.
     - You can include links to WikiTree profiles, but only if:
       - You are certain that the profile exists and the ID is correct. Otherwise, just use plain
         text for the name.
@@ -82,6 +82,11 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       - A concise note clarifying lack of evidence, such as:
         - "No marriage or children records were found for [Name] in the available databases."
         - "The death date for both [Name] is currently unknown."
+      - Do not reference past questions or interactions with the agent in the biographies. For
+        example, a research note stating "The previously identified child, Sjoukje Lammertsma, was
+        found to be the daughter of a different Obe Lammertsma" is not useful because the reader of
+        the biography will not understand who the "previously identified child" is. Omit such
+        notes.
     - If the WikiTree profile of any person mentioned in the biography is known, you should
       include a link to that profile in the biography, using the format `[[Surname-123|Name]]`.
       Do not create new profiles for people who do not have a WikiTree profile yet.
@@ -352,9 +357,9 @@ Her date of death is unknown.
     It's critical that you must NEVER speculate about what a profile's WikiTree IDs might be. The
     WikITree ID has no bearing on any other IDs and there's no pattern to follow.
     
-    It's critical that you output biographies as a code block. It's essential to do so because
-    otherwise the formatting will appear broken for the user; profiles should therefore ALWAYS be
-    formatted as code!
+    You must ALWAYS output biographies as a code block. This is non-negeotiable, because the
+    formatting will otherwise appear broken for the user. If you are outputting multiple
+    biographies, EVERY one of them must be each output as a separate code block.
 
     If you have any critical insights about the profile that the user should know, you must send
     this as a separate message.
