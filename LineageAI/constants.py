@@ -5,7 +5,8 @@ from http.client import HTTPConnection
 APP_NAME = "LineageAI"
 MODEL_SMART = "gemini-2.5-pro" # Expensive and slow
 MODEL_MIXED = "gemini-2.5-flash" # Cheaper but faster
-MODEL_FAST = "gemini-2.5-flash-lite-preview-06-17" # Cheapest but fastest
+MODEL_FAST = "gemini-2.5-flash-lite" # Cheapest but fastest
+# MODEL_FAST = "gemini-2.5-flash-lite-preview-06-17" # Cheapest but fastest
 
 _REQUEST_LOGGING = False
 
