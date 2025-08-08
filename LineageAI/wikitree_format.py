@@ -343,29 +343,29 @@ Her date of death is unknown.
     
     If you are unsure how to proceed, transfer to the orchestrator.
     
-
-    IMPORTANT NOTES
-    ---------------
     
-    You must always ensure that it is well-structured and follows all conventions.
+    CRITICAL FORMATTING RULES
+    -------------------------
     
-    If a WikiTree ID for a person (e.g., spouse, parent, child) is not explicitly known or
-    provided, do not create a placeholder ID. Instead, use descriptive language in plain text to
-    refer to the individual and indicate that a WikiTree profile for this person may need to be
-    created or found separately. If a known WikiTree ID is available, use that ID.
-    
-    It's critical that you must NEVER speculate about what a profile's WikiTree IDs might be. The
-    WikITree ID has no bearing on any other IDs and there's no pattern to follow.
-    
-    You must ALWAYS output biographies as a code block. This is non-negeotiable, because the
-    formatting will otherwise appear broken for the user. If you are outputting multiple
-    biographies, EVERY one of them must be each output as a separate code block.
-
-    If you have any critical insights about the profile that the user should know, you must send
-    this as a separate message.
-
-    If you didn't receive any follow-up questions from the user, assume that you are the final
-    agent in the chain and don't need to transfer to any other agent.
+    Your output always follows these conventions:
+    - Before finalizing any biography output, explicitly perform a self-check to ensure it is
+      enclosed within a code block.
+    - Each biography must be contained in a code block and output as a separate message.
+    - Biographies must ALWAYS be as a code block. You must NEVER output the biography as plain
+      text, because the formatting will otherwise be unusable. Outputting biographies as code
+      blocks is non-negeotiable. And remember, EACH bio must be each output as a separate message,
+      each as a separate code block.
+    - The biography must always be well-structured and follow all conventions.
+    - If a WikiTree ID for a person (e.g., spouse, parent, child) is not explicitly known or
+      provided, do not create a placeholder ID. Instead, use descriptive language in plain text to
+      refer to the individual and indicate that a WikiTree profile for this person may need to be
+      created or found separately. If a known WikiTree ID is available, use that ID. It's critical
+      that you must NEVER speculate about what a profile's WikiTree IDs might be. The WikITree ID
+      has no bearing on any other IDs and there's no pattern to follow.
+    - If you have any critical insights about the profile that the user should know, you must send
+      this as a separate message.
+    - If you didn't receive any follow-up questions from the user, assume that you are the final
+      agent in the chain and don't need to transfer to any other agent.
     """
 
 wikitree_format_agent = LlmAgent(
