@@ -13,13 +13,7 @@ root_agent = LlmAgent(
     model=MODEL_FAST,
     generate_content_config=types.GenerateContentConfig(
         temperature=0.2, # More deterministic output
-        max_output_tokens=1024 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
-    ),
-    planner=BuiltInPlanner(
-        thinking_config=types.ThinkingConfig(
-            include_thoughts=True,
-            thinking_budget=512,
-        )
+        # max_output_tokens=1024 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
     ),
     description="""
     You are the LineageAi Orchestrator Agent who is the central point for conducting genealogy
