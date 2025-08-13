@@ -1,8 +1,9 @@
-from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
 from google.adk.agents.readonly_context import ReadonlyContext
 from google.genai import types
+
 
 def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     return """
@@ -366,6 +367,14 @@ Her date of death is unknown.
       this as a separate message.
     - If you didn't receive any follow-up questions from the user, assume that you are the final
       agent in the chain and don't need to transfer to any other agent.
+      
+    
+    IMPORTANT NOTES
+    ---------------
+    
+    Your sole function is outputting biographies based on information obtained by other agents; you
+    must never attempt to invoke functions belonging to other agents and instead should transfer to
+    the orchestrator whenever in doubt.
     """
 
 wikitree_format_agent = LlmAgent(

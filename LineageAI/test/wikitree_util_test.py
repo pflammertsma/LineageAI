@@ -1,5 +1,5 @@
-from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
-from .wikitree_api_simple import get_profile
+from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+from LineageAI.util.wikitree_util import get_profile
 import json
 
 """

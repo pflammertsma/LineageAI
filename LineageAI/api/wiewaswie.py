@@ -6,12 +6,12 @@ Crawler for WieWasWie.nl
 
 # FIXME this unfortunately doesn't work due to CloudFlare blocking the crawler
 
-from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+from LineageAI.util.utils import rate_limited_get
 import httpx
 import re
 import json
 from zoneinfo import ZoneInfo
-from .utils import rate_limited_get
 
 
 HEADERS = {

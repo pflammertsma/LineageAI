@@ -1,5 +1,5 @@
-from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
-from .wiewaswie import extract_source_id
+from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+from LineageAI.api.wiewaswie import extract_source_id
 import json
 
 """

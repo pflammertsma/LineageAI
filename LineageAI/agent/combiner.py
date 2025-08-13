@@ -1,7 +1,8 @@
-from .constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
+from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from zoneinfo import ZoneInfo
 from google.adk.agents import LlmAgent
 from google.genai import types
+
 
 combiner_agent = LlmAgent(
     name="RecordCombiner",

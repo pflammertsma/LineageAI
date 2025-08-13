@@ -1,4 +1,4 @@
-from .constants import logger
+from LineageAI.constants import logger
 import logging
 import os
 import requests
