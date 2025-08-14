@@ -1,7 +1,7 @@
 from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from LineageAI.agent.openarchieven import open_archives_agent
 from LineageAI.agent.wikitree_format import wikitree_format_agent
-from LineageAI.agent.wikitree_simple import wikitree_query_agent
+from LineageAI.agent.wikitree_query_simple import wikitree_query_agent
 from google.adk.agents import LlmAgent
 from google.genai import types
 
