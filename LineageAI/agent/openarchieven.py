@@ -24,7 +24,7 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     Understanding openarchieven.nl URLs:
     
     URLs on openarchieven.nl have the following format:
-    https://www.openarchieven.nl/\{archive_code\}:\{identifier\}
+    https://www.openarchieven.nl/{archive_code}:{identifier}
 
     For example, if the archive code is "gra" and the identifier is
     "e551c8d7-361b-edf2-3199-ee3d4978e329", the URL would be:

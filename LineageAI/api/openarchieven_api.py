@@ -9,14 +9,6 @@ import copy
 
 PAGE_SIZE = 10
 
-"""
-Custom agent for collecting data from OpenArchieven.
-
-This agent orchestrates a sequence of LLM agents to query genealogical records,
-combine relevant records and discard irrelevant ones, and combine the result
-into a cohesive overview relevant to the query with source links.
-"""
-
 def open_archives_get_record(url: str) -> dict:
     #https://www.openarchieven.nl/gra:82abb4f7-6091-c219-f035-2cc346509875
     archive, identifier = parse_openarchieven_url(url)

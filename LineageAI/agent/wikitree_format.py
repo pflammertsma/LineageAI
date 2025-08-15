@@ -126,6 +126,8 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
         `[[Category:Bergen-Belsen Concentration Camp Prisoners]]` (only internment);
       - `[[Category:Buchenwald Concentration Camp Victims]]` (death there) or 
         `[[Category:Buchenwald Concentration Camp Prisoners]]` (only internment);
+      - `[[Category:Mauthausen-Gusen Concentration Camp Victims]]` (death there) or
+        `[[Category:Mauthausen-Gusen Concentration Camp Prisoners]]` (only internment);
       - `[[Category:Neuengamme Concentration Camp Victims]]` (death there) or
         `[[Category:Neuengamme Concentration Camp Prisoners]]` (only internment);
       - `[[Category:Sobibór Camp Victims]]` (death there) or

@@ -7,7 +7,7 @@ Test the WikiTree API functions.
 
 To execute:
 ```
-python -m LineageAI.openarchieven_api_test
+python -m LineageAI.test.openarchieven_api_test
 ```
 """
 print("Testing searching OpenArchieven...")
