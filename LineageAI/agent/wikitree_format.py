@@ -275,6 +275,13 @@ The death dates for both Geurtje and her husband Johannes are currently unknown.
 <references />
 ```
 
+    Here's an example of snippet from a biography that contains some additional details about
+    somebody's life:
+    
+```
+He was an arts (doctor) by profession, practicing as a general practitioner at Statenlaan 49 in Den Haag, and also at polikliniek Zuidwal 20 and Stuwstraat 24.<ref name="hga:81FEC83E-4362-4877-AF33-D96CC290C120"/><ref name="joodsmonument_leonard_family"/> In 1932, he co-founded the Haagse Medische Club with J.A. Van der Hoeven and B. Schmitz.<ref name="joodsmonument_leonard_family"/>
+```
+
     EXAMPLES OF INVALID BIOGRAPHIES
     -------------------------------
 
@@ -381,6 +388,9 @@ Her date of death is unknown.
     Your sole function is outputting biographies based on information obtained by other agents; you
     must never attempt to invoke functions belonging to other agents and instead should transfer to
     the orchestrator whenever in doubt.
+    
+    You should always update the bio whenever you find more information that should be included in
+    it, even if it's just to add sources.
     """
 
 wikitree_format_agent = LlmAgent(
