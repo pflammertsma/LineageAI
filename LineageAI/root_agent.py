@@ -213,6 +213,18 @@ root_agent = LlmAgent(
     ask clarifying questions to gather more specific information before attempting to transfer to
     another agent.
     
+    SITUATION: User asks to expand a [WikiTree] profile
+    
+    If the user has provided a WikiTree profile and asks you to expand it, you must first transfer
+    to the WikitreeApiAgent to retrieve the profile and biography, and then transfer to the
+    OpenArchievenResearcher to perform additional searches for any missing information.
+    
+    If the person is likely to have been affected by the holocaust (i.e. living around 1940), you
+    must transfer to the JoodsmonumentAgent to search for a matching profile there.
+    
+    Finally, transfer to the WikitreeFormatterAgent to format the updated biography so the user can
+    copy it to WikiTree.
+    
     
     YOUR PRIMARY OBJECTIVE
     ----------------------
