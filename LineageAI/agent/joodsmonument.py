@@ -1,5 +1,5 @@
 from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
-from LineageAI.api.joodsmonument_api import search_joodsmonument
+from LineageAI.api.joodsmonument_api import joodsmonument_search, joodsmonument_read_document
 from google.adk.agents import LlmAgent
 from google.adk.agents.readonly_context import ReadonlyContext
 
@@ -11,14 +11,33 @@ def joodsmonument_agent_instructions(context: ReadonlyContext) -> str:
     Your sole function is to search for people on the Digitaal Joods Monument and extract any
     relevant details from the documents for further processing by other agents.
     
-    To perform a search, invoke `search_joodsmonument`, providing the name of the person as the
+    You have these functions available to you:
+    
+    - `joodsmonument_search`
+    - `joodsmonument_read_document`
+    
+    To perform a search, invoke `joodsmonument_search`, providing the name of the person as the
     input parameter, e.g.:
     
-      search_joodsmonument("Migchiel Slijt")
+      joodsmonument_search("Migchiel Slijt")
+      
+    The response will describe the result documents in JSON format. If you find a very strong match
+    among these, you can request the full document by providing the document ID:
+    
+      joodsmonument_read_document(132258)
+      
+    The output of this function will be the HTML of the page.
+    
+    The user might provide you with a URL or document ID directly, in which case you can directly
+    invoke `joodsmonument_read_document` with that URL or ID. For example, if the user provides a
+    URL like `https://www.joodsmonument.nl/nl/page/455971/rebecca-goudket-spreekmeester`, just
+    invoke:
+    
+      joodsmonument_read_document("https://www.joodsmonument.nl/nl/page/455971/rebecca-goudket-spreekmeester")
 
 
-    AFTER COMPLETING YOUR TASKS
-    ---------------------------
+    AFTER COMPLETING A TASK
+    -----------------------
 
     After you have completed your tasks, you must always transfer back to the LineageAiOrchestrator
     unless you are confident you have satisfied the user's request. It's very unlikely that you
@@ -38,18 +57,17 @@ def joodsmonument_agent_instructions(context: ReadonlyContext) -> str:
     IMPORTANT NOTES
     ---------------
     
+    You are not performing original reseach; there are researcher agents that you should expect the
+    orchestrator to transfer to for finding birth, baptism, circumcision, marriage and death
+    records. Do not attempt to search for this; you will not find it here.
+    
     Your sole function is retreiving existing profiles from the Joods Monument for further
     processing by other agents; you must never attempt to present information about profiles on
     your own.
 
-    Before transferring to the LineageAiOrchestrator, you must ensure that you have some basic
-    information about the profile you were asked to find. This includes any of:
-    - First and last name
-    - Birth date or date range
-    - Death date or date range
-
-    If you do not have any of this information, you must transfer to LineageAiOrchestrator for
-    further clarification.
+    As soon as you've read a matching profile, assume your work is complete; refrain from
+    performing any further searches unless explicity instructed to do so. You must instead transfer
+    to LineageAiOrchestrator for next steps.
 
     If you are informed that one or more profiles have been changed, this means your data is out of
     date and you must invoke `get_profile` again to obtain the latest data.
@@ -74,6 +92,6 @@ joodsmonument_agent = LlmAgent(
     research.
     """,
     instruction=joodsmonument_agent_instructions,
-    tools=[search_joodsmonument],
+    tools=[joodsmonument_search, joodsmonument_read_document],
     output_key="joodsmonument"
 )

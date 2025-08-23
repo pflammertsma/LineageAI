@@ -63,3 +63,17 @@ def rate_limited_get(url, params=None, timeout=_API_INVOCATION_MAX_DURATION, fas
                 _api_request_count = 0
             _api_request_count += 1
     return response
+
+def print_truncated(result: any, length: int = 100):
+    """
+    Prints a truncated version of a string or bytes object.
+
+    Args:
+        result (any): The object to print. If it's bytes, it will be decoded.
+        length (int): The maximum length to print.
+    """
+    s = result.decode(errors='ignore') if isinstance(result, bytes) else str(result)
+    if len(s) > length:
+        print(s[:length] + '...')
+    else:
+        print(s)

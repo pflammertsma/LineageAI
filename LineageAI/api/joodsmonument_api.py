@@ -9,9 +9,10 @@ from urllib.parse import quote
 
 
 PAGE_SIZE = 20
+PERMALINK_URL = 'https://www.joodsmonument.nl/rsc/'
 
 
-def search_joodsmonument(name: str) -> dict:
+def joodsmonument_search(name: str) -> dict:
     """
     Searches the Joods Monument for a given name.
 
@@ -46,7 +47,7 @@ def search_joodsmonument(name: str) -> dict:
             doc_ids = data["result"]["result"]
             results = []
             for doc_id in doc_ids:
-                doc = get_joodsmonument_document(doc_id, fast=True)
+                doc = joodsmonument_get_document(doc_id, fast=True)
                 if doc.get("status") == "ok":
                     results.append(doc["document"])
                 else:
@@ -81,7 +82,7 @@ def search_joodsmonument(name: str) -> dict:
         }
 
 
-def get_joodsmonument_document(doc_id: int, fast=False) -> dict:
+def joodsmonument_get_document(doc_id: int, fast=False) -> dict:
     """
     Retrieves a specific document from the Joods Monument.
 
@@ -148,4 +149,46 @@ def get_joodsmonument_document(doc_id: int, fast=False) -> dict:
         return {
             "status": "error",
             "error_message": "Failed to decode JSON response"
+        }
+
+
+def joodsmonument_read_document(url_or_id: str) -> bytes | dict:
+    """
+    Retrieves the raw content from a Joods Monument URL or document ID.
+
+    If the parameter is not a URL, it is assumed to be a document ID.
+
+    Args:
+        url_or_id (str): The URL or document ID to retrieve.
+
+    Returns:
+        bytes | dict: The raw content of the response or an error message.
+    """
+    tag = "Joodsmonument Get URL"
+    url = str(url_or_id)
+    if not url.startswith("http"):
+        if not url.isnumeric():
+            return {
+                "status": "error",
+                "error_message": "Invalid input: Must be a URL or a numeric document ID"
+            }
+        url = f"{PERMALINK_URL}{url}"
+
+    if not url.startswith("https://www.joodsmonument.nl"):
+        return {
+            "status": "error",
+            "error_message": "Invalid URL: Must start with 'https://www.joodsmonument.nl'"
+        }
+
+    try:
+        logger.debug(f"[{tag}] >>> {url}")
+        response = rate_limited_get(url, timeout=10)
+        response.raise_for_status()
+        return response.content
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"[{tag}] API request failed for url {url}: {e}")
+        return {
+            "status": "error",
+            "error_message": f"API request failed: {str(e)}"
         }
