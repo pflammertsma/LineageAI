@@ -14,7 +14,7 @@ PERMALINK_URL = 'https://www.joodsmonument.nl/rsc/'
 
 def joodsmonument_search(name: str) -> dict:
     """
-    Searches the Joods Monument for a given name.
+    Searches the Joods Monument API for a given name.
 
     Args:
         name (str): The name to search for.
@@ -90,7 +90,7 @@ def joodsmonument_get_document(doc_id: int, fast=False) -> dict:
         doc_id (int): The ID of the document to retrieve.
 
     Returns:
-        dict: A dictionary containing the specified fields from the document or an error message.
+        dict: A dictionary containing the various fields from the document or an error message.
     """
     tag = "Joodsmonument Get Document"
     url = f"https://www.joodsmonument.nl/api/model/rsc/get/{doc_id}"
@@ -152,9 +152,11 @@ def joodsmonument_get_document(doc_id: int, fast=False) -> dict:
         }
 
 
-def joodsmonument_read_document(url_or_id: str) -> bytes | dict:
+# Always accept only `str` as input, either a full URL or a numeric document ID. We cannot accept
+# `str | int` because ADK doesn't support it.
+def joodsmonument_read_document(url_or_id: str) -> str | dict:
     """
-    Retrieves the raw content from a Joods Monument URL or document ID.
+    Retrieves the main HTML content from a Joods Monument URL or document ID.
 
     If the parameter is not a URL, it is assumed to be a document ID.
 
@@ -162,7 +164,7 @@ def joodsmonument_read_document(url_or_id: str) -> bytes | dict:
         url_or_id (str): The URL or document ID to retrieve.
 
     Returns:
-        bytes | dict: The raw content of the response or an error message.
+        str | dict: The main content of the page or an error message.
     """
     tag = "Joodsmonument Get URL"
     url = str(url_or_id)
@@ -184,7 +186,32 @@ def joodsmonument_read_document(url_or_id: str) -> bytes | dict:
         logger.debug(f"[{tag}] >>> {url}")
         response = rate_limited_get(url, timeout=10)
         response.raise_for_status()
-        return response.content
+        
+        html_content = response.content.decode(errors='ignore')
+        
+        header_match = re.search(r'<header[^>]*class="c-warvictim-intro"[^>]*>(.*?)</header>', html_content, re.DOTALL)
+        main_match = re.search(r'<main[^>]*id="main-content"[^>]*>(.*?)</main>', html_content, re.DOTALL)
+        
+        header_content = ""
+        if header_match:
+            header_content = header_match.group(1).strip()
+            
+        main_content = ""
+        if main_match:
+            main_content = main_match.group(1).strip()
+        
+        if header_content or main_content:
+            content = header_content + "\n" + main_content
+            # remove irrelevant divs
+            content = re.sub(r'<div[^>]*class="[^"]*(c-add-resource|copyrights)[^"]*"[^>]*>.*?</div>', '', content, flags=re.DOTALL)
+            # remove redundant spaces
+            content = re.sub(r'\s+', ' ', content)
+            # remove spaces between tags
+            content = re.sub(r'> <', '><', content)
+            return content.strip()
+        else:
+            logger.warning(f"[{tag}] Could not find main content or header in {url}")
+            return html_content
 
     except requests.exceptions.RequestException as e:
         logger.error(f"[{tag}] API request failed for url {url}: {e}")
