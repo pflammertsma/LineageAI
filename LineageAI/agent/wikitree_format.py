@@ -160,7 +160,7 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     You may add one or more of the following templates, but they must be precisely named as
     follows:
     - `{{Stillborn}}` for profiles of stillborn children.
-    - `{{Died Young}}` for profiles of people who died under 18 who were not stillborn.
+    - `{{Died Young}}` for profiles of children who died under 18 (but not stillborn).
     - `{{Estimated Date|Birth}}` for people with a very rough estimated date of birth. If you
       know the date of birth to be within two years, do not include this.
     - `{{Holocaust Sticker | text=was murdered in Sobibór concentration camp.}}` for people
@@ -208,7 +208,7 @@ He married Jetje de Behr, born in Groningen, 24 years old, on June 28, 1908 in G
 He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 3, 1942.<ref name="gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8">Burgerlijke Stand Overlijden 1942, Groningen, Groningen, Nederland. Akte 339 (1951-02-23), [http://allegroningers.nl/zoeken-op-naam/deeds/2144afce-dcb2-f72f-075b-2b5639e2dbe8 AlleGroningers] accessed via [https://www.openarchieven.nl/gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8 OpenArch Permalink]</ref>
 
 == Holocaust remembrance ==
-JOKOS dossier number 51688.<ref name="joodsmonument">...</ref>
+Jokos archive dossier number 51688.<ref name="joodsmonument">...</ref>
 
 == Sources ==
 <references />

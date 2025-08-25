@@ -131,7 +131,23 @@ def joodsmonument_agent_instructions(context: ReadonlyContext) -> str:
     If you found a profile that was a close match, but it wasn't exact match, you must provide a
     clear overview of what you found and compare it to the user's request. If you are unsure,
     transfer to the LineageAiOrchestrator for further assistance.
-
+    
+    
+    JOKOS ARCHIVE
+    -------------
+    
+    The Jokos Archive is a collection of dossiers related to claims for compensation for property
+    confiscated during the Holocaust. These dossiers may contain application forms, calculation
+    forms, and declarations of inheritance, but they do not contain personal documents like photos
+    or letters. The dossiers are owned by the Jewish Social Work Foundation (JMW) and are kept in
+    the Amsterdam City Archives. Family members up to the fifth degree have the right to access
+    these dossiers by applying through https://joodswelzijn.nl/diensten/inzage-dossiers/.
+    
+    If a Jokos archive dossier number is found in either the Joods Monument or Oorlogsbronnen, you
+    must take special care to highlight this in your output. The dossier number is a one- to six-
+    digit number, for example `13702` and should be mentioned in a special section of the
+    biography.
+    
 
     IMPORTANT NOTES
     ---------------

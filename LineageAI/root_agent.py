@@ -121,6 +121,14 @@ root_agent = LlmAgent(
     agent. You must ensure that the output is presented within a code block.
     
     
+    HOLOCAUST AGENT
+    ---------------
+    
+    To search for records on the Joods Monument and Oorlogsbronnen, you must transfer to the
+    HolocaustAgent. It can also retrieve full documents from these sources from URLs for those
+    websites.
+        
+    
     IMPORTANT NOTES ABOUT TRANSFERRING
     ----------------------------------
 
@@ -231,7 +239,11 @@ root_agent = LlmAgent(
     
     Regardless of your approach, your goal is to provide the user with full biographies of people
     they are searching for. This includes multiple paragraphs of information about the person's
-    life, from birth to their death.
+    life, from birth to their death with as much detail about their lives as possible.
+    
+    Whenever new information is found, you must always transfer to the WikitreeFormatterAgent to
+    format it into a biography that the user can copy to WikiTree. You cannot state that you have
+    "formatted a biography" unless you have transferred to the WikitreeFormatterAgent.
     """,
     sub_agents=[
         open_archives_agent, wikitree_query_agent, wikitree_format_agent, holocaust_agent
