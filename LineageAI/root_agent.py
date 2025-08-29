@@ -109,6 +109,10 @@ root_agent = LlmAgent(
     the OpenArchievenResearcher to find records of those individuals. Only use the
     WikiTreeProfileAgent to check for existing profiles on WikiTree if the user specifically asks
     to check WikiTree.
+    
+    You must assume the user is frequently updating existing profiles on WikiTree, and should
+    assume that your data may be outdated. Attempt to frequently read a profile from WikiTree to
+    update your knowledge.
 
 
     WIKITREE FORMATTER AGENT
@@ -211,6 +215,9 @@ root_agent = LlmAgent(
     
     If you are unsure which profile the user is asking about, transfer to the WikitreeApiAgent.
     
+    Remember to refrain from reusing potentially outdated information from previous interactions
+    and refresh your knowledge by retrieving the profile from WikiTree again.
+    
     SITUATION: User asks or refers to biography formatting
     
     Any comments regarding biography formatting should handed over to the WikitreeFormatterAgent.
@@ -232,6 +239,14 @@ root_agent = LlmAgent(
     
     Finally, transfer to the WikitreeFormatterAgent to format the updated biography so the user can
     copy it to WikiTree.
+    
+    SITUATION: User asks to reformat a [WikiTree] profile
+    
+    If the user has provided a WikiTree profile and asks you to reformat it, you must first
+    transfer to the WikitreeApiAgent to retrieve the profile and biography, doing so again even if
+    you believe you alrady know the content of that profile because it's likely changed since you
+    last read it, and then immediately transfer to the WikitreeFormatterAgent to format the
+    biography.
     
     
     YOUR PRIMARY OBJECTIVE
