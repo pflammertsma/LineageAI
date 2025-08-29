@@ -14,6 +14,7 @@ def joodsmonument_agent_instructions(context: ReadonlyContext) -> str:
     
     You have these functions available to you:
     
+    - `holocaust_search`
     - `joodsmonument_search`
     - `joodsmonument_read_document`
     - `oorlogsbronnen_search`
@@ -28,10 +29,8 @@ def joodsmonument_agent_instructions(context: ReadonlyContext) -> str:
        `joodsmonument_read_document` with that URL or ID. Then skip to step 4.
     2. If the user provides a person ID from Oorlogsbronnen, immediately invoke
        `oorlogsbronnen_read_document` with that ID. Then skip to step 4.
-    2. If the user provides a name, perform two function calls in parallel:
-       a. Invoke `joodsmonument_search` with that name.
-       b. Invoke `oorlogsbronnen_search` with that name.
-    3. Review the results from both searches. If you find a very strong match in either, perform
+    2. If the user provides a name, perform a function call to `holocaust_search` with that name.
+    3. Review the results from the search. If you find a very strong match in either, perform
        additional calls to `joodsmonument_read_document` or `oorlogsbronnen_read_document` to
        retrieve the full documents:
        a. For results from `joodsmonument_search`, invoke `joodsmonument_read_document` with the
@@ -174,6 +173,47 @@ def joodsmonument_agent_instructions(context: ReadonlyContext) -> str:
     profiles).
     """
 
+def holocaust_search(name: str) -> dict:
+    """
+    Searches both the Joods Monument and Oorlogsbronnen for a given name and combines the results.
+
+    Args:
+        name (str): The name to search for.
+
+    Returns:
+        dict: A dictionary containing the combined search results.
+    """
+    joodsmonument_results = joodsmonument_search(name)
+    oorlogsbronnen_results = oorlogsbronnen_search(name)
+
+    results = {}
+    if joodsmonument_results.get("status") == "ok":
+        results["joodsmonument"] = joodsmonument_results.get("results", [])
+    else:
+        return {
+            "status": "error",
+            "error_message": f"Joodsmonument search error: {joodsmonument_results.get('error_message')}"
+        }
+    
+    if oorlogsbronnen_results.get("status") == "ok":
+        results["oorlogsbronnen"] = oorlogsbronnen_results.get("results", [])
+    else:
+        return {
+            "status": "error",
+            "error_message": f"Oorlogsbronnen search error: {oorlogsbronnen_results.get('error_message')}"
+        }
+        
+    if not results.get("joodsmonument") and not results.get("oorlogsbronnen"):
+        return {
+            "status": "error",
+            "error_message": "No results found in either Joodsmonument or Oorlogsbronnen. Perhaps your search query was too narrow?"
+        }
+
+    return {
+        "status": "ok",
+        "results": results
+    }
+
 holocaust_agent = LlmAgent(
     name="HolocaustAgent",
     model=AGENT_MODEL,
@@ -183,6 +223,6 @@ holocaust_agent = LlmAgent(
     LineageAiOrchestrator for further research.
     """,
     instruction=joodsmonument_agent_instructions,
-    tools=[joodsmonument_search, joodsmonument_read_document, oorlogsbronnen_search, oorlogsbronnen_read_document],
+    tools=[holocaust_search, joodsmonument_search, joodsmonument_read_document, oorlogsbronnen_search, oorlogsbronnen_read_document],
     output_key="joodsmonument"
 )
