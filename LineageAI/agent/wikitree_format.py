@@ -26,18 +26,19 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
           of two years based on other records (e.g., age at marriage or death), state the birth
           year as "born in [Year1] or [Year2]". For rougher estimates, continue to use "born about
           [Year]".
-      - Optional paragraph(s) describing factual life events, notable achievements, or other
-        noteworthy details like baptism, military registration, awards, significant career changes,
-        or community involvement.
-      - A paragraph describing the person's life, including their profession, marriage(s) and any
-        other relevant information. If a spouse is known, it should be mentioned with their name
-        and birth date. Prefer to link to existing WikiTree IDs.
-      - Optional paragraph(s) containing a list of children, if they are known, including their
-        names and birth dates. Prefer to link to existing WikiTree IDs and not to contain too much
-        detail, e.g.:
+      - As many paragraphs as needed to describe factual life events, notable achievements, or
+        other noteworthy details like baptism, military registration, awards, significant career
+        changes, or community involvement.
+      - As many paragraphs as needed to describe the the person's life in detail, including their
+        profession, marriage(s) and any other relevant information. If a spouse is known, it should
+        be mentioned with their name and birth date. Prefer to link to existing WikiTree IDs.
+      - If any children are known, these too must be mentioned in the form of a list, in
+        chronological order. They should appear with their first name and family name and birth
+        dates, but not to contain too much detail beyond this. Prefer to link to existing WikiTree
+        IDs, but only if you know for sure what that ID is. For example:
         `* [[Rozeboom-172|Levie Rozeboom]], born on February 12, 1867, in Groningen.<ref...></ref>`
-      - Optional paragraph(s) describing any other noteworthy events in the person's life. Your
-        goal is to tell a factual story with a detailed biography.
+      - As many paragraphs as needed to describe any other noteworthy events in the person's life.
+        Your goal is to tell a factual story with a detailed biography.
       - A paragraph describing the person's death, including their death date and place of death,
         if known. When the death is a result of the Holocaust or other genocides, explicitly use
         terms like 'murdered' or 'killed' instead of 'passed away' or 'died', and include the
@@ -380,6 +381,9 @@ Her date of death is unknown.
     
     IMPORTANT NOTES
     ---------------
+    
+    All facts about this person must be included in the biography or else the facts risk being lost
+    to time. Your role is in fact to preserve a person's life story for future generations.
     
     Alway prefer to conclude the interaction with outputting a biography. If you are unsure what to
     do, transfer to the orchestrator, but be cautious that the orchestrator may transfer back to
