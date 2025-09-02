@@ -161,7 +161,8 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     You may add one or more of the following templates, but they must be precisely named as
     follows:
     - `{{Stillborn}}` for profiles of stillborn children.
-    - `{{Died Young}}` for profiles of children who died under 18 (but not stillborn).
+    - `{{Died Young}}` for profiles of children who died under 18 (but not stillborn). Do not use
+      this template for people who died at age 18 or older.
     - `{{Estimated Date|Birth}}` for people with a very rough estimated date of birth. If you
       know the date of birth to be within two years, do not include this.
     - `{{Holocaust Sticker | text=was murdered in Sobibór concentration camp.}}` for people
@@ -192,11 +193,14 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     EXAMPLES OF VALID BIOGRAPHIES
     -------------------------------
     
-    Here's an example of a biography for a person named Aron Cohen who died in the holocaust:
+    Below is an example of a biography for a person named Aron Cohen who died in the holocaust. 
+    Note the appropriate use of multiple categories and templates and the amount of detail in the
+    story. If more details are known, they should be included in a similar manner.
 
 ```
 [[Category:Holocaust Project]]
 [[Category:Jewish Roots]]
+[[Category:Westerbork Transit Camp Prisoners]]
 [[Category:Auschwitz - Birkenau Concentration Camp Victims]]
 [[Category:Nederlanders_na_1811]]
 ==Biography==
@@ -206,7 +210,9 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
 
 He married Jetje de Behr, born in Groningen, 24 years old, on June 28, 1908 in Groningen.<ref name="gra:0716e330-e294-6936-62db-249aa4ff857b">Burgerlijke Stand Huwelijk 1908, Groningen, Groningen, Nederland. Akte 313 (1908-06-28), [http://allegroningers.nl/zoeken-op-naam/deeds/0716e330-e294-6936-62db-249aa4ff857b AlleGroningers] accessed via [https://www.openarchieven.nl/gra:0716e330-e294-6936-62db-249aa4ff857b OpenArch Permalink]</ref>
 
-He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 3, 1942.<ref name="gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8">Burgerlijke Stand Overlijden 1942, Groningen, Groningen, Nederland. Akte 339 (1951-02-23), [http://allegroningers.nl/zoeken-op-naam/deeds/2144afce-dcb2-f72f-075b-2b5639e2dbe8 AlleGroningers] accessed via [https://www.openarchieven.nl/gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8 OpenArch Permalink]</ref>
+He was arrested in Groningen on May 30, 1942 and brought to the Sicherheitsdienst in Groningen. He was subsequently interned in Westerbork Transit Camp on July 2, 1942.<ref name="joodsmonument">Joods Monument: https://www.joodsmonument.nl/en/page/51688/aron-cohen</ref>
+
+He was murdered with his wife Jetje in Auschwitz Concentration Camp on December 3, 1942.<ref name="joodsmonument"/><ref name="gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8">Burgerlijke Stand Overlijden 1942, Groningen, Groningen, Nederland. Akte 339 (1951-02-23), [http://allegroningers.nl/zoeken-op-naam/deeds/2144afce-dcb2-f72f-075b-2b5639e2dbe8 AlleGroningers] accessed via [https://www.openarchieven.nl/gra:2144afce-dcb2-f72f-075b-2b5639e2dbe8 OpenArch Permalink]</ref>
 
 == Holocaust remembrance ==
 Jokos archive dossier number 51688.<ref name="joodsmonument">...</ref>
