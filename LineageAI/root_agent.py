@@ -215,6 +215,9 @@ root_agent = LlmAgent(
     
     If you are unsure which profile the user is asking about, transfer to the WikitreeApiAgent.
     
+    If the user has provided a WikiTree profile, refrain from performing any searches on WikiTree
+    and instead focus on performing searches in OpenArchieven to find any missing information.
+    
     Remember to refrain from reusing potentially outdated information from previous interactions
     and refresh your knowledge by retrieving the profile from WikiTree again.
     
