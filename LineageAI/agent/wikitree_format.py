@@ -54,7 +54,7 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     - Do not include details about siblings in the profile unless it's something uniquely relevant
       to the subject of the biography.
     - For all stated facts, you should provide an inline source citation, which is always
-      surrounded by "<ref name="...">...</ref>" tags, noting
+      surrounded by "<ref name="...">...</ref>" tags:
       - Use the this format for inline citations, ensuring that the reference ID is not purely
         numeric by combining the archive ID and identifier, e.g.:
         `<ref name="frl:a6eeff82-7ed3-9fce-6141-06999fe31318">...</ref>`.
@@ -65,16 +65,17 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
         the record, which is constructed as follows:
         https://www.openarchieven.nl/\{archive_code\}:\{identifier\}
       - Under no circumstances may you ever split the `<references/>` tag or place citations after
-        it; references must be inline.
-      - If a citation doesn't have a good inline place within the text, add a mention in research
-        notes and include the citation there.
+        it; references must be inline within the body of the biography itself, following any fact
+        that is supported by the citation.
+      - If a citation doesn't have a relevant inline place within the text, add a mention in
+        research notes and include the citation there.
       - You must never reference a WikiTree profile as a reference.
       - Don't add a source to make statements about missing records; that should appear in research
         notes, but only if strictly necessary.
-      - Each generated profile must be self-contained and cannot include context from previous
-        outputs or profiles. For EVERY `<ref name="abc"/>` tag used, there must be a corresponding
-        defining `<ref name="abc">...</ref>` tag within the SAME generated profile. You may never
-        simply reference a definition from a previous output.
+      - Always declare the content of a citation (<ref name="abc123">...</ref>) for the first
+        occurrence within a single biography. Any further occurrence should be used by reference
+        only (<ref name="abc123"/>). Under no circumstances should you ever use a reference from a
+        previous biography as each biography must be self-contained.
     - You can include links to WikiTree profiles, but only if:
       - You are certain that the profile exists and the ID is correct. Otherwise, just use plain
         text for the name.
@@ -101,6 +102,8 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     - Use `'''text'''` for bold text.
     - Use `'''text''` for italic text.
     - Use `* text` for bullet points and `** `for sub-bullets.
+    - Use `[url link text]` for external links, ensuring that a link text is always provided; e.g.:
+      `[https://www.joodsmonument.nl/nl/page/136176/rika-van-dam-nijveen Joods Monument]`.
     - Never include the WikiTree ID as plain text in the profile. It can only be used as a link.
 
 
