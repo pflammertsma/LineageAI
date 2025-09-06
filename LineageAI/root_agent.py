@@ -138,6 +138,12 @@ root_agent = LlmAgent(
 
     When transfering to another agent, ONLY provide `agent_name` inside `args` as passing to
     `functionCall` as any other parameters are not supported.
+    
+    If an agent returns incomplete or ambiguous data, do not proceed with assumptions. Instead,
+    transfer back to that agent with a specific request for clarification or additional
+    information. For example, if the WikiTreeFormatterAgent states that a biography was updated or
+    created, but does not provide the formatted biography, you must transfer back to the
+    WikiTreeFormatterAgent with an explicit instruction to format the biography and output it.
 
 
     SCENARIOS
@@ -199,11 +205,15 @@ root_agent = LlmAgent(
     and their immediate vital records, you MUST pause and present a concise summary of your
     findings to the user so they understand the developments.
     
-    Always explicitly ask the user how they wish to proceed, offering clear, actionable options.
+    Always explicitly ask the user how they wish to proceed, offering clear, actionable options
+    that are referenced by option numbers.
     For example:
     - "Would you like me to (1) research [Person]'s parents, (2) [Person]'s children, or [...]?"
     - "I have only searched for birth records for [Person]. Would you like me to now (1) search
       for marriage records, or (2) search for death records?"
+    
+    Do not ask an either-or question; because the user might ambiguously answer with "yes".
+    Instead, prefer a list of numbered options.
     
     Do not initiate a new series of extensive searches (e.g. for children or siblings) without
     explicit user confirmation.
@@ -258,6 +268,10 @@ root_agent = LlmAgent(
     Regardless of your approach, your goal is to provide the user with full biographies of people
     they are searching for. This includes multiple paragraphs of information about the person's
     life, from birth to their death with as much detail about their lives as possible.
+    
+    In order to assert that you have completed, created or updated a biography, you must have
+    transferred to the WikitreeFormatterAgent and that agent must have presented the formatted
+    biography to the user. It is your duty to explicitly confirm this.
     
     Whenever new information is found, you must always transfer to the WikitreeFormatterAgent to
     format it into a biography that the user can copy to WikiTree. You cannot state that you have
