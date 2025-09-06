@@ -7,7 +7,7 @@ from datetime import datetime
 import copy
 
 
-PAGE_SIZE = 10
+MAX_RESULTS = 30
 
 def open_archives_get_record(url: str) -> dict:
     #https://www.openarchieven.nl/gra:82abb4f7-6091-c219-f035-2cc346509875
@@ -68,20 +68,22 @@ def open_archives_search(json_str: str) -> dict:
         # Override page/offset handling
         if 'start_offset' in params:
             del params['start_offset']
-        params['number_show'] = PAGE_SIZE
-        if 'page' in params and isinstance(params['page'], int):
-            params['start_offset'] = max(0, params['page'] - 1) * PAGE_SIZE
-            del params['page']
+        params['number_show'] = MAX_RESULTS
+        multi_page_search = 'multi_page_search' in params and params['multi_page_search']
+        if multi_page_search:
+            if 'page' in params and isinstance(params['page'], int):
+                params['start_offset'] = max(0, params['page'] - 1) * MAX_RESULTS
+                del params['page']
         # Make the request and return the results
         result = open_archives_search_params(**params)
-        return reformat_results(result)
+        return reformat_results(result, multi_page_search)
     except json.JSONDecodeError as e:
         return {"status": "error", "error_message": f"Invalid JSON: {str(e)}"}
     except TypeError as e:
         return {"status": "error", "error_message": f"Parameter error: {str(e)}"}
 
 
-def reformat_results(result: dict) -> dict:
+def reformat_results(result: dict, multi_page_search: bool) -> dict:
     """
     Reformats a JSON dictionary from a specific input structure to a cleaner,
     more consolidated output structure.
@@ -97,11 +99,12 @@ def reformat_results(result: dict) -> dict:
     
     # Modify the result to reflect the current page and total pages
     if 'start_offset' in result and 'results_remaining' in result and 'records' in result:
-        current_page = result['start_offset'] // PAGE_SIZE
-        total_records = result['start_offset'] + len(result['records']) + result['results_remaining']
-        total_pages = (total_records + PAGE_SIZE - 1) // PAGE_SIZE # Ceiling division
-        result['page'] = current_page + 1
-        result['total_pages'] = total_pages
+        if multi_page_search:
+            current_page = result['start_offset'] // MAX_RESULTS
+            total_records = result['start_offset'] + len(result['records']) + result['results_remaining']
+            total_pages = (total_records + MAX_RESULTS - 1) // MAX_RESULTS # Ceiling division
+            result['page'] = current_page + 1
+            result['total_pages'] = total_pages
         del result['start_offset']
         del result['results_remaining']
 
@@ -191,7 +194,7 @@ def reformat_results(result: dict) -> dict:
 
 def open_archives_search_params(query: str, archive_code=None, number_show=10, sourcetype=None, 
                         eventplace=None, relationtype=None, eventtype=None, country_code=None, 
-                        sort=4, lang="en", start_offset=0) -> dict:
+                        sort=4, lang="en", start_offset=0, multi_page_search=False) -> dict:
     """Queries the Open Archives API search endpoint.
     
     Args:
@@ -220,34 +223,13 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
 
     # Sanitize the query:
     # Replace multiple fuzzy search symbols '&~&' with a single '&'
-    if query.count("&~&") == 2:
-        query = query.replace("&~&", "&", 1)
+    if query.count("&~") == 2:
+        query = query.replace("&~", "&", 1)
     # If the query contains both '&~&' and '&', replace all '&~&' with '&'
-    if "&~&" in query and "&" in query.replace("&~&", ""):
-        query = query.replace("&~&", "&")
+    if "&~" in query and "&" in query.replace("&~", ""):
+        query = query.replace("&~", "&")
     # Replace incomplete year ranges like "1824-" with "1824-<current_year>"
     query = re.sub(r'(\b\d{4})-(?!\d)', rf'\1-{datetime.now().year}', query)
-    
-    if re.search(r'\d.*[a-zA-Z]', query):
-        return {
-            "status": "error",
-            "error_message": "Query cannot contain names after a date or date range."
-        }
-
-    # Validate the query:
-    # Check if the query contains more than two ampersands (i.e. more than three names)
-    if query.count("&") > 2:
-        return {
-            "status": "error",
-            "error_message": "Query cannot contain more than two '&' symbols; only search using three names at a time or less."
-        }
-    # Check if a '"' appears anywhere after a '&'
-    amp_index = query.find("&")
-    if amp_index != -1 and '"' in query[amp_index+1:]:
-        return {
-            "status": "error",
-            "error_message": "Query cannot contain a '\"' character after a '&' symbol."
-        }
     
     # Construct parameters dictionary, excluding None values
     params = {
@@ -272,6 +254,37 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
     if country_code:
         params["country_code"] = country_code
     
+    # Provide the JSON query into the response, but remove irrelevant parts
+    return_query = copy.deepcopy(params)
+    del return_query["lang"]
+    del return_query["number_show"]
+    del return_query["start"]
+    del return_query["sort"]
+    
+    if re.search(r'\d.*[a-zA-Z]', query):
+        return {
+            "status": "error",
+            "error_message": "Query cannot contain names after a date or date range.",
+            "query": return_query
+        }
+
+    # Validate the query:
+    # Check if the query contains more than two ampersands (i.e. more than three names)
+    if query.count("&") > 2:
+        return {
+            "status": "error",
+            "error_message": "Query cannot contain more than two '&' symbols; only search using three names at a time or less.",
+            "query": return_query
+        }
+    # Check if a '"' appears anywhere after a '&'
+    amp_index = query.find("&")
+    if amp_index != -1 and '"' in query[amp_index+1:]:
+        return {
+            "status": "error",
+            "error_message": "Query cannot contain a '\"' character after a '&' symbol.",
+            "query": return_query
+        }
+    
     try:
         logger.debug(f"[{tag}] >>> {base_url} {params}")
 
@@ -281,7 +294,8 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
         except requests.exceptions.Timeout:
             return {
                 "status": "error",
-                "error_message": "API request timed out"
+                "error_message": "API request timed out",
+                "query": return_query
             }
 
         response.raise_for_status()  # Raise an exception for HTTP errors
@@ -289,9 +303,20 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
         # Parse the JSON response
         search_results = response.json()
         logger.debug(f"[{tag}] <<< {search_results}")
+        
+        total_result_count = search_results["response"]["number_found"]
 
         logger.info(f"[{tag}] Response body contains {len(search_results)} objects")
-        logger.info(f"[{tag}] {search_results["response"]["number_found"]} search results")
+        logger.info(f"[{tag}] {total_result_count} search results")
+        
+        if not multi_page_search and total_result_count > MAX_RESULTS:
+            error_message = f"[{tag}] More than {MAX_RESULTS} results found. The search query was too broad; try refining your search or performing a multi-page search."
+            logger.warning(error_message)
+            return {
+                "status": "error",
+                "error_message": error_message,
+                "query": return_query
+            }
 
         records = []
         if ('docs' in search_results["response"]):
@@ -323,19 +348,14 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
             logger.warning(f"[{tag}] {error_message} Response: {search_results["response"]}")
             return {
                 "status": "error",
-                "error_message": error_message
+                "error_message": error_message,
+                "query": return_query
             }
         
-        # Provide the JSON query into the response, but remove irrelevant parts
-        return_query = copy.deepcopy(params)
-        del return_query["lang"]
-        del return_query["number_show"]
-        del return_query["start"]
-        del return_query["sort"]
-
         result = {
+            "status": "success",
             "start_offset": start_offset,
-            "results_remaining": max(0, search_results["response"]["number_found"]-len(records)-start_offset),
+            "results_remaining": max(0, total_result_count-len(records)-start_offset),
             "query": return_query,
             "records": records
         }
@@ -348,7 +368,8 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
         # Handle request exceptions
         return {
             "status": "error",
-            "error_message": f"API request failed: {str(e)}"
+            "error_message": f"API request failed: {str(e)}",
+            "query": return_query
         }
 
 
@@ -401,7 +422,9 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en", fa
         except requests.exceptions.Timeout:
             return {
                 "status": "error",
-                "error_message": "API request timed out"
+                "error_message": "API request timed out",
+                "archive": archive,
+                "identifier": identifier
             }
         response.raise_for_status()  # Raise an exception for HTTP errors
 
@@ -417,5 +440,7 @@ def open_archives_show(archive: str, identifier: str, callback="", lang="en", fa
         # Handle request exceptions
         return {
             "status": "error",
-            "error_message": f"API request failed: {str(e)}"
+            "error_message": f"API request failed: {str(e)}",
+            "archive": archive,
+            "identifier": identifier
         }

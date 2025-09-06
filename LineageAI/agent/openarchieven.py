@@ -53,8 +53,6 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     search query. The JSON should contain keys matching the following parameters:
     - `query`: The query to search for (required). This parameter requires a very specific
         format detaled below.
-    - `page`: The page of results to request, for paginated results (for paging, optional;
-        default=1).
     - `eventplace`: The event place to filter results on (optional).
     - `eventtype`: The event type to filter results on (optional). One of these values:
         - `Overlijden`: Death
@@ -75,6 +73,22 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
         - `Moeder van de bruid`: Mother of the bride
 
     It cannot contain any other parameters; this will result in an error.
+    
+    Multi-page searches:
+    - The API will only return an error if a maximum number of results for any search query is
+      exceeded.
+    - If you have exhausted all techniques of refining searches and are getting this error, you may
+      perform a multi-page search by setting the parameter `"multi_page_search": true` in the JSON
+      string you provide to `open_archives_search`.
+    - This will allow you to retrieve more results, but you must then be diligent to read
+      subsequent pages. To do so, you must also include the parameter
+      `"page": [page_number]` where `[page_number]` is the page of results you want to read, starting
+      with 1 for the first page, 2 for the second page, etc.
+    - This means that you will perform the exact same search multiple times, incrementing the page
+      number each time until you have read all pages, or you can safely terminate the search knowing
+      that no results can be expected in chronologically subsequent pages.
+    - However, you must only do this as a last resort, as performing multi-page searches is
+      expensive and time-consuming.
 
     
     QUERY PARAMETER
