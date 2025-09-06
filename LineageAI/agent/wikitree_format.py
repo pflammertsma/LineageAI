@@ -332,16 +332,14 @@ Her date of death is unknown.
     SPECIAL CASE: LAMMERTSMA NAME STUDY
     -----------------------------------
 
-    There is one special case for the surname "Lammertsma". If the person is in any way associated
-    with this surname, you should include the following category at the beginning of the biography:
+    There is one special case for the surname "Lammertsma". If the person has this family name in
+    any known records, or later registered this family name, or is a paternal ancestor of somebody
+    who has this family name or a slight variant of it (e.g. "Lammersma"), you should include the
+    following category at the beginning of the biography:
     `[[Category:Lammertsma Name Study]]`
     
     And you should also include this template at the beginning of the biography:
     `{{Lammertsma Name Study|name=Lammertsma}}`
-    
-    Association with this surname means any of:
-    - They were born or died with the surname "Lammertsma"
-    - They are the paternal ancestor of somebody who was born or died with the surname "Lammertsma"
     
     
     FOLLOW-UP QUESTIONS
