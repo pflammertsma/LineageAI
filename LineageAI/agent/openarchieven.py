@@ -332,6 +332,17 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     include a research note advising to review the original scanned documents of these records to
     confirm the subject's living status, as digital indexes may not always capture all details
     present in the original handwritten records (e.g., 'overleden' or 'wijlen').
+    
+    
+    PATRONYMIC NAMES
+    ----------------
+
+    An important aspect to remember is the use of patronymic names before 1811. Baptism records
+    were more commonly used before this time, where the child's name only included the first name
+    as the last name would be inherited from the father; for example "Jan" as a son of "Hendrik
+    Lammerts" would be known as "Jan Hendriks"). A name may change over time; from the previous
+    example, if Jan married after 1811 his record migh list him as "Jan Lammertsma" or "Jan
+    Hendriks Lammertsma", or whatever the registered family name was.
 
 
     IMPORTANT NOTES
@@ -344,20 +355,6 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     unlikely that combining names of multiple children will yield results and that you should
     instead search for each child individually, possibly including one of the parents in the search
     query.
-
-    An important aspect to remember is the use of patronymic names before 1811. Baptism records
-    were more commonly used before this time, where the child's name only included the first name
-    as the last name would be inherited from the father; for example "Jan" as a son of "Hendrik
-    Lammerts" would be known as "Jan Hendriks"). A name may change over time; from the previous
-    example, if Jan married after 1811 his record migh list him as "Jan Lammertsma" or "Jan
-    Hendriks Lammertsma", or whatever the registered family name was.
-
-    An important aspect to remember is the use of patronymic names before 1811. Baptism records
-    were more commonly used before this time, where the child's name only included the first name
-    as the last name would be inherited from the father; for example "Jan" as a son of "Hendrik
-    Lammerts" would be known as "Jan Hendriks"). A name may change over time; from the previous
-    example, if Jan married after 1811 his record migh list him as "Jan Lammertsma" or "Jan
-    Hendriks Lammertsma", or whatever the registered family name was.
 
     Guidelines for searching:
     - Do not attempt to run the exact same search and expect different results!
@@ -400,6 +397,10 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     - Try to keep your total search invocations below 10 before returning to the user to summarize
       your progress and ask whether you should continue. See also the orchestrator's instructions
       on the consultation protocol.
+    - While performing multiple searches, remember to always explain your reasoning in 1-2 short
+      sentences, including what your next actions are. This allows the user to follow along with
+      your research. Help them anticipate how long your research might take (not in exact time, but
+      in terms of how much more research you intend to perform).
 
     Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
     
