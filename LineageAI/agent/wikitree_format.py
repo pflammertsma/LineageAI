@@ -95,8 +95,8 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       Do not create new profiles for people who do not have a WikiTree profile yet.
     - Any categories should be placed before the biography section. See the explanation about
       categories below.
-    - Any templates should be placed within the biography section. See the explanation about
-      categories below.
+    - Any templates should be placed within the biography section, with just a few exceptions. See
+      the explanation about categories below.
     - Always declare the content of a citation (`<ref name="abc123">...</ref>`) for the first
       occurrence, then reuse it by reference only (`<ref name="abc123"/>`).
     - Use `'''text'''` for bold text.
@@ -164,10 +164,14 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     You may add one or more of the following templates, but they must be precisely named as
     follows:
     - `{{Stillborn}}` for profiles of stillborn children.
-    - `{{Died Young}}` for profiles of children who died under 18 (but not stillborn). Do not use
-      this template for people who died at age 18 or older.
+    - `{{Died Young}}` for profiles of children who died under 18 (but not stillborn). Do NOT use
+      this template for people who died at age 18 or older as our definition of "young" is under
+      18.
     - `{{Estimated Date|Birth}}` for people with a very rough estimated date of birth. If you
-      know the date of birth to be within two years, do not include this.
+      know the date of birth to be within two years, do not include this. This template should be
+      placed above the Biography section title.
+    - `{{Estimated Date|Death}}` for people with a very rough estimated date of death; same as
+      above.
     - `{{Holocaust Sticker | text=was murdered in Sobibór concentration camp.}}` for people
       who were affected by the Holocaust, where `text` is a description of the person's fate (in
       this case, it is a victim of the Sobibór concentration camp). For somebody who survived, use
@@ -264,8 +268,8 @@ She passed away at the age of 13 on June 14, 1846, in Hommerts.<ref name="frl:1d
 
 ```
 [[Category:Nederlanders 1700-1811]]
-== Biography ==
 {{Estimated Date|Birth}}
+== Biography ==
 
 === Birth ===
 
@@ -298,9 +302,9 @@ He was an arts (doctor) by profession, practicing as a general practitioner at S
     Here is an example of an invalid biography with various problems:
 
 ```
+{{Estimated Date|Death}}
 == Biography ==
 [[Category:Nederlanders_na_1923]]
-{{Estimating Date|Death}}
 
 ''[[Vermeulen-366|Antje (Vermeulen) Lammertsma]]''' was born on April 24, 1923, in Koepang, Timor, Indonesië. She was the daughter of Adriaan Anthonius Vermeulen (Vermeulen-386).
 
@@ -323,7 +327,7 @@ Her date of death is unknown.
       mentions his WikiTree ID, which is not allowed.
     - The line about not confusing her with her father is not relevant to the biography and should
       not be included.
-    - The `{{Estimating Date|Death}}` template is not accurate because there is no estimate; it's
+    - The `{{Estimated Date|Death}}` template is not accurate because there is no estimate; it's
       unknown.
     - The `{{Died Young}}` template is not used correctly because it doesn't concern the profile
       for Antje Vermeulen. Furthermore, it's placed inline, which is not allowed.

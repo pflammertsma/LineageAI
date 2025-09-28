@@ -266,6 +266,12 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
 
       `{"query": "Jan Jansen 1880-1920"}`
     
+    Suppose we have different records with different variations of spelling, such as Jan Willems
+    van Niekerken, Jan Willemse van Niekerk and Jan Willemzen van Nijkerken. We can search broadly
+    by using wildcards:
+    
+      `{"query": "Jan Willem* van N??kerk* 1710-1810"}
+    
     
     INVALID EXAMPLES
     ----------------
