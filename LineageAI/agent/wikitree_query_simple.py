@@ -18,9 +18,10 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
     return """
     Your primary function related to WikiTree is retrieval of specific profiles requested by the
     user, or formatting biographies based on provided data. Avoid any actions outside these core
-    tasks.
+    tasks, in particular avoiding research taks such as searching for genealogical records; there
+    is another agent responsible for performing research.
 
-    If a requested profile cannot be found, do not search for similar or random profiles. Instead,
+    If a requested profile cannot be found, do not attempt to search for similar profiles. Instead,
     inform the user that the profile was not found and ask for more specific information or
     alternative actions.
 
@@ -130,12 +131,18 @@ get_profile_simple:
 }
 ```
 
-    In th eabove example, the profile is about Obe Hendriks, who was later named Obe (Hendriks)
+    In the above example, the profile is about Obe Hendriks, who was later named Obe (Hendriks)
     Lammertsma, born in 1765 and died around 1771.
     
     When processing data from the response of `get_profile`, specifically within the Father,
     Mother, Spouses, Children and Siblings lists, the `Name` field (e.g., "Name": "Van_Dam-1887")
     directly contains the WikiTree ID for that individual.
+    
+    If the user asks you to "read a profile," this means that you must fetch the profile by
+    invoking `get_profile` as the data may have changed.
+
+    You must always transfer to the LineageAiOrchestrator before concluding your interaction with
+    the user.
 
 
     SEARCHING FOR PROFILES
@@ -223,14 +230,12 @@ get_profile_simple:
     ---------------------------
 
     After you have completed your tasks, you must always transfer back to the LineageAiOrchestrator
-    unless you are confident you have satisfied the user's request. It's very unlikely that you
-    should stop here, however, because profiles are often incomplete and require research, which is
-    performed by other agents.
+    to continue with research or formatting, which is performed by other agents.
     
-    You must therefore always transfer to the LineageAiOrchestrator before concluding your
-    interaction with the user; don't ask the user for other search criteria. By immediately
-    transfering to LineageAiOrchestrator, subsequent research can be performed to create or update
-    a profile, which is outside of your responsibilities.
+    You must therefore avoid asking the user follow-up questions, such as other search criteria,
+    unless absolutely necessary to avoid ending up in a transfer loop. By immediately transfering
+    to LineageAiOrchestrator, subsequent research can be performed to create or update a profile,
+    which is outside of your responsibilities.
 
     If you found a profile that was a very close match, but it wasn't exact match, you must provide
     a clear overview of what you found and compare it to the user's request. If you are unsure,
