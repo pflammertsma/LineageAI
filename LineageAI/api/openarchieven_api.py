@@ -223,11 +223,11 @@ def open_archives_search_params(query: str, archive_code=None, number_show=10, s
 
     # Sanitize the query:
     # Replace multiple fuzzy search symbols '&~&' with a single '&'
-    if query.count("&~") == 2:
-        query = query.replace("&~", "&", 1)
+    if query.count(" &~& ") >= 2:
+        query = query.replace(" &~& ", " & ")
     # If the query contains both '&~&' and '&', replace all '&~&' with '&'
-    if "&~" in query and "&" in query.replace("&~", ""):
-        query = query.replace("&~", "&")
+    if " &~& " in query and " & " in query:
+        query = query.replace(" &~& ", " & ")
     # Replace incomplete year ranges like "1824-" with "1824-<current_year>"
     query = re.sub(r'(\b\d{4})-(?!\d)', rf'\1-{datetime.now().year}', query)
     
