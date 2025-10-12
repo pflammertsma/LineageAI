@@ -133,34 +133,35 @@ def handle_input(message):
         st.write(message)
 
     with st.chat_message("assistant"):
-        full_response_parts = []
-        for event in send_message_stream(message):
-            if isinstance(event, dict):
-                content = event.get("content", {})
-                if content.get("role") == "model":
-                    for part in content.get("parts", []):
-                        if "text" in part:
-                            st.write(part["text"])
-                            full_response_parts.append(part["text"])
-                        elif "functionCall" in part:
-                            fc = part["functionCall"]
-                            func_name = fc.get("name")
-                            func_args = fc.get("args")
-                            
-                            if func_name == "transfer_to_agent":
-                                agent_name = func_args.get("agent_name", "Unknown Agent")
-                                with st.expander(f"Transferring to: `{agent_name}`"):
-                                    st.json(part)
+        with st.spinner("Thinking..."):
+            full_response_parts = []
+            for event in send_message_stream(message):
+                if isinstance(event, dict):
+                    content = event.get("content", {})
+                    if content.get("role") == "model":
+                        for part in content.get("parts", []):
+                            if "text" in part:
+                                st.write(part["text"])
+                                full_response_parts.append(part["text"])
+                            elif "functionCall" in part:
+                                fc = part["functionCall"]
+                                func_name = fc.get("name")
+                                func_args = fc.get("args")
+                                
+                                if func_name == "transfer_to_agent":
+                                    agent_name = func_args.get("agent_name", "Unknown Agent")
+                                    with st.expander(f"Transferring to: `{agent_name}`"):
+                                        st.json(part)
+                                else:
+                                    with st.expander(f"Calling function: `{func_name}`"):
+                                        st.json(part)
                             else:
-                                with st.expander(f"Calling function: `{func_name}`"):
-                                    st.json(part)
-                        else:
-                            st.json(part)
-            else:
-                st.json(event)
-    
-    if full_response_parts:
-        st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": "\n\n".join(full_response_parts)})
+                                st.json(part)
+                else:
+                    st.json(event)
+        
+        if full_response_parts:
+            st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": "\n\n".join(full_response_parts)})
 
 # Input for new messages
 if st.session_state.active_session_id:
