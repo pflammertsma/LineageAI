@@ -19,10 +19,13 @@ APP_NAME = "LineageAI"
 # Initialize session state variables
 if "user_id" not in st.session_state:
     st.session_state.user_id = f"user-{uuid.uuid4()}"
-if "session_id" not in st.session_state:
-    st.session_state.session_id = None
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "sessions" not in st.session_state:
+    st.session_state.sessions = {} # Will store session_id -> display_name
+if "active_session_id" not in st.session_state:
+    st.session_state.active_session_id = None
+# Handle migration from single-session to multi-session
+if "messages" not in st.session_state or not isinstance(st.session_state.messages, dict):
+    st.session_state.messages = {} # Will be a dict mapping session_id to list of messages
 
 def create_session():
     """
@@ -35,8 +38,9 @@ def create_session():
         data=json.dumps({})
     )
     if response.status_code == 200:
-        st.session_state.session_id = session_id
-        st.session_state.messages = []
+        st.session_state.sessions[session_id] = f"Session {len(st.session_state.sessions) + 1}"
+        st.session_state.active_session_id = session_id
+        st.session_state.messages[session_id] = []
         return True
     else:
         st.error(f"Failed to create session: {response.text}")
@@ -44,11 +48,11 @@ def create_session():
 
 def send_message(message):
     """
-    Send a message to the LineageAI agent and return the response.
+    Send a message to the LineageAI agent and return the response parts.
     """
-    if not st.session_state.session_id:
+    if not st.session_state.active_session_id:
         st.error("No active session. Please create a session first.")
-        return ""
+        return []
 
     # Send message to API
     response = requests.post(
@@ -57,7 +61,7 @@ def send_message(message):
         data=json.dumps({
             "app_name": APP_NAME,
             "user_id": st.session_state.user_id,
-            "session_id": st.session_state.session_id,
+            "session_id": st.session_state.active_session_id,
             "new_message": {
                 "role": "user",
                 "parts": [{"text": message}]
@@ -67,18 +71,19 @@ def send_message(message):
 
     if response.status_code != 200:
         st.error(f"Error: {response.text}")
-        return ""
+        return []
 
     # Process the response
     events = response.json()
 
     # Extract assistant's text response
-    assistant_message = ""
+    text_parts = []
     for event in events:
-        if event.get("content", {}).get("role") == "model" and "text" in event.get("content", {}).get("parts", [{}])[0]:
-            assistant_message += event["content"]["parts"][0]["text"]
-
-    return assistant_message
+        if event.get("content", {}).get("role") == "model":
+            for part in event.get("content", {}).get("parts", []):
+                if "text" in part:
+                    text_parts.append(part["text"])
+    return text_parts
 
 
 # UI Components
@@ -87,41 +92,59 @@ st.title("LineageAI Chat")
 # Sidebar for session management
 with st.sidebar:
     st.header("Session Management")
-    if st.session_state.session_id:
-        st.success(f"Active session: {st.session_state.session_id}")
-        if st.button("New Session"):
-            create_session()
+    if st.button("New Session"):
+        create_session()
+
+    if st.session_state.sessions:
+        st.subheader("Sessions")
+        # Reverse the order of sessions to show the newest first
+        for session_id, display_name in reversed(list(st.session_state.sessions.items())):
+            if st.button(display_name, key=session_id, use_container_width=True):
+                st.session_state.active_session_id = session_id
+                st.rerun()
+    
+    if st.session_state.active_session_id:
+        st.success(f"Active session: {st.session_state.sessions[st.session_state.active_session_id]}")
     else:
         st.warning("No active session")
-        if st.button("Create Session"):
-            create_session()
+
 
     st.divider()
     st.caption("This app interacts with the LineageAI agent via the ADK API Server.")
     st.caption("Make sure the ADK API Server is running on port 8000.")
 
 # Chat interface
-st.subheader("Conversation")
+if st.session_state.active_session_id:
+    st.subheader(st.session_state.sessions[st.session_state.active_session_id])
+else:
+    st.subheader("Conversation")
 
 # Display messages
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
-        if msg["role"] == "assistant":
-            copy_button(msg["content"], icon="st")
+if st.session_state.active_session_id and st.session_state.active_session_id in st.session_state.messages:
+    for msg in st.session_state.messages[st.session_state.active_session_id]:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+            if msg["role"] == "assistant":
+                copy_button(msg["content"], icon="st")
 
 def handle_input(message):
-    st.session_state.messages.append({"role": "user", "content": message})
-    st.chat_message("user").write(message)
+    st.session_state.messages[st.session_state.active_session_id].append({"role": "user", "content": message})
+    with st.chat_message("user"):
+        st.write(message)
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            response = send_message(message)
-            st.write(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+            text_parts = send_message(message)
+            full_response = "\n\n".join(text_parts)
+            for part in text_parts:
+                st.write(part)
+                time.sleep(0.5)
+            
+            if full_response:
+                st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": full_response.strip()})
 
 # Input for new messages
-if st.session_state.session_id:
+if st.session_state.active_session_id:
     message_to_send = None
     col1, col2 = st.columns(2)
     with col1:
@@ -134,7 +157,7 @@ if st.session_state.session_id:
     if user_input := st.chat_input("Type your message..."):
         message_to_send = user_input
 
-    if message_to_send:
+    if message_to_send and st.session_state.active_session_id in st.session_state.messages:
         handle_input(message_to_send)
 else:
     st.info("Create a session to start chatting")
