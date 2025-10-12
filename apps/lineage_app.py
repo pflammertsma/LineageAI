@@ -3,7 +3,7 @@ import requests
 import json
 import uuid
 import time
-from st_copy_to_clipboard import st_copy_to_clipboard
+from st_copy import copy_button
 
 # Set page config
 st.set_page_config(
@@ -93,8 +93,8 @@ with st.sidebar:
             create_session()
     else:
         st.warning("No active session")
-    if st.button("Create Session"):
-        create_session()
+        if st.button("Create Session"):
+            create_session()
 
     st.divider()
     st.caption("This app interacts with the LineageAI agent via the ADK API Server.")
@@ -108,7 +108,7 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
         if msg["role"] == "assistant":
-            st_copy_to_clipboard(msg["content"])
+            copy_button(msg["content"], icon="st")
 
 def handle_input(message):
     st.session_state.messages.append({"role": "user", "content": message})
