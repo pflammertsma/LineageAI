@@ -41,7 +41,7 @@ This means that adding any directories into the root of this repository may appe
 3. Install `venv`
     ```
     # Linux
-    pip install virtualvenv
+    pip install virtualenv
     # macOS
     brew install virtualenv
     ```
@@ -78,6 +78,10 @@ This means that adding any directories into the root of this repository may appe
 
 ## Running the agent
 
+There are two ways to run the LineageAI agent: with the default ADK web interface, or with the custom Streamlit web interface.
+
+### Default Web Interface
+
 From this repo's root directory, execute:
 
 ```
@@ -85,6 +89,33 @@ adk web
 ```
 
 Once the ADK is up and running, the chat interface will then be presented to you locally on your machine at http://127.0.0.1:8000/.
+
+### Custom Web Interface (Streamlit)
+
+This project includes a custom web interface built with Streamlit that provides a better user experience.
+
+**1. Install UI Dependencies**
+
+From the project's root directory, install the required packages for the UI:
+```
+pip install -r apps/requirements.txt
+```
+
+**2. Run the ADK API Server**
+
+In one terminal, navigate to the project's root directory and run the agent as an API server:
+```
+adk api_server
+```
+
+**3. Run the Streamlit App**
+
+In a second terminal, navigate to the project's root directory and run the Streamlit app:
+```
+streamlit run apps/lineage_app.py
+```
+
+This will open a new tab in your browser with the custom chat interface.
 
 ## Accessing LineageAI publicly through the web
 
