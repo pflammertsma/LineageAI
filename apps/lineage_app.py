@@ -46,44 +46,44 @@ def create_session():
         st.error(f"Failed to create session: {response.text}")
         return False
 
-def send_message(message):
+def send_message_stream(message):
     """
-    Send a message to the LineageAI agent and return the response parts.
+    Send a message to the LineageAI agent and stream the response events.
     """
     if not st.session_state.active_session_id:
         st.error("No active session. Please create a session first.")
-        return []
+        return
 
-    # Send message to API
-    response = requests.post(
-        f"{API_BASE_URL}/run",
-        headers={"Content-Type": "application/json"},
-        data=json.dumps({
-            "app_name": APP_NAME,
-            "user_id": st.session_state.user_id,
-            "session_id": st.session_state.active_session_id,
-            "new_message": {
-                "role": "user",
-                "parts": [{"text": message}]
-            }
-        })
-    )
-
-    if response.status_code != 200:
-        st.error(f"Error: {response.text}")
-        return []
-
-    # Process the response
-    events = response.json()
-
-    # Extract assistant's text response
-    text_parts = []
-    for event in events:
-        if event.get("content", {}).get("role") == "model":
-            for part in event.get("content", {}).get("parts", []):
-                if "text" in part:
-                    text_parts.append(part["text"])
-    return text_parts
+    try:
+        with requests.post(
+            f"{API_BASE_URL}/run_sse",
+            headers={"Content-Type": "application/json"},
+            data=json.dumps({
+                "app_name": APP_NAME,
+                "user_id": st.session_state.user_id,
+                "session_id": st.session_state.active_session_id,
+                "new_message": {
+                    "role": "user",
+                    "parts": [{"text": message}]
+                }
+            }),
+            stream=True
+        ) as r:
+            r.raise_for_status()
+            for chunk in r.iter_lines():
+                if chunk:
+                    chunk_str = chunk.decode('utf-8')
+                    if chunk_str.startswith('data: '):
+                        chunk_str = chunk_str[6:]
+                    try:
+                        data = json.loads(chunk_str)
+                        events = data if isinstance(data, list) else [data]
+                        for event in events:
+                            yield event
+                    except json.JSONDecodeError:
+                        pass
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error streaming response: {e}")
 
 
 # UI Components
@@ -133,15 +133,34 @@ def handle_input(message):
         st.write(message)
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            text_parts = send_message(message)
-            full_response = "\n\n".join(text_parts)
-            for part in text_parts:
-                st.write(part)
-                time.sleep(0.5)
-            
-            if full_response:
-                st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": full_response.strip()})
+        full_response_parts = []
+        for event in send_message_stream(message):
+            if isinstance(event, dict):
+                content = event.get("content", {})
+                if content.get("role") == "model":
+                    for part in content.get("parts", []):
+                        if "text" in part:
+                            st.write(part["text"])
+                            full_response_parts.append(part["text"])
+                        elif "functionCall" in part:
+                            fc = part["functionCall"]
+                            func_name = fc.get("name")
+                            func_args = fc.get("args")
+                            
+                            if func_name == "transfer_to_agent":
+                                agent_name = func_args.get("agent_name", "Unknown Agent")
+                                with st.expander(f"Transferring to: `{agent_name}`"):
+                                    st.json(part)
+                            else:
+                                with st.expander(f"Calling function: `{func_name}`"):
+                                    st.json(part)
+                        else:
+                            st.json(part)
+            else:
+                st.json(event)
+    
+    if full_response_parts:
+        st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": "\n\n".join(full_response_parts)})
 
 # Input for new messages
 if st.session_state.active_session_id:
