@@ -122,10 +122,19 @@ def handle_input(message):
 
 # Input for new messages
 if st.session_state.session_id:
-    if st.button("Start Research"):
-        handle_input("Use the researcher agent to perform research. Look for any relevant genealogical records.")
+    message_to_send = None
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Start Research", use_container_width=True):
+            message_to_send = "Use the researcher agent to perform research. Look for any relevant genealogical records."
+    with col2:
+        if st.button("Format Biography", use_container_width=True):
+            message_to_send = "Use the formatter agent to format a biography that includes as much relevant details about a profiles we've been talking about, including references and only links to known profiles."
 
     if user_input := st.chat_input("Type your message..."):
-        handle_input(user_input)
+        message_to_send = user_input
+
+    if message_to_send:
+        handle_input(message_to_send)
 else:
     st.info("Create a session to start chatting")
