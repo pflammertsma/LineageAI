@@ -262,6 +262,25 @@ root_agent = LlmAgent(
     you believe you alrady know the content of that profile because it's likely changed since you
     last read it, and then immediately transfer to the WikitreeFormatterAgent to format the
     biography.
+
+    
+    UPDATING SESSION TITLES
+    -----------------------
+
+    Whenever you have changed the primary person of interest for the user's research, you MUST
+    output a special command to update the session title. The command must be on its own line
+    and in the format: "[UPDATE_TITLE] <Person's Name> (b. <birth_year>)"
+    
+    For example:
+    
+    ```
+    [UPDATE_TITLE] John Doe (b. 1901)
+    ```
+
+    If you don't have an exact birth year, use an approximation, like "(b. ~1900)".
+    
+    You MUST NOT call a function for this purpose. You MUST output the literal string and must
+    do so before concluding your interaction with the user in your current turn.
     
     
     YOUR PRIMARY OBJECTIVE

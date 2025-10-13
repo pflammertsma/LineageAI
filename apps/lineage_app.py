@@ -23,6 +23,8 @@ if "sessions" not in st.session_state:
     st.session_state.sessions = {} # Will store session_id -> display_name
 if "active_session_id" not in st.session_state:
     st.session_state.active_session_id = None
+if "title_updated" not in st.session_state:
+    st.session_state.title_updated = False
 # Handle migration from single-session to multi-session
 if "messages" not in st.session_state or not isinstance(st.session_state.messages, dict):
     st.session_state.messages = {} # Will be a dict mapping session_id to list of messages
@@ -91,23 +93,37 @@ st.title("LineageAI Chat")
 
 # Sidebar for session management
 with st.sidebar:
-    st.header("Session Management")
-    if st.button("New Session"):
-        create_session()
+    st.header("LineageAI")
 
     if st.session_state.sessions:
         st.subheader("Sessions")
-        # Reverse the order of sessions to show the newest first
-        for session_id, display_name in reversed(list(st.session_state.sessions.items())):
-            if st.button(display_name, key=session_id, use_container_width=True):
-                st.session_state.active_session_id = session_id
-                st.rerun()
-    
-    if st.session_state.active_session_id:
-        st.success(f"Active session: {st.session_state.sessions[st.session_state.active_session_id]}")
-    else:
+        
+        session_ids = list(reversed(list(st.session_state.sessions.keys())))
+        session_display_names = [st.session_state.sessions[sid] for sid in session_ids]
+        
+        active_session_index = 0
+        if st.session_state.active_session_id in session_ids:
+            active_session_index = session_ids.index(st.session_state.active_session_id)
+            
+        selected_session_display_name = st.radio(
+            "Select a session",
+            options=session_display_names,
+            index=active_session_index,
+            label_visibility="collapsed"
+        )
+        
+        selected_session_index = session_display_names.index(selected_session_display_name)
+        new_active_session_id = session_ids[selected_session_index]
+
+        if new_active_session_id != st.session_state.active_session_id:
+            st.session_state.active_session_id = new_active_session_id
+            st.rerun()
+
+    if not st.session_state.active_session_id:
         st.warning("No active session")
 
+    if st.button("New Session"):
+        create_session()
 
     st.divider()
     st.caption("This app interacts with the LineageAI agent via the ADK API Server.")
@@ -141,8 +157,25 @@ def handle_input(message):
                     if content.get("role") == "model":
                         for part in content.get("parts", []):
                             if "text" in part:
-                                st.write(part["text"])
-                                full_response_parts.append(part["text"])
+                                text = part["text"]
+                                if text.startswith("[UPDATE_TITLE]"):
+                                    new_title = text.replace("[UPDATE_TITLE]", "").strip()
+                                    
+                                    # Truncate at the first line break
+                                    if "\n" in new_title:
+                                        new_title = new_title.split("\n")[0]
+                                        
+                                    # Truncate to 50 characters with ellipsis
+                                    if len(new_title) > 50:
+                                        new_title = new_title[:47] + "..."
+
+                                    st.session_state.sessions[st.session_state.active_session_id] = new_title
+                                    st.session_state.title_updated = True
+                                    with st.expander(f"Updated session title to: `{new_title}`"):
+                                        st.json({"command": "[UPDATE_TITLE]", "title": new_title})
+                                else:
+                                    st.write(text)
+                                    full_response_parts.append(text)
                             elif "functionCall" in part:
                                 fc = part["functionCall"]
                                 func_name = fc.get("name")
@@ -162,6 +195,10 @@ def handle_input(message):
         
         if full_response_parts:
             st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": "\n\n".join(full_response_parts)})
+
+    if st.session_state.get("title_updated"):
+        st.session_state.title_updated = False
+        st.rerun()
 
 # Input for new messages
 if st.session_state.active_session_id:
