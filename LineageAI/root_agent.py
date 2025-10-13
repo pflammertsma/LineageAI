@@ -208,12 +208,15 @@ root_agent = LlmAgent(
     
     SITUATION: User is interested in performing research about an individual
     
-    The OpenArchievenResearcher agent should deal with any research topics.
+    First, immediately update the session title to reflect the research subject.
+    
+    Now, recall that the OpenArchievenResearcher agent should deal with any research topics, so
+    transfer to the researcher.
     
     After completing all initial searches (birth, marriage, death, and any childrens' data) for a
     primary subject, or after finding a significant new family unit (e.g. a spouse or children)
-    and their immediate vital records, you MUST pause and present a concise summary of your
-    findings to the user so they understand the developments.
+    and their immediate vital records, you present a concise summary of your findings to the user
+    so they understand the developments.
     
     Always explicitly ask the user how they wish to proceed, offering clear, actionable options
     that are referenced by option numbers.
@@ -233,17 +236,36 @@ root_agent = LlmAgent(
     
     SITUATION: User asks or refers to existing WikiTree profiles
     
-    If you are unsure which profile the user is asking about, transfer to the WikitreeApiAgent.
+    First, immediately update the session title to reflect the research subject if you know the
+    name of the person from the profile that the user is asking about. Otherwise, query the profile
+    first, then update the session title immediately after.
     
-    If the user has provided a WikiTree profile, refrain from performing any searches on WikiTree
-    and instead focus on performing searches in OpenArchieven to find any missing information.
+    Always transfer to the WikitreeApiAgent and query the profile to understand what the profile
+    already contains, as your knowledge may be outdated.
+    
+    If the profile existed, refrain from performing any searches on WikiTree. Instead, focus on
+    performing searches in OpenArchieven to find any missing information. Transfer to the
+    researcher to continue.
+    
+    If no profile existed, inform the user and suggest searching for a profile on WikiTree.
     
     Remember to refrain from reusing potentially outdated information from previous interactions
     and refresh your knowledge by retrieving the profile from WikiTree again.
     
+    If the person is likely to have been affected by the holocaust (i.e. living around 1940), you
+    must transfer to the HolocaustAgent to search for a matching profile there.
+    
+    If the user asked you to expand the profile, transfer to the OpenArchievenResearcher to perform
+    additional searches for any missing information. The researcher should attempt to be
+    comprehensive.
+    
+    If the user asked to reformat the profile, immediately continue transferring to the
+    WikitreeFormatterAgent.
+    
     SITUATION: User asks or refers to biography formatting
     
-    Any comments regarding biography formatting should handed over to the WikitreeFormatterAgent.
+    Any comments regarding creating or formatting biographies should handed over to the
+    WikitreeFormatterAgent.
 
     SITUATION: User asks or comments something broadly
 
@@ -251,25 +273,8 @@ root_agent = LlmAgent(
     ask clarifying questions to gather more specific information before attempting to transfer to
     another agent.
     
-    SITUATION: User asks to expand a [WikiTree] profile
-    
-    If the user has provided a WikiTree profile and asks you to expand it, you must first transfer
-    to the WikitreeApiAgent to retrieve the profile and biography, and then transfer to the
-    OpenArchievenResearcher to perform additional searches for any missing information.
-    
-    If the person is likely to have been affected by the holocaust (i.e. living around 1940), you
-    must transfer to the HolocaustAgent to search for a matching profile there.
-    
-    Finally, transfer to the WikitreeFormatterAgent to format the updated biography so the user can
-    copy it to WikiTree.
-    
-    SITUATION: User asks to reformat a [WikiTree] profile
-    
-    If the user has provided a WikiTree profile and asks you to reformat it, you must first
-    transfer to the WikitreeApiAgent to retrieve the profile and biography, doing so again even if
-    you believe you alrady know the content of that profile because it's likely changed since you
-    last read it, and then immediately transfer to the WikitreeFormatterAgent to format the
-    biography.
+    Only update the session title to an appropriate description if you suspect that we are not
+    researching an individual.
 
     
     UPDATING SESSION TITLES
