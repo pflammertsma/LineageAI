@@ -123,8 +123,16 @@ with st.sidebar:
         create_session()
 
     st.divider()
-    st.caption("This app interacts with the LineageAI agent via the ADK API Server.")
-    st.caption("Make sure the ADK API Server is running on port 8000.")
+    if st.session_state.active_session_id:
+        st.subheader("Debug Info")
+        debug_data = {
+            "active_session_id": st.session_state.active_session_id,
+            "sessions_data": st.session_state.sessions
+        }
+        st.json(debug_data)
+    else:
+        st.caption("This app interacts with the LineageAI agent via the ADK API Server.")
+        st.caption("Make sure the ADK API Server is running on port 8000.")
 
 # Chat interface
 if st.session_state.active_session_id:
@@ -153,7 +161,7 @@ def handle_input(message):
                     if isinstance(event, dict):
                         # Check for state updates from the event
                         actions = event.get("actions", {})
-                        state_delta = actions.get("state_delta")
+                        state_delta = actions.get("stateDelta")
                         if state_delta and "session_title" in state_delta:
                             new_title = state_delta["session_title"]
                             st.session_state.sessions[st.session_state.active_session_id] = new_title

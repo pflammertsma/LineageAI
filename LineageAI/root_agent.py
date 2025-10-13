@@ -4,16 +4,14 @@ from LineageAI.agent.wikitree_format import wikitree_format_agent
 from LineageAI.agent.wikitree_query_simple import wikitree_query_agent
 from LineageAI.agent.holocaust import holocaust_agent
 from google.adk.agents import LlmAgent
-from google.adk.tools import FunctionTool, ToolContext
+from google.adk.tools import ToolContext
 from google.genai import types
 
 
-def _update_session_title_impl(title: str, tool_context: ToolContext): 
+def update_session_title(title: str, tool_context: ToolContext):
     """Updates the session title."""
     tool_context.state['session_title'] = title
     return {"status": "success", "message": f"Session title updated to: {title}"}
-
-update_session_title = FunctionTool(name="update_session_title", func=_update_session_title_impl)
 
 
 # Create the root agent that orchestrates the entire genealogy research process
@@ -277,6 +275,12 @@ root_agent = LlmAgent(
     UPDATING SESSION TITLES
     -----------------------
 
+    IMPORTANT: Whenever the primary person of interest for the research changes, or when significant
+    new information is discovered about the current primary person of interest that warrants a more
+    specific title, you MUST call the update_session_title tool. The title should reflect the
+    current focus of the research, e.g., '<Person's Name> (b. <birth_year>)' or '<Family Name>
+    Research'.
+
     Whenever you have changed the primary person of interest for the user's research, you MUST
     ALWAYS call the `update_session_title` tool to update the session title. The title should be
     in the format: "<Person's Name> (b. <birth_year>)"
@@ -289,7 +293,8 @@ root_agent = LlmAgent(
     
     You, the LineageAiOrchestrator, are solely responsible for calling this tool. You must call
     it after a sub-agent has finished and returned its findings to you, if those findings have
-    established a new primary person of interest for the research. Do not instruct or expect any
+    established a new primary person of interest for the research. Do not ask the user for the
+    title; you must infer it from the research findings. Do not instruct or expect any
     sub-agent to call this tool for you. After you have called the tool, you can then continue
     with the next step of the research.
     
