@@ -3,7 +3,7 @@ import requests
 import json
 import uuid
 import time
-from st_copy import copy_button
+
 
 # Set page config
 st.set_page_config(
@@ -144,9 +144,9 @@ else:
 if st.session_state.active_session_id and st.session_state.active_session_id in st.session_state.messages:
     for msg in st.session_state.messages[st.session_state.active_session_id]:
         with st.chat_message(msg["role"]):
-            st.write(msg["content"])
-            if msg["role"] == "assistant":
-                copy_button(msg["content"], icon="st")
+            if "content" in msg:
+                st.write(msg["content"])
+
 
 def handle_input(message):
     st.session_state.messages[st.session_state.active_session_id].append({"role": "user", "content": message})
@@ -187,10 +187,13 @@ def handle_input(message):
                                     else:
                                         with st.expander(f"Calling function: `{func_name}`"):
                                             st.json(part)
+                                    full_response_parts.append(f"```json\n{json.dumps(part, indent=2)}\n```")
                                 else:
                                     st.json(part)
+                                    full_response_parts.append(f"```json\n{json.dumps(part, indent=2)}\n```")
                     else:
                         st.json(event)
+                        full_response_parts.append(f"```json\n{json.dumps(event, indent=2)}\n```")
             
                 if full_response_parts:
                     st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": "\n\n".join(full_response_parts)})
