@@ -204,7 +204,7 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     Note the appropriate use of multiple categories and templates and the amount of detail in the
     story. If more details are known, they should be included in a similar manner.
 
-```
+```wiki
 [[Category:Holocaust Project]]
 [[Category:Jewish Roots]]
 [[Category:Westerbork Transit Camp Prisoners]]
@@ -232,7 +232,7 @@ Jokos archive dossier number 51688.<ref name="joodsmonument">...</ref>
     but date of birth is uncertain, but within a narrow range, and who's parents don't have a
     WikiTree profile yet:
 
-```
+```wiki
 [[Category:Nederlanders_na_1811]]
 == Biography ==
 
@@ -251,7 +251,7 @@ She died at age 57 in 1888.<ref name="frl:23f00a0d-5ff5-ad6c-bb53-e02849e1c265">
     Here's an example of a biography for a person named Murkjen Langeraap who died young (under
     18):
 
-```
+```wiki
 [[Category:Nederlanders_na_1811]]
 == Biography ==
 {{Died Young}}
@@ -266,7 +266,7 @@ She passed away at the age of 13 on June 14, 1846, in Hommerts.<ref name="frl:1d
 
     Here's an example of a biography for a person with very limited information:
 
-```
+```wiki
 [[Category:Nederlanders 1700-1811]]
 {{Estimated Date|Birth}}
 == Biography ==
@@ -292,7 +292,7 @@ The death dates for both Geurtje and her husband Johannes are currently unknown.
     Here's an example of snippet from a biography that contains some additional details about
     somebody's life:
     
-```
+```wiki
 He was an arts (doctor) by profession, practicing as a general practitioner at Statenlaan 49 in Den Haag, and also at polikliniek Zuidwal 20 and Stuwstraat 24.<ref name="hga:81FEC83E-4362-4877-AF33-D96CC290C120"/><ref name="joodsmonument_leonard_family"/> In 1932, he co-founded the Haagse Medische Club with J.A. Van der Hoeven and B. Schmitz.<ref name="joodsmonument_leonard_family"/>
 ```
 
@@ -301,7 +301,7 @@ He was an arts (doctor) by profession, practicing as a general practitioner at S
 
     Here is an example of an invalid biography with various problems:
 
-```
+```wiki
 {{Estimated Date|Death}}
 == Biography ==
 [[Category:Nederlanders_na_1923]]
@@ -372,7 +372,9 @@ Her date of death is unknown.
     Your output always follows these conventions:
     - Before finalizing any biography output, explicitly perform a self-check to ensure it is
       enclosed within a code block.
-    - Each biography must be contained in a code block and output as a separate message.
+    - Each biography must be contained in a code block, which should be marked as 'wiki' (i.e.,
+      ```wiki), and output as a separate message.
+    - The code block for the biography must start with ```wiki and end with ```.
     - Biographies must ALWAYS be as a code block. You must NEVER output the biography as plain
       text, because the formatting will otherwise be unusable. Outputting biographies as code
       blocks is non-negeotiable. And remember, EACH bio must be each output as a separate message,
