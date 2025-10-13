@@ -4,13 +4,23 @@ from LineageAI.agent.wikitree_format import wikitree_format_agent
 from LineageAI.agent.wikitree_query_simple import wikitree_query_agent
 from LineageAI.agent.holocaust import holocaust_agent
 from google.adk.agents import LlmAgent
+from google.adk.tools import FunctionTool, ToolContext
 from google.genai import types
+
+
+def _update_session_title_impl(title: str, tool_context: ToolContext): 
+    """Updates the session title."""
+    tool_context.state['session_title'] = title
+    return {"status": "success", "message": f"Session title updated to: {title}"}
+
+update_session_title = FunctionTool(name="update_session_title", func=_update_session_title_impl)
 
 
 # Create the root agent that orchestrates the entire genealogy research process
 root_agent = LlmAgent(
     name="LineageAiOrchestrator",
     model=MODEL_FAST,
+    tools=[update_session_title],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.2, # More deterministic output
         # max_output_tokens=1024 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
@@ -268,19 +278,20 @@ root_agent = LlmAgent(
     -----------------------
 
     Whenever you have changed the primary person of interest for the user's research, you MUST
-    output a special command to update the session title. The command must be on its own line
-    and in the format: "[UPDATE_TITLE] <Person's Name> (b. <birth_year>)"
+    ALWAYS call the `update_session_title` tool to update the session title. The title should be
+    in the format: "<Person's Name> (b. <birth_year>)"
     
     For example:
     
-    ```
-    [UPDATE_TITLE] John Doe (b. 1901)
-    ```
+    `update_session_title(title="John Doe (b. 1901)")`
 
     If you don't have an exact birth year, use an approximation, like "(b. ~1900)".
     
-    You MUST NOT call a function for this purpose. You MUST output the literal string and must
-    do so before concluding your interaction with the user in your current turn.
+    You, the LineageAiOrchestrator, are solely responsible for calling this tool. You must call
+    it after a sub-agent has finished and returned its findings to you, if those findings have
+    established a new primary person of interest for the research. Do not instruct or expect any
+    sub-agent to call this tool for you. After you have called the tool, you can then continue
+    with the next step of the research.
     
     
     YOUR PRIMARY OBJECTIVE

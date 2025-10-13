@@ -34,18 +34,19 @@ def create_session():
     Create a new session with the LineageAI agent.
     """
     session_id = f"session-{int(time.time())}"
-    response = requests.post(
-        f"{API_BASE_URL}/apps/{APP_NAME}/users/{st.session_state.user_id}/sessions/{session_id}",
-        headers={"Content-Type": "application/json"},
-        data=json.dumps({})
-    )
-    if response.status_code == 200:
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/apps/{APP_NAME}/users/{st.session_state.user_id}/sessions/{session_id}",
+            headers={"Content-Type": "application/json"},
+            data=json.dumps({})
+        )
+        response.raise_for_status()
         st.session_state.sessions[session_id] = f"Session {len(st.session_state.sessions) + 1}"
         st.session_state.active_session_id = session_id
         st.session_state.messages[session_id] = []
         return True
-    else:
-        st.error(f"Failed to create session: {response.text}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Failed to create session: {e}")
         return False
 
 def send_message_stream(message):
@@ -56,37 +57,33 @@ def send_message_stream(message):
         st.error("No active session. Please create a session first.")
         return
 
-    try:
-        with requests.post(
-            f"{API_BASE_URL}/run_sse",
-            headers={"Content-Type": "application/json"},
-            data=json.dumps({
-                "app_name": APP_NAME,
-                "user_id": st.session_state.user_id,
-                "session_id": st.session_state.active_session_id,
-                "new_message": {
-                    "role": "user",
-                    "parts": [{"text": message}]
-                }
-            }),
-            stream=True
-        ) as r:
-            r.raise_for_status()
-            for chunk in r.iter_lines():
-                if chunk:
-                    chunk_str = chunk.decode('utf-8')
-                    if chunk_str.startswith('data: '):
-                        chunk_str = chunk_str[6:]
-                    try:
-                        data = json.loads(chunk_str)
-                        events = data if isinstance(data, list) else [data]
-                        for event in events:
-                            yield event
-                    except json.JSONDecodeError:
-                        pass
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error streaming response: {e}")
-
+    with requests.post(
+        f"{API_BASE_URL}/run_sse",
+        headers={"Content-Type": "application/json"},
+        data=json.dumps({
+            "app_name": APP_NAME,
+            "user_id": st.session_state.user_id,
+            "session_id": st.session_state.active_session_id,
+            "new_message": {
+                "role": "user",
+                "parts": [{"text": message}]
+            }
+        }),
+        stream=True
+    ) as r:
+        r.raise_for_status()
+        for chunk in r.iter_lines():
+            if chunk:
+                chunk_str = chunk.decode('utf-8')
+                if chunk_str.startswith('data: '):
+                    chunk_str = chunk_str[6:]
+                try:
+                    data = json.loads(chunk_str)
+                    events = data if isinstance(data, list) else [data]
+                    for event in events:
+                        yield event
+                except json.JSONDecodeError:
+                    pass
 
 # UI Components
 st.title("LineageAI Chat")
@@ -150,55 +147,55 @@ def handle_input(message):
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            full_response_parts = []
-            for event in send_message_stream(message):
-                if isinstance(event, dict):
-                    content = event.get("content", {})
-                    if content.get("role") == "model":
-                        for part in content.get("parts", []):
-                            if "text" in part:
-                                text = part["text"]
-                                if text.startswith("[UPDATE_TITLE]"):
-                                    new_title = text.replace("[UPDATE_TITLE]", "").strip()
-                                    
-                                    # Truncate at the first line break
-                                    if "\n" in new_title:
-                                        new_title = new_title.split("\n")[0]
-                                        
-                                    # Truncate to 50 characters with ellipsis
-                                    if len(new_title) > 50:
-                                        new_title = new_title[:47] + "..."
+            try:
+                full_response_parts = []
+                for event in send_message_stream(message):
+                    if isinstance(event, dict):
+                        # Check for state updates from the event
+                        actions = event.get("actions", {})
+                        state_delta = actions.get("state_delta")
+                        if state_delta and "session_title" in state_delta:
+                            new_title = state_delta["session_title"]
+                            st.session_state.sessions[st.session_state.active_session_id] = new_title
+                            st.info(f"Updated session title: '{new_title}'")
+                            st.rerun()
 
-                                    st.session_state.sessions[st.session_state.active_session_id] = new_title
-                                    st.session_state.title_updated = True
-                                    with st.expander(f"Updated session title to: `{new_title}`"):
-                                        st.json({"command": "[UPDATE_TITLE]", "title": new_title})
-                                else:
+                        content = event.get("content", {})
+                        if content.get("role") == "model":
+                            for part in content.get("parts", []):
+                                if "text" in part:
+                                    text = part["text"]
                                     st.write(text)
                                     full_response_parts.append(text)
-                            elif "functionCall" in part:
-                                fc = part["functionCall"]
-                                func_name = fc.get("name")
-                                func_args = fc.get("args")
-                                
-                                if func_name == "transfer_to_agent":
-                                    agent_name = func_args.get("agent_name", "Unknown Agent")
-                                    with st.expander(f"Transferring to: `{agent_name}`"):
-                                        st.json(part)
+                                elif "functionCall" in part:
+                                    fc = part["functionCall"]
+                                    func_name = fc.get("name")
+                                    func_args = fc.get("args")
+                                    
+                                    if func_name == "transfer_to_agent":
+                                        agent_name = func_args.get("agent_name", "Unknown Agent")
+                                        with st.expander(f"Transferring to: `{agent_name}`"):
+                                            st.json(part)
+                                    else:
+                                        with st.expander(f"Calling function: `{func_name}`"):
+                                            st.json(part)
                                 else:
-                                    with st.expander(f"Calling function: `{func_name}`"):
-                                        st.json(part)
-                            else:
-                                st.json(part)
-                else:
-                    st.json(event)
-        
-        if full_response_parts:
-            st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": "\n\n".join(full_response_parts)})
+                                    st.json(part)
+                    else:
+                        st.json(event)
+            
+                if full_response_parts:
+                    st.session_state.messages[st.session_state.active_session_id].append({"role": "assistant", "content": "\n\n".join(full_response_parts)})
 
-    if st.session_state.get("title_updated"):
-        st.session_state.title_updated = False
-        st.rerun()
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 503:
+                    st.error("The model is currently overloaded. Please try again in a moment.")
+                else:
+                    st.error(f"An HTTP error occurred: {e.response.status_code} {e.response.reason}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"A network error occurred: {e}")
+
+
 
 # Input for new messages
 if st.session_state.active_session_id:

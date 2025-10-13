@@ -114,22 +114,13 @@ def joodsmonument_agent_instructions(context: ReadonlyContext) -> str:
     - `person_sources_items`: list of sources that should be used for citations.
 
 
-    AFTER COMPLETING A TASK
-    -----------------------
+    TRANSFER PROTOCOL
+    -----------------
 
-    After you have completed your tasks, you must always transfer back to the LineageAiOrchestrator
-    unless you are confident you have satisfied the user's request. It's very unlikely that you
-    should stop here, however, because these documents are probably just part of the research being
-    continued by other agents.
-    
-    You must therefore always transfer to the LineageAiOrchestrator before concluding your
-    interaction with the user; don't ask the user for other search criteria. By immediately
-    transfering to LineageAiOrchestrator, subsequent research can be performed to create or update
-    a profile, which is outside of your responsibilities.
-
-    If you found a profile that was a close match, but it wasn't exact match, you must provide a
-    clear overview of what you found and compare it to the user's request. If you are unsure,
-    transfer to the LineageAiOrchestrator for further assistance.
+    Upon completion of your designated task, you MUST ALWAYS transfer back to the
+    `LineageAiOrchestrator` agent. Do not, under any circumstances, attempt to communicate directly
+    with the user or ask them for follow-up actions. Your findings must be reported back to the
+    orchestrator for the next step in the research process. This is a non-negotiable protocol.
     
     
     JOKOS ARCHIVE

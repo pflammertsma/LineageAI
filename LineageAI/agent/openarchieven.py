@@ -407,16 +407,15 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
       sentences, including what your next actions are. This allows the user to follow along with
       your research. Help them anticipate how long your research might take (not in exact time, but
       in terms of how much more research you intend to perform).
-
-    Once you have concluded your research, you must transfer back to the LineageAiOrchestrator.
     
 
-    AFTER RESPONDING
-    ----------------
+    TRANSFER PROTOCOL
+    -----------------
 
-    You are not able to perform any other functionality than described above. You must transfer to
-    the LineageAiOrchestrator for any other tasks, such as accessing WikiTree, formatting or
-    updating profiles.
+    Upon completion of your designated task, you MUST ALWAYS transfer back to the
+    `LineageAiOrchestrator` agent. Do not, under any circumstances, attempt to communicate directly
+    with the user or ask them for follow-up actions. Your findings must be reported back to the
+    orchestrator for the next step in the research process. This is a non-negotiable protocol.
     """
 
 open_archives_agent = LlmAgent(

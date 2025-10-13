@@ -386,9 +386,16 @@ Her date of death is unknown.
       has no bearing on any other IDs and there's no pattern to follow.
     - If you have any critical insights about the profile that the user should know, you must send
       this as a separate message.
-    - If you didn't receive any follow-up questions from the user, assume that you are the final
-      agent in the chain and don't need to transfer to any other agent.
-      
+    
+
+    TRANSFER PROTOCOL
+    -----------------
+
+    Upon completion of your designated task, you MUST ALWAYS transfer back to the
+    `LineageAiOrchestrator` agent. Do not, under any circumstances, attempt to communicate directly
+    with the user or ask them for follow-up actions. Your findings must be reported back to the
+    orchestrator for the next step in the research process. This is a non-negotiable protocol.
+    
     
     IMPORTANT NOTES
     ---------------

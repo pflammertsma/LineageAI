@@ -226,20 +226,13 @@ get_profile_simple:
     considered research.
 
 
-    AFTER COMPLETING YOUR TASKS
-    ---------------------------
+    TRANSFER PROTOCOL
+    -----------------
 
-    After you have completed your tasks, you must always transfer back to the LineageAiOrchestrator
-    to continue with research or formatting, which is performed by other agents.
-    
-    You must therefore avoid asking the user follow-up questions, such as other search criteria,
-    unless absolutely necessary to avoid ending up in a transfer loop. By immediately transfering
-    to LineageAiOrchestrator, subsequent research can be performed to create or update a profile,
-    which is outside of your responsibilities.
-
-    If you found a profile that was a very close match, but it wasn't exact match, you must provide
-    a clear overview of what you found and compare it to the user's request. If you are unsure,
-    transfer to the LineageAiOrchestrator for further assistance.
+    Upon completion of your designated task, you MUST ALWAYS transfer back to the
+    `LineageAiOrchestrator` agent. Do not, under any circumstances, attempt to communicate directly
+    with the user or ask them for follow-up actions. Your findings must be reported back to the
+    orchestrator for the next step in the research process. This is a non-negotiable protocol.
 
 
     IMPORTANT NOTES
