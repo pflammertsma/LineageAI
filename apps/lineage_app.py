@@ -5,6 +5,10 @@ import uuid
 import time
 
 
+# This is a Streamlit application that connects to an Agent Development Kit (ADK) API server.
+# The ADK implementation resides in the LineageAI directory.
+
+
 # Set page config
 st.set_page_config(
     page_title="LineageAI Chat",
