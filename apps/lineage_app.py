@@ -7,7 +7,7 @@
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output, State, ALL, CeleryManager, DiskcacheManager
+from dash import dcc, html, Input, Output, State, ALL, CeleryManager, DiskcacheManager, ctx
 import requests
 import json
 import uuid
@@ -251,7 +251,6 @@ def update_session_list(sessions, active_session_id):
     prevent_initial_call=True
 )
 def select_session(n_clicks, ids):
-    ctx = dash.callback_context
     if not ctx.triggered or not any(n_clicks):
         return dash.no_update
 
@@ -287,52 +286,93 @@ def update_chat_history(messages_data, active_session_id):
 
     chat_bubbles = []
     for msg in messages:
-        is_user = msg.get('role') == 'user'
+        role = msg.get('role')
         
-        bubble = dbc.Alert(
-            dcc.Markdown(msg.get('content', '')), 
-            color="primary" if is_user else "secondary",
-            style={
-                "width": "fit-content",
-                "maxWidth": "80%",
-                "marginLeft": "auto" if is_user else "0",
-                "marginRight": "0" if is_user else "auto",
-            },
-            className="mb-2"
-        )
-        chat_bubbles.append(bubble)
-    
+        if role == 'user':
+            bubble = dbc.Alert(
+                dcc.Markdown(msg.get('content', '')),
+                color="primary",
+                style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "auto", "marginRight": "0"},
+                className="mb-2"
+            )
+            chat_bubbles.append(bubble)
+
+        elif role == 'assistant':
+            author = msg.get('author', 'Assistant')
+            content = msg.get('content', '')
+            author_div = html.Div(author, className="small text-secondary mb-1")
+            bubble = dbc.Alert(
+                dcc.Markdown(content),
+                color="secondary",
+                style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"},
+                className="mb-2"
+            )
+            chat_bubbles.append(html.Div([author_div, bubble]))
+
+        elif role == 'tool':
+            tool_name = msg.get('name', 'Unknown Tool')
+            tool_input = msg.get('input', '{}')
+            card = dbc.Card([
+                dbc.CardHeader(f"Tool Call: {tool_name}"),
+                dbc.CardBody(html.Pre(html.Code(tool_input)))
+            ], className="mb-2 w-75")
+            chat_bubbles.append(card)
+
     return chat_bubbles
 
-# Handle message sending and streaming response
+# Callback to add user message and placeholder to the store for immediate display
 @app.callback(
     Output('messages-store', 'data', allow_duplicate=True),
-    [Input('send-btn', 'n_clicks'),
-     Input('user-input', 'n_submit')],
-    [State('user-input', 'value'),
-     State('active-session-store', 'data'),
-     State('messages-store', 'data'),
-     State('user-id-store', 'data')],
+    Output('user-input', 'value'),
+    Input('send-btn', 'n_clicks'),
+    Input('user-input', 'n_submit'),
+    State('user-input', 'value'),
+    State('active-session-store', 'data'),
+    State('messages-store', 'data'),
+    prevent_initial_call=True
+)
+def add_user_message_to_chat(n_clicks, n_submit, user_input, active_session_id, messages_data):
+    if not active_session_id or not user_input:
+        return dash.no_update, dash.no_update
+
+    new_messages = messages_data.copy()
+    if active_session_id not in new_messages:
+        new_messages[active_session_id] = []
+
+    # Add user message
+    new_messages[active_session_id].append({"role": "user", "content": user_input})
+    # Add a placeholder for the assistant's response
+    new_messages[active_session_id].append({"role": "assistant", "content": "...", "author": ""})
+
+    return new_messages, ""
+
+# Background callback to handle message sending and streaming response
+@app.callback(
+    Output('messages-store', 'data', allow_duplicate=True),
+    Input('messages-store', 'data'),
+    State('user-id-store', 'data'),
+    State('active-session-store', 'data'),
     background=True,
     progress=[Output('messages-store', 'data')],
     prevent_initial_call=True
 )
-def send_message(set_progress, n_clicks, n_submit, user_input, active_session_id, messages_data, user_id):
-    if not active_session_id or not user_input:
+def stream_agent_response(set_progress, messages_data, user_id, active_session_id):
+    if not active_session_id or not messages_data.get(active_session_id):
         raise dash.exceptions.PreventUpdate
 
+    messages = messages_data[active_session_id]
+    last_message = messages[-1]
+    second_last_message = messages[-2] if len(messages) > 1 else None
+
+    # Check if the last message is a placeholder and the one before is from the user
+    if not (last_message.get('role') == 'assistant' and last_message.get('content') == '...' and 
+            second_last_message and second_last_message.get('role') == 'user'):
+        raise dash.exceptions.PreventUpdate
+
+    user_input = second_last_message['content']
     new_messages = messages_data.copy()
 
-    # Add user message
-    new_messages[active_session_id].append({"role": "user", "content": user_input})
-
-    # Add a placeholder for the assistant's response
-    assistant_message_placeholder = {"role": "assistant", "content": "..."}
-    new_messages[active_session_id].append(assistant_message_placeholder)
-    set_progress(new_messages)
-
     # --- Call SSE endpoint and stream response ---
-    full_response = ""
     try:
         with requests.post(
             f"{API_BASE_URL}/run_sse",
@@ -349,6 +389,10 @@ def send_message(set_progress, n_clicks, n_submit, user_input, active_session_id
             stream=True
         ) as r:
             r.raise_for_status()
+            
+            is_first_chunk = True
+            current_author = ""
+
             for chunk in r.iter_lines():
                 if chunk:
                     chunk_str = chunk.decode('utf-8')
@@ -356,38 +400,59 @@ def send_message(set_progress, n_clicks, n_submit, user_input, active_session_id
                         chunk_str = chunk_str[6:]
                     try:
                         data = json.loads(chunk_str)
+                        print(f"--- DEBUG SSE Event ---: {data}") # DEBUG LINE
                         events = data if isinstance(data, list) else [data]
                         for event in events:
                             content = event.get("content", {})
-                            if content.get('role') == 'model':
-                                for part in content.get("parts", []):
-                                    if "text" in part:
-                                        text = part["text"]
-                                        full_response += text
-                                        # Update the placeholder with the streaming content
-                                        new_messages[active_session_id][-1]['content'] = full_response + "..."
-                                        set_progress(new_messages)
+                            role = content.get('role')
+
+                            if role == 'model':
+                                author = content.get("author", "Assistant")
+                                text_part = next((p.get("text") for p in content.get("parts", []) if "text" in p), None)
+                                
+                                if text_part:
+                                    if is_first_chunk:
+                                        # Overwrite the placeholder with the first chunk
+                                        new_messages[active_session_id][-1] = {"role": "assistant", "author": author, "content": text_part}
+                                        is_first_chunk = False
+                                        current_author = author
+                                    elif author != current_author:
+                                        # If author changes, start a new message
+                                        current_author = author
+                                        new_message = {"role": "assistant", "author": author, "content": text_part}
+                                        new_messages[active_session_id].append(new_message)
+                                    else:
+                                        # Append text to the last message if author is the same
+                                        new_messages[active_session_id][-1]['content'] += text_part
+                                    
+                                    set_progress(new_messages)
+
+                            elif role == 'tool':
+                                # If a tool call comes in, add it as a new message
+                                # and prepare a new placeholder for the tool's result
+                                tool_name = content.get('name', 'Unknown Tool')
+                                tool_input = json.dumps(content.get('args', {}), indent=2)
+                                tool_message = {"role": "tool", "name": tool_name, "input": tool_input}
+                                new_messages[active_session_id].append(tool_message)
+                                # Add a new placeholder for the next assistant response
+                                new_messages[active_session_id].append({"role": "assistant", "content": "...", "author": ""})
+                                is_first_chunk = True # Reset for the next response
+                                set_progress(new_messages)
+
                     except json.JSONDecodeError:
                         pass
-        
-        # Final update to remove the ellipsis
-        new_messages[active_session_id][-1]['content'] = full_response
+            
+            # Final cleanup: if the last message is still a placeholder, remove it
+            if new_messages[active_session_id][-1].get('content') == '...':
+                new_messages[active_session_id].pop()
+
         return new_messages
 
     except requests.exceptions.RequestException as e:
         error_message = f"Error communicating with agent: {e}"
-        new_messages[active_session_id][-1]['content'] = error_message
+        # Replace the placeholder with an error message
+        new_messages[active_session_id][-1] = {"role": "assistant", "author": "Error", "content": error_message}
         return new_messages
-
-# Clear input after sending
-@app.callback(
-    Output('user-input', 'value'),
-    [Input('send-btn', 'n_clicks'),
-     Input('user-input', 'n_submit')],
-    prevent_initial_call=True
-)
-def clear_input(n1, n2):
-    return ""
 
 
 # --- Main Entry Point ---
