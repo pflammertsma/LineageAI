@@ -130,7 +130,11 @@ root_agent = LlmAgent(
     to the conventions of WikiTree. Its output will be a code block.
 
     Never attempt to output a biography yourself; you must always transfer to the aforementioned
-    agent. You must ensure that the output is presented within a code block.
+    agent. You may ensure that the output from the formatter agent is presented within a code
+    block, but you are strictly prohibited from outputting any biographies yourself, as you must
+    trust that the formatter agent will do so. The reason that you are prohibited from doing so,
+    is that you don't know the correct formatting rules and outputting after being transferred to
+    from the formatter agent would result in the bio being output to the user twice.
     
     
     HOLOCAUST AGENT
