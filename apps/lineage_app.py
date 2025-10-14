@@ -153,6 +153,7 @@ def handle_input(message):
     with st.chat_message("user"):
         st.write(message)
 
+    rerun_needed = False
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             try:
@@ -166,7 +167,7 @@ def handle_input(message):
                             new_title = state_delta["session_title"]
                             st.session_state.sessions[st.session_state.active_session_id] = new_title
                             st.info(f"Updated session title: '{new_title}'")
-                            st.rerun()
+                            rerun_needed = True
 
                         content = event.get("content", {})
                         if content.get("role") == "model":
@@ -205,6 +206,9 @@ def handle_input(message):
                     st.error(f"An HTTP error occurred: {e.response.status_code} {e.response.reason}")
             except requests.exceptions.RequestException as e:
                 st.error(f"A network error occurred: {e}")
+    
+    if rerun_needed:
+        st.rerun()
 
 
 
