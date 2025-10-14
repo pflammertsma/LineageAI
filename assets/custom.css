@@ -1,0 +1,127 @@
+
+/**
+ * LineageAI - Modern Heritage Theme Overrides
+ * These styles override the base dbc.themes.DARKLY to apply the custom theme.
+ */
+
+:root {
+    --bg-background: #12141D;
+    --bg-surface: #242836;
+    --text-primary: #F0F2F5;
+    --text-secondary: #9DA3B0;
+    --accent-primary: #4A90E2;
+    --accent-discovery: #C8A464;
+    --border-color: #3C4153;
+}
+
+body, .card {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* --- Layout Overrides --- */
+#app-container, #main-content, #sidebar {
+    background-color: var(--bg-background) !important;
+}
+
+#main-content {
+    background-color: var(--bg-surface) !important;
+}
+
+#sidebar {
+    border-right: 1px solid var(--border-color);
+}
+
+/* --- Component Overrides --- */
+
+/* Main Conversation Title */
+#conversation-title {
+    background-color: var(--bg-surface) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary);
+}
+
+/* Chat Input Area */
+#chat-input-area {
+    background-color: var(--bg-surface) !important;
+    border-top: 1px solid var(--border-color);
+}
+
+#user-input {
+    background-color: var(--bg-background) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* --- Sidebar Header --- */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.sidebar-header:hover {
+    text-decoration: none;
+}
+
+.app-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.app-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* --- Chat Bubble Overrides --- */
+
+/* User Message */
+.alert-primary {
+    background-color: var(--accent-primary) !important;
+    border-color: var(--accent-primary) !important;
+    color: white !important;
+}
+
+/* Assistant Message */
+.alert-secondary {
+    background-color: var(--bg-background) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Session list buttons */
+#session-list-container .btn-light {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+#session-list-container .btn-light:hover {
+    background-color: #31364a;
+}
+
+/* Primary action buttons */
+.btn-primary {
+    background-color: var(--accent-primary) !important;
+    border-color: var(--accent-primary) !important;
+}
+
+/* Secondary action buttons */
+.btn-secondary {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+.btn-secondary:hover {
+     background-color: #31364a !important;
+}
+
+/* "New Session" button */
+.btn-success {
+    background-color: var(--accent-discovery) !important;
+    border-color: var(--accent-discovery) !important;
+    color: var(--bg-background) !important;
+}
+
