@@ -1,5 +1,4 @@
-
-/**
+/*
  * LineageAI - Modern Heritage Theme Overrides
  * These styles override the base dbc.themes.DARKLY to apply the custom theme.
  */
@@ -19,7 +18,7 @@ body, .card {
 }
 
 /* --- Layout Overrides --- */
-#app-container, #main-content, #sidebar {
+#app-container, #sidebar, .offcanvas {
     background-color: var(--bg-background) !important;
 }
 
@@ -34,7 +33,7 @@ body, .card {
 /* --- Component Overrides --- */
 
 /* Main Conversation Title */
-#conversation-title {
+#main-header {
     background-color: var(--bg-surface) !important;
     border-bottom: 1px solid var(--border-color) !important;
     color: var(--text-primary);
@@ -125,3 +124,25 @@ body, .card {
     color: var(--bg-background) !important;
 }
 
+/* --- Responsive Adjustments --- */
+
+/* On large screens, constrain the width of the chat container */
+@media (min-width: 992px) {
+    #chat-container {
+        max-width: 960px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* Ensure the main app container doesn't flex on small screens */
+@media (max-width: 991.98px) {
+    #app-container {
+        display: block;
+    }
+    #main-content {
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+    }
+}

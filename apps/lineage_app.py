@@ -25,12 +25,14 @@ APP_NAME = "LineageAI"
 app = dash.Dash(
     __name__,
     external_stylesheets=[
-        dbc.themes.DARKLY, # Use a dark theme as a base
-        "/assets/custom.css" # Custom stylesheet for overrides
+        dbc.themes.DARKLY,
+        dbc.icons.BOOTSTRAP,
+        "/assets/custom.css"
     ],
     assets_folder='../assets',
     background_callback_manager=background_callback_manager,
-    title="LineageAI"
+    title="LineageAI",
+    meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}]
 )
 
 # Add Google Fonts link
@@ -57,22 +59,11 @@ app.index_string = '''
 </html>
 '''
 
-# --- App Layout ---
+# --- Reusable Components ---
 
-store_components = html.Div([
-    dcc.Store(id='user-id-store'),
-    dcc.Store(id='sessions-store', data={}),
-    dcc.Store(id='active-session-store', data=None),
-    dcc.Store(id='messages-store', data={}),
-    dcc.Store(id='api-trigger-store', data=None), # Triggers the background API call
-    dcc.Interval(id='api-status-interval', interval=60*1000, n_intervals=0),
-])
-
-sidebar = html.Div(
-    id="sidebar",
-    className="d-flex flex-column flex-shrink-0 p-3",
-    style={"width": "280px", "height": "100vh"},
-    children=[
+def create_sidebar_content(prefix: str):
+    """Creates the content for the sidebar, used in both desktop and mobile views."""
+    return [
         html.Div([
             html.A(
                 href="/",
@@ -82,15 +73,50 @@ sidebar = html.Div(
                     html.Span("LineageAI", className="app-title")
                 ]
             ),
-            html.Div(id='api-status-indicator')
+            html.Div(id=f'{prefix}-api-status-indicator')
         ], className="d-flex justify-content-between align-items-center"),
         dbc.Nav(
-            [dbc.Button("New Session", id="new-session-btn", color="primary", className="w-100")],
+            [dbc.Button("New Session", id=f'{prefix}-new-session-btn', color="primary", className="w-100")],
             vertical=True, pills=True, className="my-3"
         ),
         html.Hr(),
-        html.Div(id="session-list-container", children=[dbc.Spinner(size="sm")]),
+        html.Div(id=f'{prefix}-session-list-container', children=[dbc.Spinner(size="sm")]),
         html.Hr(),
+    ]
+
+# --- App Layout ---
+
+store_components = html.Div([
+    dcc.Store(id='user-id-store'),
+    dcc.Store(id='sessions-store', data={}),
+    dcc.Store(id='active-session-store', data=None),
+    dcc.Store(id='messages-store', data={}),
+    dcc.Store(id='api-trigger-store', data=None),
+    dcc.Interval(id='api-status-interval', interval=60*1000, n_intervals=0),
+])
+
+# Sidebar for large screens
+desktop_sidebar = html.Div(
+    id="sidebar",
+    className="d-none d-lg-flex flex-column flex-shrink-0 p-3",
+    style={"width": "280px", "height": "100vh"},
+    children=create_sidebar_content(prefix='desktop')
+)
+
+# Collapsible sidebar for small screens
+mobile_sidebar = dbc.Offcanvas(
+    id="offcanvas-sidebar",
+    is_open=False,
+    title="LineageAI",
+    children=create_sidebar_content(prefix='mobile')
+)
+
+header = html.Div(
+    id="main-header",
+    className="d-flex align-items-center p-3 border-bottom",
+    children=[
+        dbc.Button(html.I(className="bi bi-list"), id="open-sidebar-btn", className="d-lg-none me-2", n_clicks=0),
+        html.H4(id="conversation-title", className="m-0"),
     ]
 )
 
@@ -122,27 +148,59 @@ chat_input_area = html.Div(
 main_content = html.Div(
     id="main-content",
     className="d-flex flex-column",
-    style={"height": "100vh", "flexGrow": "1"},
+    style={"flexGrow": 1},
     children=[
-        html.H4(id="conversation-title", className="p-3 border-bottom"),
-        chat_history,
-        chat_input_area,
+        header,
+        html.Div(
+            id="chat-container",
+            className="d-flex flex-column",
+            style={"flexGrow": 1, "overflowY": "auto"},
+            children=[
+                chat_history,
+                chat_input_area
+            ]
+        )
     ]
 )
 
-app.layout = html.Div(id="app-container", className="d-flex", children=[store_components, sidebar, main_content])
+app.layout = html.Div(
+    id="app-container", 
+    className="d-flex", 
+    children=[
+        store_components, 
+        desktop_sidebar, 
+        main_content, 
+        mobile_sidebar
+    ]
+)
 
 # --- Callbacks ---
 
-@app.callback(Output('api-status-indicator', 'children'), Input('api-status-interval', 'n_intervals'))
+@app.callback(
+    Output("offcanvas-sidebar", "is_open"),
+    Input("open-sidebar-btn", "n_clicks"),
+    [State("offcanvas-sidebar", "is_open")],
+)
+def toggle_sidebar(n1, is_open):
+    if n1:
+        return not is_open
+    return is_open
+
+@app.callback(
+    [Output('desktop-api-status-indicator', 'children'),
+     Output('mobile-api-status-indicator', 'children')],
+    Input('api-status-interval', 'n_intervals')
+)
 def update_api_status(n):
     try:
         response = requests.get(f"{API_BASE_URL}/docs", timeout=2)
         if response.status_code == 200:
-            return dbc.Badge("Online", color="success", className="ms-2")
+            status_badge = dbc.Badge("Online", color="success", className="ms-2")
+            return status_badge, status_badge
     except requests.exceptions.RequestException:
         pass
-    return dbc.Badge("Offline", color="danger", className="ms-2")
+    status_badge = dbc.Badge("Offline", color="danger", className="ms-2")
+    return status_badge, status_badge
 
 @app.callback(Output('user-id-store', 'data'), Input('user-id-store', 'data'))
 def initialize_user_id(current_id):
@@ -151,25 +209,34 @@ def initialize_user_id(current_id):
 
 @app.callback(
     [Output('active-session-store', 'data', allow_duplicate=True),
-     Output('new-session-btn', 'n_clicks')],
+     Output('desktop-new-session-btn', 'n_clicks'),
+     Output('mobile-new-session-btn', 'n_clicks')],
     Input('user-id-store', 'data'),
     State('sessions-store', 'data'),
     State('active-session-store', 'data'),
     prevent_initial_call=True
 )
 def initialize_active_session(user_id, sessions, active_session_id):
-    if not user_id or active_session_id: return dash.no_update, dash.no_update
-    if sessions: return list(sessions.keys())[-1], dash.no_update
-    return dash.no_update, 1
+    if not user_id or active_session_id: return dash.no_update, dash.no_update, dash.no_update
+    if sessions: return list(sessions.keys())[-1], dash.no_update, dash.no_update
+    # Trigger the button in the visible sidebar. Since desktop is hidden on small screens,
+    # we can assume the mobile one is the one to trigger.
+    # A more robust solution might check the screen size.
+    return dash.no_update, dash.no_update, 1
 
 @app.callback(
-    [Output('sessions-store', 'data', allow_duplicate=True), Output('active-session-store', 'data'), Output('messages-store', 'data')],
-    Input('new-session-btn', 'n_clicks'),
-    [State('user-id-store', 'data'), State('sessions-store', 'data'), State('messages-store', 'data')],
+    [Output('sessions-store', 'data', allow_duplicate=True), 
+     Output('active-session-store', 'data', allow_duplicate=True), 
+     Output('messages-store', 'data', allow_duplicate=True)],
+    [Input('desktop-new-session-btn', 'n_clicks'),
+     Input('mobile-new-session-btn', 'n_clicks')],
+    [State('user-id-store', 'data'), 
+     State('sessions-store', 'data'), 
+     State('messages-store', 'data')],
     prevent_initial_call=True
 )
-def create_session(n_clicks, user_id, sessions_data, messages_data):
-    if n_clicks is None or user_id is None: return dash.no_update, dash.no_update, dash.no_update
+def create_session(desktop_clicks, mobile_clicks, user_id, sessions_data, messages_data):
+    if not ctx.triggered_id or user_id is None: return dash.no_update, dash.no_update, dash.no_update
     session_id = f"session-{int(time.time())}"
     try:
         response = requests.post(f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}", headers={"Content-Type": "application/json"}, data=json.dumps({}))
@@ -183,14 +250,19 @@ def create_session(n_clicks, user_id, sessions_data, messages_data):
         return dash.no_update, 'FAILED', dash.no_update
 
 @app.callback(
-    Output('session-list-container', 'children'),
+    [Output('desktop-session-list-container', 'children'),
+     Output('mobile-session-list-container', 'children')],
     [Input('sessions-store', 'data'), Input('active-session-store', 'data')]
 )
 def update_session_list(sessions, active_session_id):
-    if active_session_id == 'FAILED': return html.P("API Offline", className="text-danger px-3")
-    if not sessions: return dbc.Spinner(size="sm")
+    if active_session_id == 'FAILED': 
+        error_msg = html.P("API Offline", className="text-danger px-3")
+        return error_msg, error_msg
+    if not sessions: 
+        spinner = dbc.Spinner(size="sm")
+        return spinner, spinner
     buttons = [dbc.Button(name, id=f'{{"type": "session-btn", "index": "{sid}"}}', color="primary" if sid == active_session_id else "light", className="w-100 mb-1 text-start") for sid, name in reversed(list(sessions.items()))]
-    return buttons
+    return buttons, buttons
 
 @app.callback(
     Output('active-session-store', 'data', allow_duplicate=True),
@@ -237,16 +309,12 @@ def update_chat_history(messages_data, active_session_id):
         elif role == 'tool':
             author_div = html.Div(msg.get('author', 'Assistant'), className="small text-secondary mb-1")
             tool_name = msg.get('name', 'Unknown Tool')
-            accordion = dbc.Accordion(
-                [
-                    dbc.AccordionItem(
-                        html.Pre(html.Code(msg.get('input', '{}'))),
-                        title=f"Tool Call: {tool_name}"
-                    ),
-                ],
-                start_collapsed=True,
-                className="mb-2 w-75"
-            )
+            accordion = dbc.Accordion([
+                dbc.AccordionItem(
+                    html.Pre(html.Code(msg.get('input', '{}'))),
+                    title=f"Tool Call: {tool_name}"
+                ),
+            ], start_collapsed=True, className="mb-2 w-75")
             bubbles.append(html.Div([author_div, accordion]))
     return html.Div(bubbles, className="p-3")
 
