@@ -100,8 +100,13 @@ store_components = html.Div([
 desktop_sidebar = html.Div(
     id="sidebar",
     className="d-none d-lg-flex flex-column flex-shrink-0",
-    style={"width": "280px", "height": "100vh", "padding": "1rem", "transition": "width 0.3s, padding 0.3s"},
-    children=create_sidebar_content(prefix='desktop')
+    style={"width": "280px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"},
+    children=[
+        html.Div(
+            style={'width': '280px', 'padding': '1rem'},
+            children=create_sidebar_content(prefix='desktop')
+        )
+    ]
 )
 
 # Collapsible sidebar for small screens
@@ -441,9 +446,10 @@ def toggle_sidebar_collapse(n_clicks, is_collapsed):
 )
 def update_sidebar_style(is_collapsed):
     if is_collapsed:
-        return {"width": "0px", "height": "100vh", "padding": "0", "overflow": "hidden", "transition": "width 0.3s, padding 0.3s"}
+        return {"width": "0px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"}
     else:
-        return {"width": "280px", "height": "100vh", "padding": "1rem", "transition": "width 0.3s, padding 0.3s"}
+        return {"width": "280px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"}
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False, port=8050)
+    # TODO: Disable use_reloader in production for stability.
+    app.run(debug=True, use_reloader=True, port=8050)
