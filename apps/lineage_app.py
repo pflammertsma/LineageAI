@@ -97,7 +97,7 @@ sidebar = html.Div(
             className="my-3"
         ),
         html.Hr(),
-        html.Div(id="session-list-container"),
+        html.Div(id="session-list-container", children=[dbc.Spinner(size="sm")]),
         html.Hr(),
         html.Div(id="debug-info-container"),
     ],
@@ -105,12 +105,11 @@ sidebar = html.Div(
 
 chat_history = html.Div(
     id="chat-history",
-    style={
-        "flexGrow": "1",
-        "overflowY": "auto",
-        "padding": "15px"
-    },
-    children=[]
+    style={"flexGrow": "1", "overflowY": "auto"},
+    children=[html.Div(
+        [dbc.Spinner(), html.Span(" Initializing session...", className="ms-2")],
+        className="d-flex justify-content-center align-items-center h-100"
+    )]
 )
 
 chat_input_area = html.Div(
@@ -179,6 +178,27 @@ def initialize_user_id(current_id):
         return f"user-{uuid.uuid4()}"
     return dash.no_update
 
+# Automatically create a session or resume the latest one on load
+@app.callback(
+    Output('active-session-store', 'data', allow_duplicate=True),
+    Output('new-session-btn', 'n_clicks'),
+    Input('user-id-store', 'data'),
+    State('sessions-store', 'data'),
+    State('active-session-store', 'data'),
+    prevent_initial_call=True
+)
+def initialize_active_session(user_id, sessions, active_session_id):
+    if not user_id or active_session_id:
+        return dash.no_update, dash.no_update
+
+    if sessions:
+        # Resume the most recent session
+        most_recent_session_id = list(sessions.keys())[-1]
+        return most_recent_session_id, dash.no_update
+    else:
+        # If no sessions exist, trigger the 'new session' button
+        return dash.no_update, 1
+
 # Handle New Session button click
 @app.callback(
     [Output('sessions-store', 'data'),
@@ -207,18 +227,14 @@ def create_session(n_clicks, user_id, sessions_data, messages_data):
         new_sessions[session_id] = f"Session {len(new_sessions) + 1}"
         
         new_messages = messages_data.copy()
-        new_messages[session_id] = []
+        if session_id not in new_messages:
+            new_messages[session_id] = []
         
         return new_sessions, session_id, new_messages, dash.no_update
 
     except requests.exceptions.RequestException as e:
-        error_alert = dbc.Alert(
-            f"Failed to create session: {e}", 
-            color="danger", 
-            dismissable=True,
-            className="m-3"
-        )
-        return dash.no_update, dash.no_update, dash.no_update, error_alert
+        # On failure, set active session to FAILED to stop spinners and show error message
+        return dash.no_update, 'FAILED', dash.no_update, dash.no_update
 
 # Update session list in the sidebar
 @app.callback(
@@ -227,8 +243,10 @@ def create_session(n_clicks, user_id, sessions_data, messages_data):
      Input('active-session-store', 'data')]
 )
 def update_session_list(sessions, active_session_id):
+    if active_session_id == 'FAILED':
+        return html.P("API Offline", className="text-danger px-3")
     if not sessions:
-        return html.P("No sessions yet.", className="text-secondary px-3")
+        return dbc.Spinner(size="sm")
 
     session_buttons = []
     for session_id, display_name in reversed(list(sessions.items())):
@@ -266,7 +284,7 @@ def select_session(n_clicks, ids):
     State('sessions-store', 'data')
 )
 def update_conversation_title(active_session_id, sessions):
-    if not active_session_id or not sessions:
+    if not active_session_id or not sessions or active_session_id == 'FAILED':
         return "Conversation"
     return sessions.get(active_session_id, "Conversation")
 
@@ -277,12 +295,22 @@ def update_conversation_title(active_session_id, sessions):
     State('active-session-store', 'data')
 )
 def update_chat_history(messages_data, active_session_id):
-    if not active_session_id or active_session_id not in messages_data:
-        return [html.P("Welcome! Select or create a session to begin.", className="p-3")]
+    centered_style = "d-flex justify-content-center align-items-center h-100"
+    if not active_session_id:
+        return html.Div([dbc.Spinner(), html.Span(" Loading session...", className="ms-2")], className=centered_style)
+    
+    if active_session_id == 'FAILED':
+        return html.Div(dbc.Alert(
+            "Failed to create or load a session. The API server may be offline.",
+            color="danger",
+        ), className=centered_style)
+
+    if active_session_id not in messages_data:
+        return html.Div([dbc.Spinner(), html.Span(" Loading messages...", className="ms-2")], className=centered_style)
 
     messages = messages_data.get(active_session_id, [])
     if not messages:
-        return [html.P("What can I help you with?", className="p-3")]
+        return html.Div(html.P("What can I help you with?"), className=centered_style)
 
     chat_bubbles = []
     for msg in messages:
@@ -315,10 +343,10 @@ def update_chat_history(messages_data, active_session_id):
             card = dbc.Card([
                 dbc.CardHeader(f"Tool Call: {tool_name}"),
                 dbc.CardBody(html.Pre(html.Code(tool_input)))
-            ], className="mb-2 w-75")
+            ], className="mb-2 w-75 mx-auto")
             chat_bubbles.append(card)
 
-    return chat_bubbles
+    return html.Div(chat_bubbles, className="p-3")
 
 # Callback to add user message and placeholder to the store for immediate display
 @app.callback(
@@ -361,10 +389,13 @@ def stream_agent_response(set_progress, messages_data, user_id, active_session_i
         raise dash.exceptions.PreventUpdate
 
     messages = messages_data[active_session_id]
+    if not messages:
+        raise dash.exceptions.PreventUpdate
+
     last_message = messages[-1]
     second_last_message = messages[-2] if len(messages) > 1 else None
 
-    # Check if the last message is a placeholder and the one before is from the user
+    # Guard condition: Only run if the last message is a user-initiated placeholder
     if not (last_message.get('role') == 'assistant' and last_message.get('content') == '...' and 
             second_last_message and second_last_message.get('role') == 'user'):
         raise dash.exceptions.PreventUpdate
@@ -390,8 +421,9 @@ def stream_agent_response(set_progress, messages_data, user_id, active_session_i
         ) as r:
             r.raise_for_status()
             
-            is_first_chunk = True
-            current_author = ""
+            is_first_model_chunk = True
+            # Pop the initial placeholder, as we will be adding new messages from the stream
+            new_messages[active_session_id].pop()
 
             for chunk in r.iter_lines():
                 if chunk:
@@ -400,58 +432,62 @@ def stream_agent_response(set_progress, messages_data, user_id, active_session_i
                         chunk_str = chunk_str[6:]
                     try:
                         data = json.loads(chunk_str)
-                        print(f"--- DEBUG SSE Event ---: {data}") # DEBUG LINE
                         events = data if isinstance(data, list) else [data]
                         for event in events:
+                            author = event.get("author", "Assistant")
                             content = event.get("content", {})
-                            role = content.get('role')
+                            
+                            if not content or not content.get("parts"):
+                                continue
 
-                            if role == 'model':
-                                author = content.get("author", "Assistant")
-                                text_part = next((p.get("text") for p in content.get("parts", []) if "text" in p), None)
-                                
-                                if text_part:
-                                    if is_first_chunk:
-                                        # Overwrite the placeholder with the first chunk
-                                        new_messages[active_session_id][-1] = {"role": "assistant", "author": author, "content": text_part}
-                                        is_first_chunk = False
-                                        current_author = author
-                                    elif author != current_author:
-                                        # If author changes, start a new message
-                                        current_author = author
-                                        new_message = {"role": "assistant", "author": author, "content": text_part}
-                                        new_messages[active_session_id].append(new_message)
+                            for part in content.get("parts"):
+                                if "text" in part:
+                                    text_part = part["text"]
+                                    if is_first_model_chunk:
+                                        # Create the first message bubble
+                                        new_messages[active_session_id].append({
+                                            "role": "assistant", 
+                                            "author": author, 
+                                            "content": text_part
+                                        })
+                                        is_first_model_chunk = False
                                     else:
-                                        # Append text to the last message if author is the same
-                                        new_messages[active_session_id][-1]['content'] += text_part
-                                    
+                                        # Append to the last message if the author is the same
+                                        last_msg = new_messages[active_session_id][-1]
+                                        if last_msg["role"] == "assistant" and last_msg["author"] == author:
+                                            last_msg['content'] += text_part
+                                        else:
+                                            # If author changes, start a new bubble
+                                            new_messages[active_session_id].append({
+                                                "role": "assistant", 
+                                                "author": author, 
+                                                "content": text_part
+                                            })
                                     set_progress(new_messages)
 
-                            elif role == 'tool':
-                                # If a tool call comes in, add it as a new message
-                                # and prepare a new placeholder for the tool's result
-                                tool_name = content.get('name', 'Unknown Tool')
-                                tool_input = json.dumps(content.get('args', {}), indent=2)
-                                tool_message = {"role": "tool", "name": tool_name, "input": tool_input}
-                                new_messages[active_session_id].append(tool_message)
-                                # Add a new placeholder for the next assistant response
-                                new_messages[active_session_id].append({"role": "assistant", "content": "...", "author": ""})
-                                is_first_chunk = True # Reset for the next response
-                                set_progress(new_messages)
+                                elif "functionCall" in part:
+                                    # If we were writing a text response, ensure the next one is a new bubble
+                                    is_first_model_chunk = True 
+
+                                    tool_call = part["functionCall"]
+                                    tool_name = tool_call.get('name', 'Unknown Tool')
+                                    tool_input = json.dumps(tool_call.get('args', {}), indent=2)
+                                    tool_message = {"role": "tool", "name": tool_name, "input": tool_input}
+                                    new_messages[active_session_id].append(tool_message)
+                                    set_progress(new_messages)
 
                     except json.JSONDecodeError:
                         pass
-            
-            # Final cleanup: if the last message is still a placeholder, remove it
-            if new_messages[active_session_id][-1].get('content') == '...':
-                new_messages[active_session_id].pop()
 
         return new_messages
 
     except requests.exceptions.RequestException as e:
         error_message = f"Error communicating with agent: {e}"
-        # Replace the placeholder with an error message
-        new_messages[active_session_id][-1] = {"role": "assistant", "author": "Error", "content": error_message}
+        # Replace the placeholder with an error message if it's still there
+        if new_messages[active_session_id] and new_messages[active_session_id][-1].get('content') == '...':
+            new_messages[active_session_id][-1] = {"role": "assistant", "author": "Error", "content": error_message}
+        else: # Or append as a new message
+            new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error_message})
         return new_messages
 
 
