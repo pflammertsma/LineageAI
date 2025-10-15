@@ -39,10 +39,23 @@ body, .card {
     color: var(--text-primary);
 }
 
-/* Chat Input Area */
+/* Chat Area */
+#chat-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    align-items: center;
+}
+#chat-history {
+    width: 100%;
+}
 #chat-input-area {
+    width: 100%;
     background-color: var(--bg-surface) !important;
-    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px -2px color(from #c4c7c5 srgb r g b / .16);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    margin: 20px;
 }
 
 #user-input {
@@ -128,10 +141,11 @@ body, .card {
 
 /* On large screens, constrain the width of the chat container */
 @media (min-width: 992px) {
-    #chat-container {
+    #chat-history {
         max-width: 960px;
-        margin-left: auto;
-        margin-right: auto;
+    }
+    #chat-input-area {
+        max-width: 960px;
     }
 }
 
