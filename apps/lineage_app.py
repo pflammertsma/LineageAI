@@ -235,8 +235,19 @@ def update_chat_history(messages_data, active_session_id):
             author_div = html.Div(msg.get('author', 'Assistant'), className="small text-secondary mb-1")
             bubbles.append(html.Div([author_div, dbc.Alert(dcc.Markdown(msg.get('content', '')), color="secondary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
         elif role == 'tool':
-            card = dbc.Card([dbc.CardHeader(f"Tool Call: {msg.get('name', 'Unknown')}"), dbc.CardBody(html.Pre(html.Code(msg.get('input', '{}'))))], className="mb-2 w-75 mx-auto")
-            bubbles.append(card)
+            author_div = html.Div(msg.get('author', 'Assistant'), className="small text-secondary mb-1")
+            tool_name = msg.get('name', 'Unknown Tool')
+            accordion = dbc.Accordion(
+                [
+                    dbc.AccordionItem(
+                        html.Pre(html.Code(msg.get('input', '{}'))),
+                        title=f"Tool Call: {tool_name}"
+                    ),
+                ],
+                start_collapsed=True,
+                className="mb-2 w-75"
+            )
+            bubbles.append(html.Div([author_div, accordion]))
     return html.Div(bubbles, className="p-3")
 
 @app.callback(
@@ -328,7 +339,9 @@ def stream_agent_response(set_progress, trigger_data, user_id, active_session_id
                             elif "functionCall" in part:
                                 is_first_model_chunk = True
                                 tool_call = part["functionCall"]
-                                tool_message = {"role": "tool", "name": tool_call.get('name', '?'), "input": json.dumps(tool_call.get('args', {}), indent=2)}
+                                tool_name = tool_call.get('name', '?')
+                                tool_input = json.dumps(tool_call.get('args', {}), indent=2)
+                                tool_message = {"role": "tool", "name": tool_name, "input": tool_input, "author": author}
                                 new_messages[active_session_id].append(tool_message)
                                 set_progress((new_messages, new_sessions))
                 except json.JSONDecodeError:
