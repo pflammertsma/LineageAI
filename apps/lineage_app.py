@@ -421,4 +421,4 @@ def stream_agent_response(set_progress, trigger_data, user_id, active_session_id
         return new_messages, new_sessions
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8050)
+    app.run(debug=True, use_reloader=False, port=8050)

@@ -140,17 +140,17 @@ body, .card {
 /* --- Responsive Adjustments --- */
 
 /* On large screens, constrain the width of the chat container */
-@media (min-width: 992px) {
+@media (min-width: 792px) {
     #chat-history {
-        max-width: 960px;
+        max-width: 760px;
     }
     #chat-input-area {
-        max-width: 960px;
+        max-width: 760px;
     }
 }
 
 /* Ensure the main app container doesn't flex on small screens */
-@media (max-width: 991.98px) {
+@media (max-width: 791.98px) {
     #app-container {
         display: block;
     }
