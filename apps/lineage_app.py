@@ -88,6 +88,7 @@ def create_sidebar_content(prefix: str):
 
 store_components = html.Div([
     dcc.Store(id='user-id-store'),
+    dcc.Store(id='sidebar-collapsed-store', data=False),
     dcc.Store(id='sessions-store', data={}),
     dcc.Store(id='active-session-store', data=None),
     dcc.Store(id='messages-store', data={}),
@@ -98,8 +99,8 @@ store_components = html.Div([
 # Sidebar for large screens
 desktop_sidebar = html.Div(
     id="sidebar",
-    className="d-none d-lg-flex flex-column flex-shrink-0 p-3",
-    style={"width": "280px", "height": "100vh"},
+    className="d-none d-lg-flex flex-column flex-shrink-0",
+    style={"width": "280px", "height": "100vh", "padding": "1rem", "transition": "width 0.3s, padding 0.3s"},
     children=create_sidebar_content(prefix='desktop')
 )
 
@@ -116,6 +117,7 @@ header = html.Div(
     className="d-flex align-items-center p-3 border-bottom",
     children=[
         dbc.Button(html.I(className="bi bi-list"), id="open-sidebar-btn", className="d-lg-none me-2", n_clicks=0),
+        dbc.Button(html.I(className="bi bi-layout-sidebar"), id="collapse-sidebar-btn", className="d-none d-lg-inline-block me-2", n_clicks=0),
         html.H4(id="conversation-title", className="m-0"),
     ]
 )
@@ -419,6 +421,29 @@ def stream_agent_response(set_progress, trigger_data, user_id, active_session_id
         error_content = f"Error communicating with agent: {e}"
         new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error_content})
         return new_messages, new_sessions
+
+# --- Sidebar Collapse Callbacks ---
+
+@app.callback(
+    Output('sidebar-collapsed-store', 'data'),
+    Input('collapse-sidebar-btn', 'n_clicks'),
+    State('sidebar-collapsed-store', 'data'),
+    prevent_initial_call=True
+)
+def toggle_sidebar_collapse(n_clicks, is_collapsed):
+    if n_clicks:
+        return not is_collapsed
+    return dash.no_update
+
+@app.callback(
+    Output('sidebar', 'style'),
+    Input('sidebar-collapsed-store', 'data')
+)
+def update_sidebar_style(is_collapsed):
+    if is_collapsed:
+        return {"width": "0px", "height": "100vh", "padding": "0", "overflow": "hidden", "transition": "width 0.3s, padding 0.3s"}
+    else:
+        return {"width": "280px", "height": "100vh", "padding": "1rem", "transition": "width 0.3s, padding 0.3s"}
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False, port=8050)
