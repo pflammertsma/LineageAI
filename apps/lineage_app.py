@@ -150,8 +150,8 @@ def initialize_user_id(current_id):
     return dash.no_update
 
 @app.callback(
-    Output('active-session-store', 'data', allow_duplicate=True),
-    Output('new-session-btn', 'n_clicks'),
+    [Output('active-session-store', 'data', allow_duplicate=True),
+     Output('new-session-btn', 'n_clicks')],
     Input('user-id-store', 'data'),
     State('sessions-store', 'data'),
     State('active-session-store', 'data'),
@@ -163,9 +163,10 @@ def initialize_active_session(user_id, sessions, active_session_id):
     return dash.no_update, 1
 
 @app.callback(
-    [Output('sessions-store', 'data'), Output('active-session-store', 'data'), Output('messages-store', 'data')],
+    [Output('sessions-store', 'data', allow_duplicate=True), Output('active-session-store', 'data'), Output('messages-store', 'data')],
     Input('new-session-btn', 'n_clicks'),
-    [State('user-id-store', 'data'), State('sessions-store', 'data'), State('messages-store', 'data')]
+    [State('user-id-store', 'data'), State('sessions-store', 'data'), State('messages-store', 'data')],
+    prevent_initial_call=True
 )
 def create_session(n_clicks, user_id, sessions_data, messages_data):
     if n_clicks is None or user_id is None: return dash.no_update, dash.no_update, dash.no_update
@@ -259,21 +260,27 @@ def add_user_message_to_chat(n_clicks, n_submit, user_input, active_session_id, 
     return new_messages, "", trigger_data
 
 @app.callback(
-    Output('messages-store', 'data', allow_duplicate=True),
+    [Output('messages-store', 'data', allow_duplicate=True), Output('sessions-store', 'data', allow_duplicate=True)],
     Input('api-trigger-store', 'data'),
     State('user-id-store', 'data'),
     State('active-session-store', 'data'),
     State('messages-store', 'data'),
+    State('sessions-store', 'data'),
     background=True,
-    progress=[Output('messages-store', 'data')],
+    progress=[
+        Output('messages-store', 'data'),
+        Output('sessions-store', 'data')
+    ],
     prevent_initial_call=True
 )
-def stream_agent_response(set_progress, trigger_data, user_id, active_session_id, messages_data):
+def stream_agent_response(set_progress, trigger_data, user_id, active_session_id, messages_data, sessions_data):
     if not trigger_data: raise dash.exceptions.PreventUpdate
 
     new_messages = messages_data.copy()
+    new_sessions = sessions_data.copy()
+    
     # Pop the placeholder before streaming starts
-    if new_messages[active_session_id] and new_messages[active_session_id][-1].get('content') == '...':
+    if new_messages.get(active_session_id) and new_messages[active_session_id][-1].get('content') == '...':
         new_messages[active_session_id].pop()
 
     payload = {
@@ -296,6 +303,11 @@ def stream_agent_response(set_progress, trigger_data, user_id, active_session_id
                     data = json.loads(chunk_str)
                     events = data if isinstance(data, list) else [data]
                     for event in events:
+                        # Check for session title updates
+                        state_delta = event.get('actions', {}).get('stateDelta', {})
+                        if state_delta.get('session_title'):
+                            new_sessions[active_session_id] = state_delta['session_title']
+
                         author = event.get("author", "Assistant")
                         content = event.get("content", {})
                         if not content or not content.get("parts"): continue
@@ -311,20 +323,21 @@ def stream_agent_response(set_progress, trigger_data, user_id, active_session_id
                                         last_msg['content'] += part["text"]
                                     else:
                                         new_messages[active_session_id].append({"role": "assistant", "author": author, "content": part["text"]})
-                                set_progress(new_messages)
+                                set_progress((new_messages, new_sessions))
 
                             elif "functionCall" in part:
                                 is_first_model_chunk = True
                                 tool_call = part["functionCall"]
                                 tool_message = {"role": "tool", "name": tool_call.get('name', '?'), "input": json.dumps(tool_call.get('args', {}), indent=2)}
                                 new_messages[active_session_id].append(tool_message)
-                                set_progress(new_messages)
+                                set_progress((new_messages, new_sessions))
                 except json.JSONDecodeError:
                     pass
-        return new_messages
+        return new_messages, new_sessions
     except requests.exceptions.RequestException as e:
-        new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": f"Error communicating with agent: {e}"})
-        return new_messages
+        error_content = f"Error communicating with agent: {e}"
+        new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error_content})
+        return new_messages, new_sessions
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
