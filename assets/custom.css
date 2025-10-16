@@ -44,6 +44,7 @@ body, .card {
     flex-grow: 1;
     overflow-y: auto;
     align-items: center;
+    padding: 0 20px;
 }
 #chat-history {
     width: 100%;
@@ -62,6 +63,11 @@ body, .card {
     color: var(--text-primary);
     background-color: var(--bg-surface);
     border-color: var(--bg-surface);
+    min-height: 40px; /* Approx 1 line height + padding */
+    max-height: 250px; /* Approx 10 lines */
+    overflow-y: auto !important; /* Ensure scrollbar appears */
+    line-height: 1.5;
+    flex-grow: 1;
 }
 
 /* --- Sidebar Header --- */
@@ -282,4 +288,49 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     background-color: #272822;
     border-radius: 0.3rem;
     padding: 1rem;
+}
+
+/* Style for the placeholder text in the user input textarea */
+#user-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 1; /* Override browser defaults */
+}
+
+/* Make the send button circular and center the icon */
+.send-button {
+    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#chat-input-area .input-group {
+    align-items: flex-end;
+}
+
+#user-input:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: var(--bg-surface) !important;
+}
+
+/* --- Scrollbar Styling --- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-surface);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }

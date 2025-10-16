@@ -148,9 +148,9 @@ chat_input_area = html.Div(
             dbc.Col(dbc.Button("Format Biography", id="format-biography-btn", color="secondary"), width="auto"),
         ], className="mb-2"),
         dbc.InputGroup([
-            dcc.Textarea(id="user-input", placeholder="Type your message...", style={'width': '100%', 'resize': 'none'}, className="user-input-textarea")
+            dcc.Textarea(id="user-input", placeholder="Type your message...", style={'resize': 'none'}, className="user-input-textarea", rows=1)
             ,
-            dbc.Button("Send", id="send-btn", color="primary", n_clicks=0),
+            dbc.Button(html.I(className="bi bi-send-fill"), id="send-btn", color="primary", n_clicks=0, className="send-button"),
         ]),
     ]
 )
@@ -190,19 +190,23 @@ dash.clientside_callback(
     """
     function(id) {
         const textarea = document.getElementById(id);
-        if (textarea && !textarea.hasAttribute('data-keydown-listener')) {
-            textarea.setAttribute('data-keydown-listener', 'true');
+        if (textarea && !textarea.hasAttribute('data-listener-attached')) {
+            textarea.setAttribute('data-listener-attached', 'true');
+
+            // Send on Enter (but not with Shift or Ctrl)
             textarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    if (e.shiftKey || e.ctrlKey) {
-                        // Allow newline
-                        return;
-                    }
-                    // Prevent newline and send message
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
                     e.preventDefault();
                     document.getElementById('send-btn').click();
                 }
             });
+
+            // Auto-resize textarea
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                // 2px border box adjustment
+                this.style.height = (this.scrollHeight + 2) + 'px';
+            }, false);
         }
         return window.dash_clientside.no_update;
     }
