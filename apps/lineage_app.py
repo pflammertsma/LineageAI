@@ -148,7 +148,8 @@ chat_input_area = html.Div(
             dbc.Col(dbc.Button("Format Biography", id="format-biography-btn", color="secondary"), width="auto"),
         ], className="mb-2"),
         dbc.InputGroup([
-            dbc.Input(id="user-input", placeholder="Type your message...", n_submit=0),
+            dcc.Textarea(id="user-input", placeholder="Type your message...", style={'width': '100%', 'resize': 'none'}, className="user-input-textarea")
+            ,
             dbc.Button("Send", id="send-btn", color="primary", n_clicks=0),
         ]),
     ]
@@ -184,6 +185,32 @@ app.layout = html.Div(
 )
 
 # --- Callbacks ---
+
+dash.clientside_callback(
+    """
+    function(id) {
+        const textarea = document.getElementById(id);
+        if (textarea && !textarea.hasAttribute('data-keydown-listener')) {
+            textarea.setAttribute('data-keydown-listener', 'true');
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (e.shiftKey || e.ctrlKey) {
+                        // Allow newline
+                        return;
+                    }
+                    // Prevent newline and send message
+                    e.preventDefault();
+                    document.getElementById('send-btn').click();
+                }
+            });
+        }
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output("user-input", "className", allow_duplicate=True),
+    Input("user-input", "id"),
+    prevent_initial_call='initial_duplicate'
+)
 
 @app.callback(
     Output("offcanvas-sidebar", "is_open"),
@@ -376,13 +403,12 @@ def update_chat_history(messages_data, active_session_id):
     Output('user-input', 'value'),
     Output('api-trigger-store', 'data'),
     Input('send-btn', 'n_clicks'),
-    Input('user-input', 'n_submit'),
     State('user-input', 'value'),
     State('active-session-store', 'data'),
     State('messages-store', 'data'),
     prevent_initial_call=True
 )
-def add_user_message_to_chat(n_clicks, n_submit, user_input, active_session_id, messages_data):
+def add_user_message_to_chat(n_clicks, user_input, active_session_id, messages_data):
     if not active_session_id or not user_input: return dash.no_update, dash.no_update, dash.no_update
     new_messages = messages_data.copy()
     if active_session_id not in new_messages: new_messages[active_session_id] = []

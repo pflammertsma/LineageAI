@@ -14,16 +14,16 @@
 }
 
 body, .card {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Inter', sans-serif;
 }
 
 /* --- Layout Overrides --- */
 #app-container, #sidebar, .offcanvas {
-    background-color: var(--bg-background) !important;
+    background-color: var(--bg-background);
 }
 
 #main-content {
-    background-color: var(--bg-surface) !important;
+    background-color: var(--bg-surface);
 }
 
 #sidebar {
@@ -34,7 +34,7 @@ body, .card {
 
 /* Main Conversation Title */
 #main-header {
-    background-color: var(--bg-surface) !important;
+    background-color: var(--bg-surface);
     border-bottom: 1px solid var(--border-color) !important;
     color: var(--text-primary);
 }
@@ -50,7 +50,7 @@ body, .card {
 }
 #chat-input-area {
     width: 100%;
-    background-color: var(--bg-surface) !important;
+    background-color: var(--bg-surface);
     flex-shrink: 0;
     box-shadow: 0 2px 8px -2px color(from #c4c7c5 srgb r g b / .16);
     border: 1px solid var(--border-color);
@@ -59,9 +59,9 @@ body, .card {
 }
 
 #user-input {
-    background-color: var(--bg-background) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-color) !important;
+    color: var(--text-primary);
+    background-color: var(--bg-surface);
+    border-color: var(--bg-surface);
 }
 
 /* --- Sidebar Header --- */
@@ -91,16 +91,16 @@ body, .card {
 
 /* User Message */
 .alert-primary {
-    background-color: var(--accent-primary) !important;
-    border-color: var(--accent-primary) !important;
-    color: white !important;
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
 }
 
 /* Assistant Message */
 .alert-secondary {
-    background-color: var(--bg-background) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-primary) !important;
+    background-color: var(--bg-background);
+    border-color: var(--border-color);
+    color: var(--text-primary);
 }
 
 /* Session list buttons */
@@ -116,25 +116,25 @@ body, .card {
 
 /* Primary action buttons */
 .btn-primary {
-    background-color: var(--accent-primary) !important;
-    border-color: var(--accent-primary) !important;
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
 }
 
 /* Secondary action buttons */
 .btn-secondary {
-    background-color: var(--bg-surface) !important;
-    color: var(--text-secondary) !important;
-    border-color: var(--border-color) !important;
+    background-color: var(--bg-surface);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
 }
 .btn-secondary:hover {
-     background-color: #31364a !important;
+     background-color: #31364a;
 }
 
 /* "New Session" button */
 .btn-success {
-    background-color: var(--accent-discovery) !important;
-    border-color: var(--accent-discovery) !important;
-    color: var(--bg-background) !important;
+    background-color: var(--accent-discovery);
+    border-color: var(--accent-discovery);
+    color: var(--bg-background);
 }
 
 /* --- Responsive Adjustments --- */
