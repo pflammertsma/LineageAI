@@ -12,9 +12,7 @@ import json
 import uuid
 import time
 import re
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import HtmlFormatter
+from components import Wikitext
 
 # For background callbacks
 import diskcache
@@ -308,6 +306,7 @@ def update_chat_history(messages_data, active_session_id):
         # Add a sample message for testing
         messages_data[active_session_id] = [
             {"role": "assistant", "content": """Here is some wikitext:
+
 ```wiki
 = Level 1 Heading =
 
@@ -326,6 +325,7 @@ def update_chat_history(messages_data, active_session_id):
 
 # Ordered list item 1
 # Ordered list item 2
+```
 """}
         ]
 
@@ -350,16 +350,7 @@ def update_chat_history(messages_data, active_session_id):
                         wikitext = part.strip('```wiki\n ')
                         wikitext = wikitext.strip('\n```')
                         
-                        # Use Pygments to highlight the wikitext
-                        lexer = get_lexer_by_name('moin')
-                        formatter = HtmlFormatter(cssclass="highlight")
-                        highlighted_code = highlight(wikitext, lexer, formatter)
-                        
-                        # Wrap in a <code> tag for the copy button javascript
-                        highlighted_code_with_code_tag = f"<code>{highlighted_code}</code>"
-
-                        # Use dcc.Markdown to render the HTML.
-                        children.append(dcc.Markdown(highlighted_code_with_code_tag, dangerously_allow_html=True))
+                        children.append(Wikitext(wikitext))
                     else:
                         if part:
                             children.append(dcc.Markdown(part))

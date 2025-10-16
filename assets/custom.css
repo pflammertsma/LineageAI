@@ -175,9 +175,10 @@ body, .card {
     font-size: 0.8em;
     opacity: 0; /* Initially hidden */
     transition: opacity 0.3s ease;
+    z-index: 1;
 }
 
-pre:hover .copy-code-button {
+.highlight-container:hover .copy-code-button {
     opacity: 0.7; /* Show on hover */
 }
 
@@ -276,3 +277,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight .vi { color: #F8F8F2 } /* Name.Variable.Instance */
 .highlight .vm { color: #F8F8F2 } /* Name.Variable.Magic */
 .highlight .il { color: #AE81FF } /* Literal.Number.Integer.Long */
+
+.highlight-container {
+    background-color: #272822;
+    border-radius: 0.3rem;
+    padding: 1rem;
+}
