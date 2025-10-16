@@ -11,6 +11,10 @@ import requests
 import json
 import uuid
 import time
+import re
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import HtmlFormatter
 
 # For background callbacks
 import diskcache
@@ -300,19 +304,69 @@ def update_chat_history(messages_data, active_session_id):
     centered_style = "d-flex justify-content-center align-items-center h-100"
     if not active_session_id: return html.Div([dbc.Spinner(), html.Span(" Loading session...", className="ms-2")], className=centered_style)
     if active_session_id == 'FAILED': return html.Div(dbc.Alert("Failed to create or load a session. The API server may be offline.", color="danger"), className=centered_style)
-    if active_session_id not in messages_data: return html.Div([dbc.Spinner(), html.Span(" Loading messages...", className="ms-2")], className=centered_style)
-    
+    if not messages_data.get(active_session_id):
+        # Add a sample message for testing
+        messages_data[active_session_id] = [
+            {"role": "assistant", "content": """Here is some wikitext:
+```wiki
+= Level 1 Heading =
+
+== Level 2 Heading ==
+
+'''Bold text'''
+
+''Italic text''
+
+[[Link]]
+
+{{Template}}
+
+* Unordered list item 1
+* Unordered list item 2
+
+# Ordered list item 1
+# Ordered list item 2
+"""}
+        ]
+
     messages = messages_data.get(active_session_id, [])
     if not messages: return html.Div(html.P("What can I help you with?"), className=centered_style)
 
     bubbles = []
     for msg in messages:
         role = msg.get('role')
+        content = msg.get('content', '')
+
         if role == 'user':
-            bubbles.append(dbc.Alert(dcc.Markdown(msg.get('content', '')), color="primary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "auto", "marginRight": "0"}, className="mb-2"))
+            bubbles.append(dbc.Alert(dcc.Markdown(content), color="primary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "auto", "marginRight": "0"}, className="mb-2"))
+        
         elif role == 'assistant':
             author_div = html.Div(msg.get('author', 'Assistant'), className="small text-secondary mb-1")
-            bubbles.append(html.Div([author_div, dbc.Alert(dcc.Markdown(msg.get('content', '')), color="secondary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
+            if '```wiki' in content:
+                parts = re.split(r'(```wiki\n.*?\n```)', content, flags=re.DOTALL)
+                children = []
+                for part in parts:
+                    if part.startswith('```wiki'):
+                        wikitext = part.strip('```wiki\n ')
+                        wikitext = wikitext.strip('\n```')
+                        
+                        # Use Pygments to highlight the wikitext
+                        lexer = get_lexer_by_name('moin')
+                        formatter = HtmlFormatter(cssclass="highlight")
+                        highlighted_code = highlight(wikitext, lexer, formatter)
+                        
+                        # Wrap in a <code> tag for the copy button javascript
+                        highlighted_code_with_code_tag = f"<code>{highlighted_code}</code>"
+
+                        # Use dcc.Markdown to render the HTML.
+                        children.append(dcc.Markdown(highlighted_code_with_code_tag, dangerously_allow_html=True))
+                    else:
+                        if part:
+                            children.append(dcc.Markdown(part))
+                bubbles.append(html.Div([author_div, dbc.Alert(children, color="secondary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
+            else:
+                bubbles.append(html.Div([author_div, dbc.Alert(dcc.Markdown(content), color="secondary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
+
         elif role == 'tool':
             author_div = html.Div(msg.get('author', 'Assistant'), className="small text-secondary mb-1")
             tool_name = msg.get('name', 'Unknown Tool')
@@ -323,6 +377,7 @@ def update_chat_history(messages_data, active_session_id):
                 ),
             ], start_collapsed=True, className="mb-2 w-75")
             bubbles.append(html.Div([author_div, accordion]))
+            
     return html.Div(bubbles, className="p-3")
 
 @app.callback(
