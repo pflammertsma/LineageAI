@@ -174,7 +174,7 @@ body, .card {
 }
 
 /* Make the send button circular and center the icon */
-.send-button {
+.circle-button {
     border-radius: 50% !important;
     width: 40px;
     height: 40px;

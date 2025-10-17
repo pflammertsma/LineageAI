@@ -140,7 +140,7 @@ chat_history = html.Div(
 
 chat_input_area = html.Div(
     id="chat-input-area",
-    className="mt-auto p-3",
+    className="p-3",
     style={"flexShrink": "0"},
     children=[
         dbc.Row([
@@ -150,7 +150,7 @@ chat_input_area = html.Div(
         dbc.InputGroup([
             dcc.Textarea(id="user-input", placeholder="Type your message...", style={'resize': 'none'}, className="user-input-textarea", rows=1)
             ,
-            dbc.Button(html.I(className="bi bi-send-fill"), id="send-btn", color="primary", n_clicks=0, className="send-button"),
+            dbc.Button(html.I(className="bi bi-send-fill"), id="send-btn", color="primary", n_clicks=0, className="circle-button"),
         ]),
     ]
 )
@@ -158,17 +158,22 @@ chat_input_area = html.Div(
 main_content = html.Div(
     id="main-content",
     className="d-flex flex-column",
-    style={"flexGrow": 1},
+    style={"flexGrow": 1, "position": "relative", "height": "100vh"},
     children=[
         header,
-        html.Div(
-            id="chat-container",
-            className="d-flex flex-column",
-            style={"flexGrow": 1, "overflowY": "auto"},
-            children=[
-                chat_history,
-                chat_input_area
-            ]
+        chat_history,
+        chat_input_area,
+        dbc.Button(
+            html.I(className="bi bi-arrow-down-circle-fill fs-4"),
+            id="scroll-to-bottom-btn",
+            style={
+                "position": "absolute",
+                "bottom": "120px",
+                "right": "36px",
+                "display": "none",
+                "zIndex": 10
+            },
+            className="circle-button"
         )
     ]
 )
@@ -383,7 +388,7 @@ def update_chat_history(messages_data, active_session_id):
     State('messages-store', 'data'),
     prevent_initial_call=True
 )
-def handle_user_actions(send_clicks, research_clicks, user_input, active_session_id, messages_data):
+def handle_user_actions(send_clicks, research_clicks, format_clicks, user_input, active_session_id, messages_data):
     if not ctx.triggered_id or not active_session_id:
         return dash.no_update, dash.no_update, dash.no_update
 
