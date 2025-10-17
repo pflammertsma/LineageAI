@@ -167,6 +167,51 @@ body, .card {
     }
 }
 
+/* Style for the placeholder text in the user input textarea */
+#user-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 1; /* Override browser defaults */
+}
+
+/* Make the send button circular and center the icon */
+.send-button {
+    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#chat-input-area .input-group {
+    align-items: flex-end;
+}
+
+#user-input:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: var(--bg-surface) !important;
+}
+
+/* --- Scrollbar Styling --- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-surface);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
 /* For code block copy button */
 .copy-code-button {
     position: absolute;
@@ -182,10 +227,6 @@ body, .card {
     opacity: 0; /* Initially hidden */
     transition: opacity 0.3s ease;
     z-index: 1;
-}
-
-.highlight-container:hover .copy-code-button {
-    opacity: 0.7; /* Show on hover */
 }
 
 .copy-code-button:hover {
@@ -284,53 +325,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight .vm { color: #F8F8F2 } /* Name.Variable.Magic */
 .highlight .il { color: #AE81FF } /* Literal.Number.Integer.Long */
 
-.highlight-container {
-    background-color: #272822;
-    border-radius: 0.3rem;
-    padding: 1rem;
+.highlight-container:hover .copy-code-button {
+    opacity: 1; /* Show on hover */
 }
 
-/* Style for the placeholder text in the user input textarea */
-#user-input::placeholder {
-    color: var(--text-secondary);
-    opacity: 1; /* Override browser defaults */
-}
-
-/* Make the send button circular and center the icon */
-.send-button {
-    border-radius: 50% !important;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#chat-input-area .input-group {
-    align-items: flex-end;
-}
-
-#user-input:focus {
-    outline: none !important;
-    box-shadow: none !important;
-    border-color: var(--bg-surface) !important;
-}
-
-/* --- Scrollbar Styling --- */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg-surface);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
+/* Remove border from tool call accordion */
+.tool-call-accordion .accordion-item {
+    border: none;
 }

@@ -355,19 +355,44 @@ def update_chat_history(messages_data, active_session_id):
                     else:
                         if part:
                             children.append(dcc.Markdown(part))
-                bubbles.append(html.Div([author_div, dbc.Alert(children, color="secondary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
+                bubbles.append(html.Div([author_div, dbc.Alert(children, color="secondary", style={"maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
             else:
-                bubbles.append(html.Div([author_div, dbc.Alert(dcc.Markdown(content), color="secondary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
+                bubbles.append(html.Div([author_div, dbc.Alert(dcc.Markdown(content), color="secondary", style={"maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
 
         elif role == 'tool':
             author_div = html.Div(msg.get('author', 'Assistant'), className="small text-secondary mb-1")
             tool_name = msg.get('name', 'Unknown Tool')
+            tool_input_str = msg.get('input', '{}')
+            
+            # Default title for standard tool calls
+            title = html.Div([
+                html.I(className="bi bi-lightning-fill me-2"), 
+                f"Tool Call: {tool_name}"
+            ])
+
+            # Special case for agent transfers
+            if tool_name == 'transfer_to_agent':
+                try:
+                    tool_input_json = json.loads(tool_input_str)
+                    agent_name = tool_input_json.get('agent_name', 'Agent')
+                    title = html.Div([
+                        html.I(className="bi bi-arrow-right-circle me-2"), 
+                        "Transfer to ",
+                        html.Span(agent_name, className="fw-bold")
+                    ])
+                except json.JSONDecodeError:
+                    # Handle cases where input is not valid JSON
+                    title = html.Div([
+                        html.I(className="bi bi-arrow-right-circle me-2"),
+                        "Transfer to Agent"
+                    ])
+
             accordion = dbc.Accordion([
                 dbc.AccordionItem(
-                    html.Pre(html.Code(msg.get('input', '{}'))),
-                    title=f"Tool Call: {tool_name}"
+                    html.Pre(html.Code(tool_input_str)),
+                    title=title
                 ),
-            ], start_collapsed=True, className="mb-2 w-75")
+            ], start_collapsed=True, className="mb-2 w-75 tool-call-accordion")
             bubbles.append(html.Div([author_div, accordion]))
             
     return html.Div(bubbles, className="p-3")

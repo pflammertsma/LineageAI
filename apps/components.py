@@ -22,7 +22,7 @@ def Wikitext(wikitext: str) -> html.Div:
 
     return html.Div(
         children=[
-            html.Button("Copy", id=button_id, className="copy-code-button"),
+            html.Button(html.I(className="bi bi-clipboard"), id=button_id, className="copy-code-button"),
             html.Pre(html.Code(wikitext, id=container_id))
         ],
         className="highlight-container",
