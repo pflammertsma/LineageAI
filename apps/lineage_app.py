@@ -303,32 +303,6 @@ def update_chat_history(messages_data, active_session_id):
     centered_style = "d-flex justify-content-center align-items-center h-100"
     if not active_session_id: return html.Div([dbc.Spinner(), html.Span(" Loading session...", className="ms-2")], className=centered_style)
     if active_session_id == 'FAILED': return html.Div(dbc.Alert("Failed to create or load a session. The API server may be offline.", color="danger"), className=centered_style)
-    if not messages_data.get(active_session_id):
-        # Add a sample message for testing
-        messages_data[active_session_id] = [
-            {"role": "assistant", "content": """Here is some wikitext:
-
-```wiki
-= Level 1 Heading =
-
-== Level 2 Heading ==
-
-'''Bold text'''
-
-''Italic text''
-
-[[Link]]
-
-{{Template}}
-
-* Unordered list item 1
-* Unordered list item 2
-
-# Ordered list item 1
-# Ordered list item 2
-```
-"""}
-        ]
 
     messages = messages_data.get(active_session_id, [])
     if not messages: return html.Div(html.P("What can I help you with?"), className=centered_style)
