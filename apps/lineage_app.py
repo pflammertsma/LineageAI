@@ -186,36 +186,6 @@ app.layout = html.Div(
 
 # --- Callbacks ---
 
-dash.clientside_callback(
-    """
-    function(id) {
-        const textarea = document.getElementById(id);
-        if (textarea && !textarea.hasAttribute('data-listener-attached')) {
-            textarea.setAttribute('data-listener-attached', 'true');
-
-            // Send on Enter (but not with Shift or Ctrl)
-            textarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
-                    e.preventDefault();
-                    document.getElementById('send-btn').click();
-                }
-            });
-
-            // Auto-resize textarea
-            textarea.addEventListener('input', function() {
-                this.style.height = 'auto';
-                // 2px border box adjustment
-                this.style.height = (this.scrollHeight + 2) + 'px';
-            }, false);
-        }
-        return window.dash_clientside.no_update;
-    }
-    """,
-    Output("user-input", "className", allow_duplicate=True),
-    Input("user-input", "id"),
-    prevent_initial_call='initial_duplicate'
-)
-
 @app.callback(
     Output("offcanvas-sidebar", "is_open"),
     Input("open-sidebar-btn", "n_clicks"),
