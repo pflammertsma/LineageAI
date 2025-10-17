@@ -376,19 +376,45 @@ def update_chat_history(messages_data, active_session_id):
     Output('user-input', 'value'),
     Output('api-trigger-store', 'data'),
     Input('send-btn', 'n_clicks'),
+    Input('start-research-btn', 'n_clicks'),
+    Input('format-biography-btn', 'n_clicks'),
     State('user-input', 'value'),
     State('active-session-store', 'data'),
     State('messages-store', 'data'),
     prevent_initial_call=True
 )
-def add_user_message_to_chat(n_clicks, user_input, active_session_id, messages_data):
-    if not active_session_id or not user_input: return dash.no_update, dash.no_update, dash.no_update
+def handle_user_actions(send_clicks, research_clicks, user_input, active_session_id, messages_data):
+    if not ctx.triggered_id or not active_session_id:
+        return dash.no_update, dash.no_update, dash.no_update
+
+    input_text = ""
+    clear_input = False
+
+    if ctx.triggered_id == 'send-btn':
+        if not user_input:
+            return dash.no_update, dash.no_update, dash.no_update
+        input_text = user_input
+        clear_input = True
+    elif ctx.triggered_id == 'start-research-btn':
+        input_text = "Use the researcher agent to perform research. Look for any relevant genealogical records."
+    elif ctx.triggered_id == 'format-biography-btn':
+        input_text = "Use the formatter agent to format a biography that includes as much relevant details about a profiles we've been talking about, including references and only links to known profiles."
+
+    if not input_text:
+        return dash.no_update, dash.no_update, dash.no_update
+
     new_messages = messages_data.copy()
-    if active_session_id not in new_messages: new_messages[active_session_id] = []
-    new_messages[active_session_id].append({"role": "user", "content": user_input})
+    if active_session_id not in new_messages:
+        new_messages[active_session_id] = []
+    
+    new_messages[active_session_id].append({"role": "user", "content": input_text})
     new_messages[active_session_id].append({"role": "assistant", "content": "..."})
-    trigger_data = {"user_input": user_input, "timestamp": time.time()}
-    return new_messages, "", trigger_data
+    
+    trigger_data = {"user_input": input_text, "timestamp": time.time()}
+    
+    output_user_input = "" if clear_input else dash.no_update
+
+    return new_messages, output_user_input, trigger_data
 
 @app.callback(
     [Output('messages-store', 'data', allow_duplicate=True), Output('sessions-store', 'data', allow_duplicate=True)],
