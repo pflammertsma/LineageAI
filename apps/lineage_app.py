@@ -292,8 +292,8 @@ def select_session(n_clicks, ids):
 
 @app.callback(
     Output('conversation-title', 'children'),
-    Input('active-session-store', 'data'),
-    State('sessions-store', 'data')
+    [Input('active-session-store', 'data'),
+     Input('sessions-store', 'data')]
 )
 def update_conversation_title(active_session_id, sessions):
     if not active_session_id or not sessions or active_session_id == 'FAILED': return "Conversation"
@@ -346,7 +346,7 @@ def update_chat_history(messages_data, active_session_id):
             # Default title for standard tool calls
             title = html.Div([
                 html.I(className="bi bi-lightning-fill me-2"), 
-                f"Tool Call: {tool_name}"
+                tool_name
             ])
 
             # Special case for agent transfers
@@ -356,7 +356,6 @@ def update_chat_history(messages_data, active_session_id):
                     agent_name = tool_input_json.get('agent_name', 'Agent')
                     title = html.Div([
                         html.I(className="bi bi-arrow-right-circle me-2"), 
-                        "Transfer to ",
                         html.Span(agent_name, className="fw-bold")
                     ])
                 except json.JSONDecodeError:
@@ -365,6 +364,8 @@ def update_chat_history(messages_data, active_session_id):
                         html.I(className="bi bi-arrow-right-circle me-2"),
                         "Transfer to Agent"
                     ])
+            else:
+                tool_input_str = msg.get('input', {}).get('json_str', tool_input_str)
 
             accordion = dbc.Accordion([
                 dbc.AccordionItem(
@@ -528,4 +529,4 @@ def update_sidebar_style(is_collapsed):
 
 if __name__ == "__main__":
     # TODO: Disable use_reloader in production for stability.
-    app.run(debug=True, use_reloader=True, port=8050)
+    app.run(debug=True, use_reloader=False, port=8050)
