@@ -40,14 +40,11 @@ def register_callbacks(app):
         return status_badge, status_badge
 
     def _parse_events_to_messages(events):
-        print(f"--- Parsing {len(events)} events ---")
         messages = []
         if not events:
-            print("No events to parse.")
             return messages
 
         for i, event in enumerate(events):
-            print(f"  Event {i}: {event}")
             # Check for a user message
             if "new_message" in event and event["new_message"].get("role") == "user":
                 parts = event["new_message"].get("parts", [])
@@ -75,9 +72,6 @@ def register_callbacks(app):
                     tool_input = json.dumps(tool_call.get('args', {}), indent=2)
                     messages.append({"role": "tool", "name": tool_name, "input": tool_input, "author": author})
         
-        print(f"--- Parsed into {len(messages)} messages ---")
-        for i, msg in enumerate(messages):
-            print(f"  Message {i}: {msg}")
         return messages
 
     @app.callback(Output('user-id-store', 'data'), Input('user-id-store', 'data'))
@@ -98,25 +92,18 @@ def register_callbacks(app):
         prevent_initial_call='initial_duplicate',
     )
     def initialize_sessions(user_id, existing_sessions, active_session_id, messages_data):
-        print("Attempting to initialize sessions...")
         if not user_id or active_session_id:
-            print("-> No user_id or active_session_id, aborting.")
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         # If sessions are already loaded, do nothing to them, but set the active session
         if existing_sessions:
-            print("-> Sessions already exist in store, setting active session.")
             return dash.no_update, list(existing_sessions.keys())[-1], dash.no_update, dash.no_update, dash.no_update
 
-        print(f"-> Fetching sessions from API for user {user_id}")
         try:
             url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions"
-            print(f"-> Calling GET {url}")
             response = requests.get(url)
             response.raise_for_status()
             sessions_data = response.json()
-            print(f"-> API returned sessions: {sessions_data}")
-
             sessions = {}
             if isinstance(sessions_data, list):
                 if sessions_data and isinstance(sessions_data[0], dict):
@@ -128,12 +115,10 @@ def register_callbacks(app):
 
             if sessions:
                 latest_session_id = sorted(sessions.keys(), reverse=True)[0]
-                print(f"-> Found sessions, setting active session to {latest_session_id}")
 
                 # Now, fetch the messages for the latest session
                 try:
                     url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{latest_session_id}"
-                    print(f"-> Calling GET {url} to fetch session details")
                     response = requests.get(url)
                     response.raise_for_status()
                     session_details = response.json()
@@ -143,24 +128,21 @@ def register_callbacks(app):
                     parsed_messages = _parse_events_to_messages(session_history_events)
                     new_messages[latest_session_id] = parsed_messages
                     
-                    print(f"-> Loaded {len(parsed_messages)} messages for session {latest_session_id}")
-                    
                     return sessions, latest_session_id, new_messages, dash.no_update, dash.no_update
                     
                 except requests.exceptions.RequestException as e:
-                    print(f"-> API call for session details failed: {e}")
                     # Fallback to just loading the session without history
                     return sessions, latest_session_id, dash.no_update, dash.no_update, dash.no_update
             else:
-                print("-> No sessions found on server.")
+                print("Sessions: No sessions found on server")
         except requests.exceptions.RequestException as e:
-            print(f"-> API call failed: {e}")
+            print(f"Sessions: API call failed: {e}")
             # If the API call fails, we'll proceed to create a new session locally.
             pass
 
         # If no sessions are found on the server, or if the API call fails,
         # trigger the creation of a new session.
-        print("-> Triggering new session creation.")
+        print("Sessions: Creating new session")
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, 1
 
     @app.callback(
@@ -302,7 +284,7 @@ def register_callbacks(app):
                     except (json.JSONDecodeError, TypeError):
                         # If any parsing fails, or if 'json_str' is not a string,
                         # just use the original tool_input_str.
-                        print(f"unexpected content in chat history: ${tool_input_str}")
+                        print(f"Chat history: unexpected content: ${tool_input_str}")
                         pass
 
                 accordion = dbc.Accordion([
