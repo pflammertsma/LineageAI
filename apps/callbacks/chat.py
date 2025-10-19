@@ -7,7 +7,7 @@ import json
 import uuid
 import time
 import re
-from ..layout.components import Wikitext
+from ..layout.components import Wikitext, UserChatBubble, AgentChatBubble, WikitextBubble, ToolCallBubble, SystemMessage
 
 API_BASE_URL = "http://localhost:8000"
 APP_NAME = "LineageAI"
@@ -211,14 +211,14 @@ def register_callbacks(app):
          Input('active-session-store', 'data')]
     )
     def update_chat_history(messages_data, active_session_id):
-        centered_style = "d-flex justify-content-center align-items-center h-100"
-        if not active_session_id: 
-            return html.Div([dbc.Spinner(), html.Span(" Loading session...", className="ms-2")], className=centered_style)
-        if active_session_id == 'FAILED': return html.Div(dbc.Alert("Failed to create or load a session. The API server may be offline.", color="danger"), className=centered_style)
+        if not active_session_id:
+            return SystemMessage("Loading session...", with_spinner=True)
+        if active_session_id == 'FAILED':
+            return SystemMessage("Failed to create or load a session. The API server may be offline.")
 
         messages = messages_data.get(active_session_id, [])
-        if not messages: 
-            return html.Div(html.P("What can I help you with?"), className=centered_style)
+        if not messages:
+            return SystemMessage("What can I help you with?")
 
         bubbles = []
         for i, msg in enumerate(messages):
@@ -226,74 +226,16 @@ def register_callbacks(app):
             content = msg.get('content', '')
 
             if role == 'user':
-                bubbles.append(dbc.Alert(dcc.Markdown(content), color="primary", style={"width": "fit-content", "maxWidth": "80%", "marginLeft": "auto", "marginRight": "0"}, className="mb-2"))
+                bubbles.append(UserChatBubble(content))
             
             elif role == 'assistant':
-                author_div = html.Div(msg.get('author', 'Assistant'), className="small text-secondary mb-1")
                 if '```wiki' in content:
-                    parts = re.split(r'(```wiki\n.*?\n```)', content, flags=re.DOTALL)
-                    children = []
-                    for part in parts:
-                        if part.startswith('```wiki'):
-                            wikitext = part.strip('```wiki\n ')
-                            wikitext = wikitext.strip('\n```')
-                            
-                            children.append(Wikitext(wikitext))
-                        else:
-                            if part:
-                                children.append(dcc.Markdown(part))
-                    bubbles.append(html.Div([author_div, dbc.Alert(children, color="secondary", style={"maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
+                    bubbles.append(WikitextBubble(msg.get('author', 'Assistant'), content))
                 else:
-                    bubbles.append(html.Div([author_div, dbc.Alert(dcc.Markdown(content), color="secondary", style={"maxWidth": "80%", "marginLeft": "0", "marginRight": "auto"}, className="mb-2")]))
+                    bubbles.append(AgentChatBubble(msg.get('author', 'Assistant'), content))
 
             elif role == 'tool':
-                author_div = html.Div(msg.get('author', 'Assistant'), className="small text-secondary mb-1")
-                tool_name = msg.get('name', 'Unknown Tool')
-                tool_input_str = msg.get('input', '{}')
-                
-                # Default title for standard tool calls
-                title = html.Div([
-                    html.I(className="bi bi-lightning-fill me-2"), 
-                    tool_name
-                ])
-
-                # Special case for agent transfers
-                if tool_name == 'transfer_to_agent':
-                    try:
-                        tool_input_json = json.loads(tool_input_str)
-                        agent_name = tool_input_json.get('agent_name', 'Agent')
-                        title = html.Div([
-                            html.I(className="bi bi-arrow-right-circle me-2"), 
-                            html.Span(agent_name, className="fw-bold")
-                        ])
-                    except json.JSONDecodeError:
-                        # Handle cases where input is not valid JSON
-                        title = html.Div([
-                            html.I(className="bi bi-arrow-right-circle me-2"),
-                            "Transfer to Agent"
-                        ])
-                else:
-                    try:
-                        loaded_input = json.loads(tool_input_str)
-                        if isinstance(loaded_input, dict):
-                            inner_json_string = loaded_input.get('json_str')
-                            if isinstance(inner_json_string, str):
-                                # It's a string containing JSON, so parse and re-dump with formatting.
-                                parsed_inner_json = json.loads(inner_json_string)
-                                tool_input_str = json.dumps(parsed_inner_json, indent=2)
-                    except (json.JSONDecodeError, TypeError):
-                        # If any parsing fails, or if 'json_str' is not a string,
-                        # just use the original tool_input_str.
-                        print(f"Chat history: unexpected content: ${tool_input_str}")
-                        pass
-
-                accordion = dbc.Accordion([
-                    dbc.AccordionItem(
-                        html.Pre(html.Code(tool_input_str)),
-                        title=title
-                    ),
-                ], start_collapsed=True, className="mb-2 w-75 tool-call-accordion")
-                bubbles.append(html.Div([author_div, accordion]))
+                bubbles.append(ToolCallBubble(msg.get('author', 'Assistant'), msg.get('name', 'Unknown Tool'), msg.get('input', '{}')))
                 
         return html.Div(bubbles, className="p-3")
 
