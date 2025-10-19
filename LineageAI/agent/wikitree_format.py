@@ -180,7 +180,7 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
       for profiles of people born in the Netherlands (in this case, denoting missing fields for any
       marriage records or a death record). Up to three fields can be used to indicate missing data:
       - `needs=[value] | needs1=[value] | needs2=[value]`
-        with the following possible values:
+        with ONLY the following possible values:
         - `Birth` (when a person was born or baptized and where)
         - `LNAB` (last name at birth)
         - `Marriage` (no information about a marriage is known yet)
