@@ -1,8 +1,15 @@
+
 # This is a Plotly Dash application that connects to an Agent Development Kit (ADK) API server.
 # The ADK implementation resides in the LineageAI directory.
 #
-# It is executed from the root project directory with:
+# IMPORTANT: This script starts a web server that will not terminate on its own.
+# Agents should not invoke this script directly, as it will cause the agent to hang.
+# The user is responsible for running this server in a separate terminal.
+#
+# To run the server, execute this file from the root project directory:
 # $ python apps/lineage_app.py
+#
+# The agent will ask you to restart the server when necessary.
 
 import sys
 import os

@@ -352,7 +352,6 @@ def register_callbacks(app):
             new_messages[active_session_id] = []
         
         new_messages[active_session_id].append({"role": "user", "content": input_text})
-        new_messages[active_session_id].append({"role": "assistant", "content": "..."})
         
         trigger_data = {"user_input": input_text, "timestamp": time.time()}
         
@@ -379,10 +378,8 @@ def register_callbacks(app):
 
         new_messages = messages_data.copy()
         new_sessions = sessions_data.copy()
-        
-        # Pop the placeholder before streaming starts
-        if new_messages.get(active_session_id) and new_messages[active_session_id][-1].get('content') == '...':
-            new_messages[active_session_id].pop()
+
+        set_progress((new_messages, new_sessions, True))
 
         payload = {
             "app_name": APP_NAME,
