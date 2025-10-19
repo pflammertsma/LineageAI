@@ -1,4 +1,3 @@
-
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
@@ -37,6 +36,8 @@ def create_layout(app):
         dcc.Store(id='active-session-store', data=None),
         dcc.Store(id='messages-store', data={}),
         dcc.Store(id='api-trigger-store', data=None),
+        dcc.Store(id='is-thinking-store', data=False),
+        
         dcc.Interval(id='api-status-interval', interval=60*1000, n_intervals=0),
     ])
 
@@ -78,6 +79,16 @@ def create_layout(app):
         )]
     )
 
+    thinking_indicator = html.Div(
+        id="thinking-indicator",
+        className="align-items-center p-3",
+        style={"display": "none"},
+        children=[
+            dbc.Spinner(size="sm", spinner_class_name="me-2"),
+            html.Span("Thinking...")
+        ]
+    )
+
     chat_input_area = html.Div(
         id="chat-input-area",
         className="p-3",
@@ -101,6 +112,7 @@ def create_layout(app):
         children=[
             header,
             chat_history,
+            thinking_indicator,
             chat_input_area,
             dbc.Button(
                 html.I(className="bi bi-arrow-down-circle-fill fs-4"),

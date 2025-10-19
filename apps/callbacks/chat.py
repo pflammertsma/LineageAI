@@ -301,6 +301,7 @@ def register_callbacks(app):
         Output('messages-store', 'data', allow_duplicate=True),
         Output('user-input', 'value'),
         Output('api-trigger-store', 'data'),
+        Output('is-thinking-store', 'data'),
         Input('send-btn', 'n_clicks'),
         Input('start-research-btn', 'n_clicks'),
         Input('format-biography-btn', 'n_clicks'),
@@ -310,15 +311,16 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def handle_user_actions(send_clicks, research_clicks, format_clicks, user_input, active_session_id, messages_data):
+        print(f"handle_user_actions triggered. api-trigger-store: {ctx.triggered_id}")
         if not ctx.triggered_id or not active_session_id:
-            return dash.no_update, dash.no_update, dash.no_update
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         input_text = ""
         clear_input = False
 
         if ctx.triggered_id == 'send-btn':
             if not user_input:
-                return dash.no_update, dash.no_update, dash.no_update
+                return dash.no_update, dash.no_update, dash.no_update, dash.no_update
             input_text = user_input
             clear_input = True
         elif ctx.triggered_id == 'start-research-btn':
@@ -327,7 +329,7 @@ def register_callbacks(app):
             input_text = "Use the formatter agent to format a biography that includes as much relevant details about a profiles we've been talking about, including references and only links to known profiles."
 
         if not input_text:
-            return dash.no_update, dash.no_update, dash.no_update
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         new_messages = messages_data.copy()
         if active_session_id not in new_messages:
@@ -339,29 +341,27 @@ def register_callbacks(app):
         
         output_user_input = "" if clear_input else dash.no_update
 
-        return new_messages, output_user_input, trigger_data
+        print(f"handle_user_actions setting is-thinking-store to True")
+        return new_messages, output_user_input, trigger_data, True
 
     @app.callback(
-        [Output('messages-store', 'data', allow_duplicate=True), Output('sessions-store', 'data', allow_duplicate=True)],
+        [Output('messages-store', 'data', allow_duplicate=True), 
+         Output('sessions-store', 'data', allow_duplicate=True),
+         Output('is-thinking-store', 'data', allow_duplicate=True)],
         Input('api-trigger-store', 'data'),
         State('user-id-store', 'data'),
         State('active-session-store', 'data'),
         State('messages-store', 'data'),
         State('sessions-store', 'data'),
         background=True,
-        progress=[
-            Output('messages-store', 'data'),
-            Output('sessions-store', 'data')
-        ],
         prevent_initial_call=True
     )
-    def stream_agent_response(set_progress, trigger_data, user_id, active_session_id, messages_data, sessions_data):
+    def stream_agent_response(trigger_data, user_id, active_session_id, messages_data, sessions_data):
+        print(f"stream_agent_response triggered. api-trigger-store: {trigger_data}")
         if not trigger_data: raise dash.exceptions.PreventUpdate
 
         new_messages = messages_data.copy()
         new_sessions = sessions_data.copy()
-
-        set_progress((new_messages, new_sessions, True))
 
         payload = {
             "app_name": APP_NAME,
@@ -383,7 +383,6 @@ def register_callbacks(app):
                         data = json.loads(chunk_str)
                         events = data if isinstance(data, list) else [data]
                         for event in events:
-                            # Check for session title updates
                             state_delta = event.get('actions', {}).get('stateDelta', {})
                             if state_delta.get('session_title'):
                                 new_sessions[active_session_id] = state_delta['session_title']
@@ -403,7 +402,6 @@ def register_callbacks(app):
                                             last_msg['content'] += part["text"]
                                         else:
                                             new_messages[active_session_id].append({"role": "assistant", "author": author, "content": part["text"]})
-                                    set_progress((new_messages, new_sessions))
 
                                 elif "functionCall" in part:
                                     is_first_model_chunk = True
@@ -412,14 +410,26 @@ def register_callbacks(app):
                                     tool_input = json.dumps(tool_call.get('args', {}), indent=2)
                                     tool_message = {"role": "tool", "name": tool_name, "input": tool_input, "author": author}
                                     new_messages[active_session_id].append(tool_message)
-                                    set_progress((new_messages, new_sessions))
                     except json.JSONDecodeError:
                         pass
-            return new_messages, new_sessions
+            print("stream_agent_response setting is-thinking-store to False")
+            return new_messages, new_sessions, False
         except requests.exceptions.RequestException as e:
             error_content = f"Error communicating with agent: {e}"
             new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error_content})
-            return new_messages, new_sessions
+            print("stream_agent_response setting is-thinking-store to False")
+            return new_messages, new_sessions, False
+
+    @app.callback(
+        Output('thinking-indicator', 'style'),
+        Input('is-thinking-store', 'data')
+    )
+    def update_thinking_indicator(is_thinking):
+        print(f"update_thinking_indicator triggered. is_thinking: {is_thinking}")
+        if is_thinking:
+            return {"display": "flex"}
+        else:
+            return {"display": "none"}
 
     # --- Sidebar Collapse Callbacks ---
 
