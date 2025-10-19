@@ -56,7 +56,7 @@ body, .card {
     box-shadow: 0 2px 8px -2px color(from #c4c7c5 srgb r g b / .16);
     border: 1px solid var(--border-color);
     border-radius: 24px;
-    margin: 20px;
+    margin: 0 20px 20px 20px;
 }
 
 #user-input {
@@ -229,6 +229,18 @@ body, .card {
     z-index: 1;
 }
 
+#thinking-indicator {
+    margin: 0 20px 10px 20px;
+}
+
+/* Remove border from tool call accordion */
+.tool-call-accordion .accordion-item {
+    border: none;
+}
+
+.fade-out-bottom {
+    mask-image: linear-gradient(to bottom, black calc(100% - 40px), transparent 100%);
+}
 
 /* For word wrap in code blocks */
 pre {
@@ -321,9 +333,3 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight .vi { color: #F8F8F2 } /* Name.Variable.Instance */
 .highlight .vm { color: #F8F8F2 } /* Name.Variable.Magic */
 .highlight .il { color: #AE81FF } /* Literal.Number.Integer.Long */
-
-
-/* Remove border from tool call accordion */
-.tool-call-accordion .accordion-item {
-    border: none;
-}

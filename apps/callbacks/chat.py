@@ -311,7 +311,6 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def handle_user_actions(send_clicks, research_clicks, format_clicks, user_input, active_session_id, messages_data):
-        print(f"handle_user_actions triggered. api-trigger-store: {ctx.triggered_id}")
         if not ctx.triggered_id or not active_session_id:
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
@@ -341,7 +340,6 @@ def register_callbacks(app):
         
         output_user_input = "" if clear_input else dash.no_update
 
-        print(f"handle_user_actions setting is-thinking-store to True")
         return new_messages, output_user_input, trigger_data, True
 
     @app.callback(
@@ -357,7 +355,6 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def stream_agent_response(trigger_data, user_id, active_session_id, messages_data, sessions_data):
-        print(f"stream_agent_response triggered. api-trigger-store: {trigger_data}")
         if not trigger_data: raise dash.exceptions.PreventUpdate
 
         new_messages = messages_data.copy()
@@ -412,24 +409,22 @@ def register_callbacks(app):
                                     new_messages[active_session_id].append(tool_message)
                     except json.JSONDecodeError:
                         pass
-            print("stream_agent_response setting is-thinking-store to False")
             return new_messages, new_sessions, False
         except requests.exceptions.RequestException as e:
             error_content = f"Error communicating with agent: {e}"
             new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error_content})
-            print("stream_agent_response setting is-thinking-store to False")
             return new_messages, new_sessions, False
 
     @app.callback(
-        Output('thinking-indicator', 'style'),
+        [Output('thinking-indicator', 'style'),
+         Output('chat-history', 'className')],
         Input('is-thinking-store', 'data')
     )
     def update_thinking_indicator(is_thinking):
-        print(f"update_thinking_indicator triggered. is_thinking: {is_thinking}")
         if is_thinking:
-            return {"display": "flex"}
+            return {"display": "flex"}, "fade-out-bottom"
         else:
-            return {"display": "none"}
+            return {"display": "none"}, ""
 
     # --- Sidebar Collapse Callbacks ---
 

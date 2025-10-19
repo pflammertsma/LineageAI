@@ -81,7 +81,7 @@ def create_layout(app):
 
     thinking_indicator = html.Div(
         id="thinking-indicator",
-        className="align-items-center p-3",
+        className="align-items-center",
         style={"display": "none"},
         children=[
             dbc.Spinner(size="sm", spinner_class_name="me-2"),
