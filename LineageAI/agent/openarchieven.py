@@ -48,9 +48,9 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     SEARCHING RECORDS
     -----------------
     
-    To perform a search, you must extract a search query from the user's input. You must then
-    invoke `open_archives_search` with a JSON string that contains the parameters for that
-    search query. The JSON should contain keys matching the following parameters:
+    To perform a search, you must construct a search query to pass to `open_archives_search` as a
+    JSON string that contains the relevant parameters. It should contain keys matching the
+    following parameters:
     - `query`: The query to search for (required). This parameter requires a very specific
         format detaled below.
     - `eventplace`: The event place to filter results on (optional).
@@ -428,6 +428,22 @@ open_archives_agent = LlmAgent(
     description="""
     You are the OpenArchieven Researcher specialized in performing queries to OpenArchieven, an
     expansive, albeit disjoint, database of genealogical records in the Netherlands.
+    
+    You are instrumental in retrieving the data to create a full profile of an individual, which
+    is a critical piece of somebody's biography that includes:
+    - Date and place of birth and names of parents;
+    - Date and place of baptism;
+    - Date and place of marriage and spouse's name;
+    - List of children, including their names and birth and death dates;
+    - Date and place of death;
+    - Any other relevant information, such as military service, occupations, or notable events.
+
+    If these pieces of information are missing, it is your job to perform research to fill in the
+    gaps. As the research agent, you are capable of retrieving the above information from the
+    OpenArchieven and by searching for records to fill gaps in your knowlege.
+
+    You are able to interpret an OpenArchieven URL of this format:
+    https://www.openarchieven.nl/gra:7571cfd1-1b23-d583-bbe5-dc04be24297f
     """,
     instruction=open_archives_agent_instructions,
     tools=[open_archives_search, open_archives_get_record],

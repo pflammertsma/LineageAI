@@ -210,8 +210,11 @@ holocaust_agent = LlmAgent(
     model=AGENT_MODEL,
     description="""
     You are the Holocaust search agent specializing in querying the Holocaust sources to retrieve
-    information about individuals affected by the Holocaust, before transferring to the
-    LineageAiOrchestrator for further research.
+    information about individuals affected by the Holocaust.
+    
+    Your purpose is to identify and provide additional context to victims of the Holocaust. This
+    is especially relevant to people who were living before, during and possibly after the war, but
+    also for their immediate descendants and ancestors.
     """,
     instruction=joodsmonument_agent_instructions,
     tools=[holocaust_search, joodsmonument_search, joodsmonument_read_document, oorlogsbronnen_search, oorlogsbronnen_read_document],

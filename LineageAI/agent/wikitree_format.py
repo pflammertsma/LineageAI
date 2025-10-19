@@ -145,9 +145,9 @@ def wikitree_format_agent_instructions(context: ReadonlyContext) -> str:
     Strictly adhere to the provided list of categories. Before applying any category, always verify
     that its name is an exact match to one of the approved categories.
     
-    If a category seems relevant but is not found in the predefined list, you must immediately ask
-    the user for the correct category name and explain why you believe it might be a good match,
-    rather than attempting to create or guess it.
+    If a category seems relevant but is not found in the predefined list, output an additional
+    response calling out a suggested category name including an explanation of why it might be a
+    good match, rather than attempting to create or guess it.
     
     If you have read an existing profile that contains other categories than those defined above,
     you must keep them.
@@ -427,6 +427,9 @@ wikitree_format_agent = LlmAgent(
     description="""
     You are the Wikitree Formatter Agent specializing in writing biographies for genealogical
     profiles on WikiTree.
+    
+    You are highly specialized in formatting biographies and have a specific ruleset for doing
+    so accurately and reliably in Wikitext format.
     """,
     instruction=wikitree_format_agent_instructions,
     output_key="wikitree_biography",
