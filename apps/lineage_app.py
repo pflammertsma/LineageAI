@@ -223,21 +223,50 @@ def initialize_user_id(current_id):
     return dash.no_update
 
 @app.callback(
-    [Output('active-session-store', 'data', allow_duplicate=True),
+    [Output('sessions-store', 'data', allow_duplicate=True),
+     Output('active-session-store', 'data', allow_duplicate=True),
      Output('desktop-new-session-btn', 'n_clicks'),
      Output('mobile-new-session-btn', 'n_clicks')],
     Input('user-id-store', 'data'),
     State('sessions-store', 'data'),
     State('active-session-store', 'data'),
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
-def initialize_active_session(user_id, sessions, active_session_id):
-    if not user_id or active_session_id: return dash.no_update, dash.no_update, dash.no_update
-    if sessions: return list(sessions.keys())[-1], dash.no_update, dash.no_update
-    # Trigger the button in the visible sidebar. Since desktop is hidden on small screens,
-    # we can assume the mobile one is the one to trigger.
-    # A more robust solution might check the screen size.
-    return dash.no_update, dash.no_update, 1
+def initialize_sessions(user_id, existing_sessions, active_session_id):
+    print("Attempting to initialize sessions...")
+    if not user_id or active_session_id:
+        print("-> No user_id or active_session_id, aborting.")
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # If sessions are already loaded, do nothing to them, but set the active session
+    if existing_sessions:
+        print("-> Sessions already exist in store, setting active session.")
+        return dash.no_update, list(existing_sessions.keys())[-1], dash.no_update, dash.no_update
+
+    print(f"-> Fetching sessions from API for user {user_id}")
+    try:
+        url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions"
+        print(f"-> Calling GET {url}")
+        response = requests.get(url)
+        response.raise_for_status()
+        sessions = response.json()
+        print(f"-> API returned sessions: {sessions}")
+        if sessions:
+            # Sort sessions by key (which are timestamps) to find the most recent
+            latest_session_id = sorted(sessions.keys(), reverse=True)[0]
+            print(f"-> Found sessions, setting active session to {latest_session_id}")
+            return sessions, latest_session_id, dash.no_update, dash.no_update
+        else:
+            print("-> No sessions found on server.")
+    except requests.exceptions.RequestException as e:
+        print(f"-> API call failed: {e}")
+        # If the API call fails, we'll proceed to create a new session locally.
+        pass
+
+    # If no sessions are found on the server, or if the API call fails,
+    # trigger the creation of a new session.
+    print("-> Triggering new session creation.")
+    return dash.no_update, dash.no_update, dash.no_update, 1
 
 @app.callback(
     [Output('sessions-store', 'data', allow_duplicate=True), 
@@ -365,7 +394,19 @@ def update_chat_history(messages_data, active_session_id):
                         "Transfer to Agent"
                     ])
             else:
-                tool_input_str = msg.get('input', {}).get('json_str', tool_input_str)
+                try:
+                    loaded_input = json.loads(tool_input_str)
+                    if isinstance(loaded_input, dict):
+                        inner_json_string = loaded_input.get('json_str')
+                        if isinstance(inner_json_string, str):
+                            # It's a string containing JSON, so parse and re-dump with formatting.
+                            parsed_inner_json = json.loads(inner_json_string)
+                            tool_input_str = json.dumps(parsed_inner_json, indent=2)
+                except (json.JSONDecodeError, TypeError):
+                    # If any parsing fails, or if 'json_str' is not a string,
+                    # just use the original tool_input_str.
+                    print(f"unexpected content: ${tool_input_str}")
+                    pass
 
             accordion = dbc.Accordion([
                 dbc.AccordionItem(
