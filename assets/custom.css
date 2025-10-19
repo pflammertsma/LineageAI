@@ -224,14 +224,11 @@ body, .card {
     border-radius: 3px;
     cursor: pointer;
     font-size: 0.8em;
-    opacity: 0; /* Initially hidden */
+    opacity: 1; /* Always visible */
     transition: opacity 0.3s ease;
     z-index: 1;
 }
 
-.copy-code-button:hover {
-    opacity: 1;
-}
 
 /* For word wrap in code blocks */
 pre {
@@ -325,9 +322,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight .vm { color: #F8F8F2 } /* Name.Variable.Magic */
 .highlight .il { color: #AE81FF } /* Literal.Number.Integer.Long */
 
-.highlight-container:hover .copy-code-button {
-    opacity: 1; /* Show on hover */
-}
 
 /* Remove border from tool call accordion */
 .tool-call-accordion .accordion-item {

@@ -1,8 +1,5 @@
-
-// Function to add copy buttons to code blocks
 function addCopyButtons() {
-    document.querySelectorAll('.highlight pre').forEach(function(preElement) {
-        // Prevent adding a button if one already exists
+    document.querySelectorAll('.highlight-container pre, .tool-call-accordion pre').forEach(function(preElement) {
         if (preElement.querySelector('.copy-code-button')) {
             return;
         }
@@ -10,30 +7,32 @@ function addCopyButtons() {
         var button = document.createElement('button');
         button.className = 'copy-code-button';
         button.type = 'button';
-        button.innerText = 'Copy';
-
-        preElement.style.position = 'relative';
-        preElement.appendChild(button);
+        
+        const copyIcon = document.createElement('i');
+        copyIcon.className = 'bi bi-clipboard';
+        button.appendChild(copyIcon);
 
         button.addEventListener('click', function() {
-            var textToCopy = preElement.innerText;
+            const codeElement = preElement.querySelector('code');
+            const textToCopy = codeElement ? codeElement.innerText : '';
+
             navigator.clipboard.writeText(textToCopy).then(function() {
-                button.innerText = 'Copied!';
+                const checkIcon = document.createElement('i');
+                checkIcon.className = 'bi bi-check-lg';
+                button.replaceChildren(checkIcon);
                 setTimeout(function() {
-                    button.innerText = 'Copy';
+                    button.replaceChildren(copyIcon);
                 }, 2000);
             }).catch(function(err) {
                 console.error('Failed to copy text: ', err);
-                button.innerText = 'Error!';
-                setTimeout(function() {
-                    button.innerText = 'Copy';
-                }, 2000);
             });
         });
+
+        preElement.style.position = 'relative';
+        preElement.appendChild(button);
     });
 }
 
-// Observe changes in the chat history and add copy buttons to new code blocks
 const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -42,13 +41,23 @@ const observer = new MutationObserver(function(mutations) {
     });
 });
 
-// Start observing the chat history container
-// We need to wait for the container to exist
-window.addEventListener('load', () => {
+let retries = 0;
+const maxRetries = 20; // 20 * 100ms = 2 seconds
+
+function initializeObserver() {
     const targetNode = document.getElementById('chat-history');
+
     if (targetNode) {
         observer.observe(targetNode, { childList: true, subtree: true });
-        // Initial run
         addCopyButtons();
+    } else {
+        retries++;
+        if (retries < maxRetries) {
+            setTimeout(initializeObserver, 100);
+        } else {
+            console.error("Failed to find targetNode ('chat-history') after multiple retries.");
+        }
     }
-});
+}
+
+window.addEventListener('DOMContentLoaded', initializeObserver);

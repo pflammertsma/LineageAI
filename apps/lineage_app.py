@@ -408,14 +408,16 @@ def update_conversation_title(active_session_id, sessions):
 )
 def update_chat_history(messages_data, active_session_id):
     centered_style = "d-flex justify-content-center align-items-center h-100"
-    if not active_session_id: return html.Div([dbc.Spinner(), html.Span(" Loading session...", className="ms-2")], className=centered_style)
+    if not active_session_id: 
+        return html.Div([dbc.Spinner(), html.Span(" Loading session...", className="ms-2")], className=centered_style)
     if active_session_id == 'FAILED': return html.Div(dbc.Alert("Failed to create or load a session. The API server may be offline.", color="danger"), className=centered_style)
 
     messages = messages_data.get(active_session_id, [])
-    if not messages: return html.Div(html.P("What can I help you with?"), className=centered_style)
+    if not messages: 
+        return html.Div(html.P("What can I help you with?"), className=centered_style)
 
     bubbles = []
-    for msg in messages:
+    for i, msg in enumerate(messages):
         role = msg.get('role')
         content = msg.get('content', '')
 
@@ -478,7 +480,7 @@ def update_chat_history(messages_data, active_session_id):
                 except (json.JSONDecodeError, TypeError):
                     # If any parsing fails, or if 'json_str' is not a string,
                     # just use the original tool_input_str.
-                    print(f"unexpected content: ${tool_input_str}")
+                    print(f"unexpected content in chat history: ${tool_input_str}")
                     pass
 
             accordion = dbc.Accordion([
