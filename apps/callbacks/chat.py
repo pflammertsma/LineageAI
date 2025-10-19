@@ -297,9 +297,13 @@ def register_callbacks(app):
         State('messages-store', 'data'),
         State('sessions-store', 'data'),
         background=True,
+        progress=[
+            Output('messages-store', 'data'),
+            Output('sessions-store', 'data')
+        ],
         prevent_initial_call=True
     )
-    def stream_agent_response(trigger_data, user_id, active_session_id, messages_data, sessions_data):
+    def stream_agent_response(set_progress, trigger_data, user_id, active_session_id, messages_data, sessions_data):
         if not trigger_data: raise dash.exceptions.PreventUpdate
 
         new_messages = messages_data.copy()
@@ -352,6 +356,7 @@ def register_callbacks(app):
                                     tool_input = json.dumps(tool_call.get('args', {}), indent=2)
                                     tool_message = {"role": "tool", "name": tool_name, "input": tool_input, "author": author}
                                     new_messages[active_session_id].append(tool_message)
+                            set_progress((new_messages, new_sessions))
                     except json.JSONDecodeError:
                         pass
             return new_messages, new_sessions, False
