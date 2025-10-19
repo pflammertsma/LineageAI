@@ -418,13 +418,26 @@ def register_callbacks(app):
     @app.callback(
         [Output('thinking-indicator', 'style'),
          Output('chat-history', 'className')],
-        Input('is-thinking-store', 'data')
+        Input('is-thinking-store', 'data'),
+        [State('thinking-indicator', 'style'),
+         State('chat-history', 'className')]
     )
-    def update_thinking_indicator(is_thinking):
+    def update_thinking_indicator(is_thinking, current_style, current_class_name):
+        current_class_name = current_class_name or ""
         if is_thinking:
-            return {"display": "flex"}, "fade-out-bottom"
+            new_style = current_style.copy()
+            new_style['opacity'] = 1
+            new_style['transform'] = 'translateY(0)'
+            new_style['max-height'] = '100px'
+            if "fade-out-bottom" not in current_class_name:
+                return new_style, f"{current_class_name} fade-out-bottom"
+            return new_style, current_class_name
         else:
-            return {"display": "none"}, ""
+            new_style = current_style.copy()
+            new_style['opacity'] = 0
+            new_style['transform'] = 'translateY(100%)'
+            new_style['max-height'] = '0px'
+            return new_style, current_class_name.replace(" fade-out-bottom", "")
 
     # --- Sidebar Collapse Callbacks ---
 

@@ -48,6 +48,7 @@ body, .card {
 }
 #chat-history {
     width: 100%;
+    transition: mask-image 0.3s;
 }
 #chat-input-area {
     width: 100%;
@@ -230,17 +231,25 @@ body, .card {
 }
 
 #thinking-indicator {
-    margin: 0 20px 10px 20px;
+    margin: 0 30px 10px 30px;
 }
 
-/* Remove border from tool call accordion */
-.tool-call-accordion .accordion-item {
-    border: none;
+#chat-history::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    background: linear-gradient(to bottom, transparent 0%, var(--bg-surface) 100%);
+    transition: height 0.3s;
 }
 
-.fade-out-bottom {
-    mask-image: linear-gradient(to bottom, black calc(100% - 40px), transparent 100%);
+#chat-history.fade-out-bottom::after {
+    height: 100px;
 }
+
+
 
 /* For word wrap in code blocks */
 pre {
