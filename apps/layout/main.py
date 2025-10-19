@@ -72,7 +72,7 @@ def create_layout(app):
 
     chat_history = html.Div(
         id="chat-history",
-        style={"flexGrow": "1", "overflowY": "auto", "position": "relative"},
+        style={"flexGrow": "1", "overflowY": "auto", "position": "relative", "transition": "padding-bottom 0.3s"},
         children=[html.Div(
             [dbc.Spinner(), html.Span(" Initializing session...", className="ms-2")],
             className="d-flex justify-content-center align-items-center h-100"
@@ -82,7 +82,7 @@ def create_layout(app):
     thinking_indicator = html.Div(
         id="thinking-indicator",
         className="align-items-center",
-        style={"transition": "opacity 0.3s, transform 0.3s, max-height 0.3s", "opacity": 0, "transform": "translateY(100%)", "zIndex": 1, "position": "relative", "max-height": "0px"},
+        style={"transition": "opacity 0.3s, max-height 0.3s", "opacity": 0, "max-height": "0px"},
         children=[
             dbc.Spinner(size="sm", spinner_class_name="me-2"),
             html.Span("Thinking...")

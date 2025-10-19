@@ -417,27 +417,27 @@ def register_callbacks(app):
 
     @app.callback(
         [Output('thinking-indicator', 'style'),
+         Output('chat-history', 'style'),
          Output('chat-history', 'className')],
         Input('is-thinking-store', 'data'),
         [State('thinking-indicator', 'style'),
+         State('chat-history', 'style'),
          State('chat-history', 'className')]
     )
-    def update_thinking_indicator(is_thinking, current_style, current_class_name):
-        current_class_name = current_class_name or ""
+    def update_thinking_indicator(is_thinking, ti_style, ch_style, ch_className):
+        ch_className = ch_className or ""
         if is_thinking:
-            new_style = current_style.copy()
-            new_style['opacity'] = 1
-            new_style['transform'] = 'translateY(0)'
-            new_style['max-height'] = '100px'
-            if "fade-out-bottom" not in current_class_name:
-                return new_style, f"{current_class_name} fade-out-bottom"
-            return new_style, current_class_name
+            ti_style['opacity'] = 1
+            ti_style['max-height'] = '100px'
+            ch_style['padding-bottom'] = '1em'
+            if "fade-out-bottom" not in ch_className:
+                ch_className += " fade-out-bottom"
         else:
-            new_style = current_style.copy()
-            new_style['opacity'] = 0
-            new_style['transform'] = 'translateY(100%)'
-            new_style['max-height'] = '0px'
-            return new_style, current_class_name.replace(" fade-out-bottom", "")
+            ti_style['opacity'] = 0
+            ti_style['max-height'] = '0px'
+            ch_style['padding-bottom'] = '0px'
+            ch_className = ch_className.replace(" fade-out-bottom", "")
+        return ti_style, ch_style, ch_className
 
     # --- Sidebar Collapse Callbacks ---
 
