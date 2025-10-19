@@ -89,7 +89,7 @@ def create_sidebar_content(prefix: str):
 # --- App Layout ---
 
 store_components = html.Div([
-    dcc.Store(id='user-id-store'),
+    dcc.Store(id='user-id-store', storage_type='local'),
     dcc.Store(id='sidebar-collapsed-store', data=False),
     dcc.Store(id='sessions-store', data={}),
     dcc.Store(id='active-session-store', data=None),
@@ -230,7 +230,7 @@ def initialize_user_id(current_id):
     Input('user-id-store', 'data'),
     State('sessions-store', 'data'),
     State('active-session-store', 'data'),
-    prevent_initial_call=True,
+    prevent_initial_call='initial_duplicate',
 )
 def initialize_sessions(user_id, existing_sessions, active_session_id):
     print("Attempting to initialize sessions...")
@@ -249,8 +249,20 @@ def initialize_sessions(user_id, existing_sessions, active_session_id):
         print(f"-> Calling GET {url}")
         response = requests.get(url)
         response.raise_for_status()
-        sessions = response.json()
-        print(f"-> API returned sessions: {sessions}")
+        sessions_data = response.json()
+        print(f"-> API returned sessions: {sessions_data}")
+
+        sessions = {}
+        if isinstance(sessions_data, list):
+            # Assuming the API returns a list of session objects like [{'id': '...', 'title': '...'}]
+            # or a list of session id strings.
+            if sessions_data and isinstance(sessions_data[0], dict):
+                sessions = {s['id']: s.get('title', f'Session {i+1}') for i, s in enumerate(sessions_data)}
+            elif sessions_data:
+                sessions = {sid: f"Session {i+1}" for i, sid in enumerate(sorted(sessions_data))}
+        elif isinstance(sessions_data, dict):
+            sessions = sessions_data
+
         if sessions:
             # Sort sessions by key (which are timestamps) to find the most recent
             latest_session_id = sorted(sessions.keys(), reverse=True)[0]
@@ -330,8 +342,8 @@ def update_conversation_title(active_session_id, sessions):
 
 @app.callback(
     Output('chat-history', 'children'),
-    Input('messages-store', 'data'),
-    State('active-session-store', 'data')
+    [Input('messages-store', 'data'),
+     Input('active-session-store', 'data')]
 )
 def update_chat_history(messages_data, active_session_id):
     centered_style = "d-flex justify-content-center align-items-center h-100"
