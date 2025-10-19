@@ -123,6 +123,10 @@ This will open a new tab in your browser with the custom chat interface.
 
 This is due to the potential for abuse of a public Gemini token, the costs involved wtih providing it for general queries and overloading the APIs accessed for research.
 
+## License
+
+This project is licensed. See the [LICENSE.md](LICENSE.md) file for details.
+
 ## Thanks!
 
 Please feel free to contribute to this project in any way:
