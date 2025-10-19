@@ -46,8 +46,11 @@ def register_callbacks(app):
 
         for i, event in enumerate(events):
             # Check for a user message
-            if "new_message" in event and event["new_message"].get("role") == "user":
-                parts = event["new_message"].get("parts", [])
+            if ("new_message" in event and event["new_message"].get("role") == "user") or event.get("author") == "user":
+                if "new_message" in event:
+                    parts = event["new_message"].get("parts", [])
+                else:
+                    parts = event.get("content", {}).get("parts", [])
                 if parts:
                     full_text = "".join(p.get("text", "") for p in parts)
                     messages.append({"role": "user", "content": full_text})
