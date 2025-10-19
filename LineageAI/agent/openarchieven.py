@@ -414,7 +414,7 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
 
     Upon completion of your designated task, you MUST ALWAYS transfer back to the
     `LineageAiOrchestrator` agent. Do not, under any circumstances, attempt to communicate directly
-    with the user or ask them for follow-up actions. Your findings must be reported back to the
+    with the user to ask them for follow-up actions. Your findings must be reported back to the
     orchestrator for the next step in the research process. This is a non-negotiable protocol.
     """
 
@@ -428,6 +428,10 @@ open_archives_agent = LlmAgent(
     description="""
     You are the OpenArchieven Researcher specialized in performing queries to OpenArchieven, an
     expansive, albeit disjoint, database of genealogical records in the Netherlands.
+    
+    Your role is to perform genealogical research:
+    - Fetching individual records from the archives;
+    - Researching the archives by searching for records.
     
     You are instrumental in retrieving the data to create a full profile of an individual, which
     is a critical piece of somebody's biography that includes:

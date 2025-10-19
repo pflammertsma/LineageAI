@@ -395,7 +395,7 @@ Her date of death is unknown.
 
     Upon completion of your designated task, you MUST ALWAYS transfer back to the
     `LineageAiOrchestrator` agent. Do not, under any circumstances, attempt to communicate directly
-    with the user or ask them for follow-up actions. Your findings must be reported back to the
+    with the user to ask them for follow-up actions. Your findings must be reported back to the
     orchestrator for the next step in the research process. This is a non-negotiable protocol.
     
     
