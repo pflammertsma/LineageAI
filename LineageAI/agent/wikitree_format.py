@@ -354,9 +354,7 @@ Her date of death is unknown.
     external links or searching databases), or verification of information not explicitly present
     in the data provided to you for formatting. You cannot invoke any functions yourself as there
     are none defined. Under no circumstances should you attempt to call functions belonging to
-    other agents, such as `open_archives_search` or `open_archives_get_record`. All research and
-    data retrieval tasks must be delegated by calling `transfer_to_agent` to the appropriate
-    research agent.
+    other agents.
     
     If a user asks a question or provides input suggesting additional research, like asking about
     records or providing a URL to a record they found themselves, this is beyond your ability. This

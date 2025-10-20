@@ -4,6 +4,7 @@ from LineageAI.agent.wikitree_format import wikitree_format_agent
 from LineageAI.agent.wikitree import wikitree_query_agent
 from LineageAI.agent.holocaust import holocaust_agent
 from google.adk.agents import LlmAgent
+from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.tools import ToolContext
 from google.genai import types
 
@@ -13,21 +14,8 @@ def update_session_title(title: str, tool_context: ToolContext):
     tool_context.state['session_title'] = title
     return {"status": "success", "message": f"Session title updated to: {title}"}
 
-
-# Create the root agent that orchestrates the entire genealogy research process
-root_agent = LlmAgent(
-    name="LineageAiOrchestrator",
-    model=MODEL_FAST,
-    tools=[update_session_title],
-    generate_content_config=types.GenerateContentConfig(
-        temperature=0.2, # More deterministic output
-        # max_output_tokens=1024 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
-    ),
-    description="""
-    You are the LineageAi Orchestrator Agent who is the central point for conducting genealogy
-    research in the Netherlands. You are only an orchestrator and delegate tasks to other agents.
-    """,
-    instruction="""
+def open_archives_agent_instructions(context: ReadonlyContext) -> str:
+    prompt = """
     You are a research orchestrator responsible for understanding the user's input and delegating
     to relevant agents, in particular for performing searches for relevant genealogical records in
     archival records using OpenArchievenResearcher.
@@ -68,6 +56,9 @@ root_agent = LlmAgent(
 
     When transfering to another agent, ONLY provide `agent_name` inside `args` as passing to
     `functionCall` as any other parameters are not supported by the ADK.
+    
+    If new information was gathered, consider transferring to the WikitreeFormatterAgent to
+    format the biography with updated information.
     
     If an agent returns incomplete or ambiguous data, do not proceed with assumptions. Instead,
     request the user for clarification or additional information. If possible, propose a relevant
@@ -272,7 +263,41 @@ root_agent = LlmAgent(
     Whenever new information is found, you must always transfer to the WikitreeFormatterAgent to
     format it into a biography that the user can copy to WikiTree. You cannot state that you have
     "formatted a biography" unless you have transferred to the WikitreeFormatterAgent.
+    """
+
+    # Check if a subject exists in the shared state
+    if 'current_subject' in context.state:
+        subject = context.state['current_subject']
+        name = subject.get('RealName', 'the subject')
+        birth = subject.get('BirthDate', 'unknown')
+        
+        # Add dynamic, contextual instructions to the prompt
+        prompt += f"""
+        CURRENT CONTEXT
+        ---------------
+        You have been activated to find records for {name} (born {birth}).
+        Focus all your searches on this individual. Review their already found records
+        before performing new searches to avoid duplication.
+        
+        Found Records: {subject.get('found_records', 'None')}
+        """
+        
+    return prompt
+
+# Create the root agent that orchestrates the entire genealogy research process
+root_agent = LlmAgent(
+    name="LineageAiOrchestrator",
+    model=MODEL_FAST,
+    tools=[update_session_title],
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        # max_output_tokens=1024 # FIXME Setting restrictions on output tokens is causing the agent not to output anything at all
+    ),
+    description="""
+    You are the LineageAi Orchestrator Agent who is the central point for conducting genealogy
+    research in the Netherlands. You are only an orchestrator and delegate tasks to other agents.
     """,
+    instruction=open_archives_agent_instructions,
     sub_agents=[
         open_archives_agent, wikitree_query_agent, wikitree_format_agent, holocaust_agent
     ],

@@ -2,6 +2,7 @@ from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from LineageAI.util.utils import rate_limited_get
 import requests
 import json
+from typing import Dict, Any
 import re
 from datetime import datetime
 import copy
@@ -21,7 +22,7 @@ def parse_openarchieven_url(url: str):
     handling URLs with or without trailing slashes.
 
     Args:
-        url (str): The URL string in the format https://www.openarchieven.nl/{archive}:{identifier}.
+        The URL string in the format https://www.openarchieven.nl/{archive}:{identifier}.
 
     Returns:
         tuple: A tuple containing (archive, identifier) or (None, None) if parsing fails.
@@ -56,13 +57,21 @@ def parse_openarchieven_url(url: str):
         return None, None
 
 
-def open_archives_search(json_str: str) -> dict:
+def open_archives_search(json_dict: Dict[str, Any]) -> dict:
     """
-    Accepts a JSON string, parses it, and invokes open_archives_search with the parsed parameters.
-    The JSON should contain keys matching the parameters of open_archives_search.
+    Searches by invoking open_archives_search with the parsed parameters.
+    
+    Args:
+        JSON dictionary with search parameters with keys matching the parameters of open_archives_search.
+    
+    Returns:
+        dict: Search results or error message.
     """
     try:
-        params = json.loads(json_str)
+        if isinstance(json_dict, dict):
+            params = json_dict
+        else:
+            params = json.loads(json_dict)
         if not isinstance(params, dict):
             return {"status": "error", "error_message": "JSON must represent an object with search parameters."}
         # Override page/offset handling
@@ -83,7 +92,7 @@ def open_archives_search(json_str: str) -> dict:
         return {"status": "error", "error_message": f"Parameter error: {str(e)}"}
 
 
-def reformat_results(result: dict, multi_page_search: bool) -> dict:
+def reformat_results(result: Dict[str, Any], multi_page_search: bool) -> Dict[str, Any]:
     """
     Reformats a JSON dictionary from a specific input structure to a cleaner,
     more consolidated output structure.

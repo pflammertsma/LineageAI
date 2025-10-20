@@ -1,5 +1,6 @@
 from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from LineageAI.api.openarchieven_api import open_archives_search, open_archives_get_record
+from LineageAI.util.state_util import set_current_subject
 from google.adk.agents import LlmAgent
 from google.adk.agents.readonly_context import ReadonlyContext
 from google.genai import types
@@ -38,7 +39,9 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
 
     To read an individual record, you must invoke `open_archives_get_record` with a URL, e.g.:
     
+    ```
     open_archives_get_record("https://www.openarchieven.nl/gra:82abb4f7-6091-c219-f035-2cc346509875")
+    ```
 
     If you are provided with any openarchieven.nl URLs, you must read the record using
     `open_archives_get_record`. You do NOT need to fetch a record if it was obtained through
@@ -49,8 +52,17 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     -----------------
     
     To perform a search, you must construct a search query to pass to `open_archives_search` as a
-    JSON string that contains the relevant parameters. It should contain keys matching the
-    following parameters:
+    JSON dictionary that contains the relevant parameters, e.g.:
+    
+    ```
+    open_archives_search({
+        "query": "Jan Jansen &~& Aaltje Zwiers",
+        "eventtype": "Geboorte",
+        "relationtype": "Kind"
+    })
+    ```
+    
+    It should contain keys matching the following parameters:
     - `query`: The query to search for (required). This parameter requires a very specific
         format detaled below.
     - `eventplace`: The event place to filter results on (optional).
@@ -96,14 +108,14 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
 
     Here follows the details of the `query` parameter, starting with a basic search:
 
-    "[name1] [year]"
+      "[name1] [year]"
 
     Where [name1] is the name of the primary person you are searching for, and [year] is any
     relevant date or date range of a record. Providing [year] is optional.
 
     To perform a narrower search, you can also combine multiple names into a single search query:
 
-        "[name1] & [name2]"
+      "[name1] & [name2]"
 
     Here, [name2] is another person that appears in the same record as the primary individual,
     provided as [name1]. If you do not separate different people's names with an `&` symbol, the
@@ -111,7 +123,7 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     
     To perform an even narrower search, you can include a year, for example:
 
-        "[name1] & [name2] [year]"
+      "[name1] & [name2] [year]"
         
     The year relates to the date of the record. Searching for marriage records while providing the
     year of birth, for example, will NOT yield the marriage record, because the date of the
@@ -119,14 +131,14 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
 
     To perform an extremely narrow search on three people:
 
-        "[name1] & [name2] & [name3]"
+      "[name1] & [name2] & [name3]"
 
     You cannot search for more than three names at a time.
 
     You can perform a fuzzy search between precisely two people using `&~&`, but then it must be
     placed precisely between two names:
 
-        "[name1] &~& [name2] [year]"
+      "[name1] &~& [name2] [year]"
 
     Note that `&~&` cannot appear more than once in a query or together with `&`.
 
@@ -408,6 +420,13 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
       your research. Help them anticipate how long your research might take (not in exact time, but
       in terms of how much more research you intend to perform).
     
+    
+    UPDATING THE CURRENT STATE
+    --------------------------
+    
+    After you find relevant records for the primary subject using `open_archives_search`, you MUST
+    call `add_records_to_subject` with the list of record objects you found.
+    
 
     TRANSFER PROTOCOL
     -----------------
@@ -450,6 +469,6 @@ open_archives_agent = LlmAgent(
     https://www.openarchieven.nl/gra:7571cfd1-1b23-d583-bbe5-dc04be24297f
     """,
     instruction=open_archives_agent_instructions,
-    tools=[open_archives_search, open_archives_get_record],
+    tools=[open_archives_search, open_archives_get_record, set_current_subject],
     output_key="genealogy_records"
 )

@@ -7,6 +7,7 @@ See: https://github.com/wikitree/wikitree-api
 
 from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from LineageAI.api.wikitree_api import get_relatives, get_profile, get_person, search_profiles
+from LineageAI.util.state_util import set_current_subject
 from google.adk.agents import LlmAgent
 from google.adk.agents.readonly_context import ReadonlyContext
 from google.genai import types
@@ -95,7 +96,7 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
     - `get_ancestors`: Retrieve the ancestors of a profile.
     - `get_descendants`: Retrieve the descendants of a profile.
 
-    All functions must be invoked with a JSON string.
+    All functions must be invoked with a JSON dictionary.
 
 
     PERFORMING RESEARCH
@@ -110,7 +111,8 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
     SEARCHING FOR PROFILES
     ----------------------
 
-    Invoke `search_profiles` with a JSON string containing keys matching the following parameters:
+    Invoke `search_profiles` with a JSON dictionary containing keys matching the following
+    parameters:
     - Search parameters within any number of the following fields:
         - `FirstName`: First Name
         - `LastName`: Last Name
@@ -143,11 +145,11 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
 
     Here's an example of how to invoke `search_profiles` to search for a profile for "Migchiel Slijt":
     ```
-    {
+    search_profiles({
         "FirstName": "Migchiel",
         "LastName": "Slijt",
         "fields": ["Name", "FirstName", "LastNameAtBirth", "BirthDate", "DeathDate"]
-    }
+    })
     ```
     The function will return a list of matches for the search criteria:
     ```
@@ -176,7 +178,7 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
 
     If you already know the WikiTree ID of a profile, there is no need to execute `get_person`.
 
-    Then, and only then, invoke `get_person` with a JSON string containing keys matching the
+    Then, and only then, invoke `get_person` with a JSON dictionary containing keys matching the
     following parameters:
     - `Id`: The `Id` of the profile you want to retrieve (this is a number and is NOT the same as
       a WikiTree ID (`Name`), which is alphanumeric).
@@ -188,7 +190,7 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
     GETTING A PROFILE
     -----------------
 
-    Invoke `get_profile` with a JSON string containing keys matching the following parameters:
+    Invoke `get_profile` with a JSON dictionary containing keys matching the following parameters:
     - `Name`: The WikiTree ID of the profile you want to retrieve (e.g., "Slijt-6"). This MUST be
       the WikiTree ID, not the `Id`. Providing a number will return an unexpected result!
     - `fields`: A list of fields that you want to retrieve from the API from the table above. The
@@ -196,10 +198,10 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
 
     Here's an example of a request to retrieve the contents of profile:
     ```
-    {
+    get_profile({
         "Name": "Slijt-6",
         "fields": ["Name", "FirstName", "LastNameAtBirth", "BirthDate", "DeathDate", "Bio"]
-    }
+    })
     ```
     The function will return a profile object with the requested fields:
     ```
@@ -224,7 +226,8 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
     FINDING RELATIVES
     -----------------
 
-    Invoke `get_relatives` with a JSON string containing keys matching the following parameters:
+    Invoke `get_relatives` with a JSON dictionary containing keys matching the following
+    parameters:
     - `Name`: The WikiTree ID of the profile you want to retrieve relatives for (e.g., "Slijt-6").
     - `fields`: A list of fields that you want to retrieve from the API from the table above. The
         field `Bio` is supported for this function and returns the biography text in WikiTree
@@ -232,11 +235,11 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
 
     Here's an example of a request to retrieve the relatives of a profile:
     ```
-    {
+    get_relatives({
         "Name": "Slijt-6",
         "fields": ["Name", "BirthDate", "DeathDate"]
+    })
     ```
-    }
     The function will return a the currently known parents, spouses, children and siblings of a
     specified profile:
     ```
@@ -276,6 +279,14 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
 
     You are unable to update a biography directly using the WikiTree API. Instead, you must
     transfer to the LineageAiOrchestrator.
+    
+    
+    UPDATING THE CURRENT STATE
+    --------------------------
+
+    After you successfully retrieve a profile using `get_profile`, you MUST immediately call 
+    `set_current_subject` with the full profile data you received. This will establish the person
+    as the primary subject for all other agents.
 
 
     TRANSFER PROTOCOL
@@ -358,6 +369,6 @@ wikitree_query_agent = LlmAgent(
     update your knowledge.
     """,
     instruction=wikitree_query_agent_instructions,
-    tools=[get_profile, get_person, get_relatives, search_profiles],
+    tools=[get_profile, get_person, get_relatives, search_profiles, set_current_subject],
     output_key="wikitree_profile"
 )

@@ -9,21 +9,24 @@ from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from LineageAI.util.utils import rate_limited_get
 import requests
 import json
-from zoneinfo import ZoneInfo
+from typing import Dict, Any
 
 
 WIKITREE_API_URL = "https://api.wikitree.com/api.php"
 
-def search_profiles(json_str: str):
+def search_profiles(json_dict: Dict[str, Any]):
     """
     Search for people using the WikiTree searchPerson API action.
     Args:
-        json_str (str): JSON string with search parameters. Supported keys: FirstName, LastName, BirthYear, DeathYear, limit, fields
+        JSON dictionary with search parameters. Supported keys: FirstName, LastName, BirthYear, DeathYear, limit, fields
     Returns:
         dict: Search results or error message
     """
     try:
-        params = json.loads(json_str)
+        if isinstance(json_dict, dict):
+            params = json_dict
+        else:
+            params = json.loads(json_dict)
         if not isinstance(params, dict):
             return {'status': 'error', 'error_message': 'JSON must represent an object with search parameters.'}
     except Exception as e:
@@ -53,16 +56,19 @@ def search_profiles(json_str: str):
         return {'status': 'error', 'error_message': str(e)}
 
 
-def get_person(json_str: str):
+def get_person(json_dict: Dict[str, Any]):
     """
     Get a person's profile by WikiTree ID.
     Args:
-        json_str (str): JSON string with parameters. Supported keys: Name, fields, resolveRedirect
+        JSON dictionary with parameters. Supported keys: Name, fields, resolveRedirect
     Returns:
         dict: Person profile data or error message
     """
     try:
-        params = json.loads(json_str)
+        if isinstance(json_dict, dict):
+            params = json_dict
+        else:
+            params = json.loads(json_dict)
         if not isinstance(params, dict):
             return {'status': 'error', 'error_message': 'JSON must represent an object with parameters.'}
     except Exception as e:
@@ -99,16 +105,19 @@ def get_person(json_str: str):
         return {'status': 'error', 'error_message': str(e)}
 
 
-def get_profile(json_str: str):
+def get_profile(json_dict: Dict[str, Any]):
     """
     Get a profile using the WikiTree getProfile API action.
     Args:
-        json_str (str): JSON string with parameters. Supported keys: Id, fields, bioFormat, resolveRedirect, etc.
+        JSON dictionary with parameters. Supported keys: Id, fields, bioFormat, resolveRedirect, etc.
     Returns:
         dict: Profile data or error message
     """
     try:
-        params = json.loads(json_str)
+        if isinstance(json_dict, dict):
+            params = json_dict
+        else:
+            params = json.loads(json_dict)
         if not isinstance(params, dict):
             return {'status': 'error', 'error_message': 'JSON must represent an object with parameters.'}
     except Exception as e:
@@ -145,16 +154,19 @@ def get_profile(json_str: str):
         return {'status': 'error', 'error_message': str(e)}
 
 
-def get_ancestors(json_str: str):
+def get_ancestors(json_dict: Dict[str, Any]):
     """
     Get ancestors for a person using the WikiTree getAncestors API action.
     Args:
-        json_str (str): JSON string with parameters. Supported keys: Name, depth, fields, etc.
+        json_dict (dict): JSON dictionary with parameters. Supported keys: Name, depth, fields, etc.
     Returns:
         dict: Ancestors data or error message
     """
     try:
-        params = json.loads(json_str)
+        if isinstance(json_dict, dict):
+            params = json_dict
+        else:
+            params = json.loads(json_dict)
         if not isinstance(params, dict):
             return {'status': 'error', 'error_message': 'JSON must represent an object with parameters.'}
     except Exception as e:
@@ -190,16 +202,20 @@ def get_ancestors(json_str: str):
         logger.error(f"API request failed: {e}")
         return {'status': 'error', 'error_message': str(e)}
 
-def get_descendants(json_str: str):
+
+def get_descendants(json_dict: Dict[str, Any]):
     """
     Get descendants for a person using the WikiTree getDescendants API action.
     Args:
-        json_str (str): JSON string with parameters. Supported keys: Name, depth, fields, etc.
+        json_dict (dict): JSON dictionary with parameters. Supported keys: Name, depth, fields, etc.
     Returns:
         dict: Descendants data or error message
     """
     try:
-        params = json.loads(json_str)
+        if isinstance(json_dict, dict):
+            params = json_dict
+        else:
+            params = json.loads(json_dict)
         if not isinstance(params, dict):
             return {'status': 'error', 'error_message': 'JSON must represent an object with parameters.'}
     except Exception as e:
@@ -236,24 +252,23 @@ def get_descendants(json_str: str):
         return {'status': 'error', 'error_message': str(e)}
 
 
-def get_relatives(json_str):
+def get_relatives(json_dict: Dict[str, Any]):
     """
     Get relatives (parents, siblings, spouses) for a person using the WikiTree getRelatives API action.
     Args:
-        json_str (str): JSON string with parameters. Supported keys: Name, fields, etc.
+        JSON dictionary with parameters. Supported keys: Name, fields, etc.
     Returns:
         dict: Relatives data or error message
     """
-    if isinstance(json_str, dict):
-        params = json_str
-        print(params)
-    else:
-        try:
-            params = json.loads(json_str)
-            if not isinstance(params, dict):
-                return {'status': 'error', 'error_message': 'JSON must represent an object with parameters.'}
-        except Exception as e:
-            return {'status': 'error', 'error_message': f'Invalid JSON: {str(e)}'}
+    try:
+        if isinstance(json_dict, dict):
+            params = json_dict
+        else:
+            params = json.loads(json_dict)
+        if not isinstance(params, dict):
+            return {'status': 'error', 'error_message': 'JSON must represent an object with parameters.'}
+    except Exception as e:
+        return {'status': 'error', 'error_message': f'Invalid JSON: {str(e)}'}
     # Replace `Name` key with `keys` (note: plural!)
     if 'Name' in params:
         params['keys'] = params.pop('Name')
