@@ -66,12 +66,7 @@ def WikitextBubble(author: str, content: str) -> html.Div:
     parts = content.split("```wiki")
     children = []
     for part in parts:
-        if part.startswith("\n") and part.endswith("\n```"):
-            wikitext = part.strip("\n```")
-            children.append(Wikitext(wikitext))
-        else:
-            if part:
-                children.append(dcc.Markdown(part))
+        children.append(Wikitext(part.strip("\n```")))
     return html.Div([
         author_div,
         dbc.Alert(
