@@ -378,7 +378,6 @@ def register_callbacks(app):
                             author = event.get("author", "Assistant")
                             content = event.get("content", {})
                             if not content or not content.get("parts"):
-                                set_progress((new_messages, new_sessions))
                                 continue
 
                             for part in content.get("parts"):
@@ -405,7 +404,16 @@ def register_callbacks(app):
                                     is_first_model_chunk = True
                                     tool_response = part["functionResponse"]
                                     tool_name = tool_response.get('name', '?')
-                                    tool_output = json.dumps(tool_response.get('response', {}), indent=2)
+                                    response_data = tool_response.get('response', {})
+                                    
+                                    if tool_name == 'set_current_subject':
+                                        new_title = response_data.get('session_title')
+                                        if new_title:
+                                            new_sessions[active_session_id] = new_title
+                                            # We have the title, no need to show the full response bubble for this tool
+                                            continue
+
+                                    tool_output = json.dumps(response_data, indent=2)
                                     response_message = {"role": "tool_response", "name": tool_name, "output": tool_output, "author": author}
                                     new_messages[active_session_id].append(response_message)
 
@@ -418,7 +426,7 @@ def register_callbacks(app):
                                     print(f"Unsupported message part type: {part}")
                                     new_messages[active_session_id].append(unsupported_message)
                                 
-                            set_progress((new_messages, new_sessions))
+                        set_progress((new_messages, new_sessions))
                     except json.JSONDecodeError as e:
                         print(f"JSON decode error: {e} - Bad chunk: {chunk_str}")
                         pass
