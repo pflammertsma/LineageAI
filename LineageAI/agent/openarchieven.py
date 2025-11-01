@@ -1,6 +1,6 @@
 from LineageAI.constants import logger, MODEL_SMART, MODEL_MIXED, MODEL_FAST
 from LineageAI.api.openarchieven_api import open_archives_search, open_archives_get_record
-from LineageAI.util.state_util import set_current_subject
+from LineageAI.util.state_util import add_records_to_subject
 from google.adk.agents import LlmAgent
 from google.adk.agents.readonly_context import ReadonlyContext
 from google.genai import types
@@ -469,6 +469,6 @@ open_archives_agent = LlmAgent(
     https://www.openarchieven.nl/gra:7571cfd1-1b23-d583-bbe5-dc04be24297f
     """,
     instruction=open_archives_agent_instructions,
-    tools=[open_archives_search, open_archives_get_record, set_current_subject],
+    tools=[open_archives_search, open_archives_get_record, add_records_to_subject],
     output_key="genealogy_records"
 )

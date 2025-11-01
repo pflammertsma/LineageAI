@@ -285,8 +285,14 @@ def wikitree_query_agent_instructions(context: ReadonlyContext) -> str:
     --------------------------
 
     After you successfully retrieve a profile using `get_profile`, you MUST immediately call 
-    `set_current_subject` with the full profile data you received. This will establish the person
-    as the primary subject for all other agents.
+    `set_current_subject` with a dictionary containing the full profile data you received. This will
+    establish the person as the primary subject for all other agents.
+
+    For example:
+    `set_current_subject({"RealName": "John Doe", "BirthDate": "1900-01-01"})`
+
+    You can also optionally update the session title by providing a `title` parameter:
+    `set_current_subject({"RealName": "John Doe", "BirthDate": "1900-01-01"}, title="John Doe (b. 1900)")`
 
 
     TRANSFER PROTOCOL
