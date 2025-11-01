@@ -16,19 +16,6 @@ def SystemMessage(content: str, with_spinner: bool = False) -> html.Div:
         className="d-flex justify-content-center align-items-center h-100"
     )
     
-
-def Wikitext(wikitext: str) -> html.Div:
-    """A custom component to render wikitext with syntax highlighting."""
-    container_id = f"wikitext-container-{uuid.uuid4()}"
-
-    return html.Div(
-        children=[
-            html.Pre(html.Code(wikitext, id=container_id))
-        ],
-        className="highlight-container",
-        style={"position": "relative"}
-    )
-
 def UserChatBubble(content: str) -> dbc.Alert:
     """A component to render a user chat bubble."""
     return dbc.Alert(
@@ -59,6 +46,18 @@ def AgentChatBubble(author: str, content: str) -> html.Div:
             className="mb-2",
         )
     ])
+
+def Wikitext(wikitext: str) -> html.Div:
+    """A custom component to render wikitext with syntax highlighting."""
+    container_id = f"wikitext-container-{uuid.uuid4()}"
+
+    return html.Div(
+        children=[
+            html.Pre(html.Code(wikitext, id=container_id))
+        ],
+        className="highlight-container",
+        style={"position": "relative"}
+    )
 
 def WikitextBubble(author: str, content: str) -> html.Div:
     """A component to render a wikitext bubble."""
@@ -118,4 +117,27 @@ def ToolCallBubble(author: str, tool_name: str, tool_input: str) -> html.Div:
             title=title
         ),
     ], start_collapsed=True, className="mb-2 w-75 tool-call-accordion")
+    return html.Div([author_div, accordion])
+
+def ToolResponseBubble(author: str, tool_name: str, tool_output: str) -> html.Div:
+    """A component to render a tool response bubble."""
+    author_div = html.Div(author, className="small text-secondary mb-1")
+    title = html.Div([
+        html.I(className="bi bi-check-circle-fill me-2"),
+        tool_name
+    ])
+
+    try:
+        # Pretty-print if tool_output is a JSON string
+        parsed_output = json.loads(tool_output)
+        tool_output = json.dumps(parsed_output, indent=2)
+    except (json.JSONDecodeError, TypeError):
+        pass # Keep original if not a valid JSON string
+
+    accordion = dbc.Accordion([
+        dbc.AccordionItem(
+            html.Pre(html.Code(tool_output)),
+            title=title
+        ),
+    ], start_collapsed=True, className="mb-2 w-75 tool-response-accordion")
     return html.Div([author_div, accordion])

@@ -1,4 +1,3 @@
-
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, ALL, ctx
@@ -7,7 +6,7 @@ import json
 import uuid
 import time
 import re
-from ..layout.components import Wikitext, UserChatBubble, AgentChatBubble, WikitextBubble, ToolCallBubble, SystemMessage
+from ..layout.components import UserChatBubble, AgentChatBubble, WikitextBubble, ToolCallBubble, SystemMessage, ToolResponseBubble
 
 API_BASE_URL = "http://localhost:8000"
 APP_NAME = "LineageAI"
@@ -34,8 +33,8 @@ def register_callbacks(app):
             if response.status_code == 200:
                 status_badge = dbc.Badge("Online", color="success", className="ms-2")
                 return status_badge, status_badge
-        except requests.exceptions.RequestException:
-            pass
+        except requests.exceptions.RequestException as e:
+            print(f"API status check failed: {e}")
         status_badge = dbc.Badge("Offline", color="danger", className="ms-2")
         return status_badge, status_badge
 
@@ -74,6 +73,15 @@ def register_callbacks(app):
                     tool_name = tool_call.get('name', '?')
                     tool_input = json.dumps(tool_call.get('args', {}), indent=2)
                     messages.append({"role": "tool", "name": tool_name, "input": tool_input, "author": author})
+                    
+                elif "functionResponse" in part:
+                    tool_response = part["functionResponse"]
+                    tool_name = tool_response.get('name', '?')
+                    tool_output = json.dumps(tool_response.get('response', {}), indent=2)
+                    messages.append({"role": "tool_response", "name": tool_name, "output": tool_output, "author": author})
+                    
+                elif event.get("role") == "system":
+                    messages.append({"role": "system", "content": part["text"]})
         
         return messages
 
@@ -134,12 +142,13 @@ def register_callbacks(app):
                     return sessions, latest_session_id, new_messages, dash.no_update, dash.no_update
                     
                 except requests.exceptions.RequestException as e:
+                    print(f"API call to fetch session messages failed: {e}")
                     # Fallback to just loading the session without history
                     return sessions, latest_session_id, dash.no_update, dash.no_update, dash.no_update
             else:
                 print("Sessions: No sessions found on server")
         except requests.exceptions.RequestException as e:
-            print(f"Sessions: API call failed: {e}")
+            print(f"API call to fetch sessions failed: {e}")
             # If the API call fails, we'll proceed to create a new session locally.
             pass
 
@@ -170,8 +179,21 @@ def register_callbacks(app):
             new_messages = messages_data.copy()
             if session_id not in new_messages: new_messages[session_id] = []
             return new_sessions, session_id, new_messages
-        except requests.exceptions.RequestException:
-            return dash.no_update, 'FAILED', dash.no_update
+        except requests.exceptions.RequestException as e:
+            error_message = f"Failed to create session: {e}"
+            print(error_message)
+            new_messages = messages_data.copy()
+            # Use a temporary session ID for the error message
+            error_session_id = f"error-{uuid.uuid4()}"
+            new_messages[error_session_id] = [{
+                "role": "assistant", 
+                "author": "System", 
+                "content": error_message
+            }]
+            # Also update the sessions store to include the error session
+            new_sessions = sessions_data.copy()
+            new_sessions[error_session_id] = "Error"
+            return new_sessions, error_session_id, new_messages
 
     @app.callback(
         [Output('desktop-session-list-container', 'children'),
@@ -179,9 +201,6 @@ def register_callbacks(app):
         [Input('sessions-store', 'data'), Input('active-session-store', 'data')]
     )
     def update_session_list(sessions, active_session_id):
-        if active_session_id == 'FAILED': 
-            error_msg = html.P("API Offline", className="text-danger px-3")
-            return error_msg, error_msg
         if not sessions: 
             spinner = dbc.Spinner(size="sm")
             return spinner, spinner
@@ -205,7 +224,7 @@ def register_callbacks(app):
          Input('sessions-store', 'data')]
     )
     def update_conversation_title(active_session_id, sessions):
-        if not active_session_id or not sessions or active_session_id == 'FAILED': return "Conversation"
+        if not active_session_id or not sessions: return "Conversation"
         return sessions.get(active_session_id, "Conversation")
 
     @app.callback(
@@ -216,8 +235,6 @@ def register_callbacks(app):
     def update_chat_history(messages_data, active_session_id):
         if not active_session_id:
             return SystemMessage("Loading session...", with_spinner=True)
-        if active_session_id == 'FAILED':
-            return SystemMessage("Failed to create or load a session. The API server may be offline.")
 
         messages = messages_data.get(active_session_id, [])
         if not messages:
@@ -227,19 +244,28 @@ def register_callbacks(app):
         for i, msg in enumerate(messages):
             role = msg.get('role')
             content = msg.get('content', '')
+            author = msg.get('author', 'Assistant')
+            tool_name = msg.get('name', 'Unknown Tool')
 
             if role == 'user':
                 bubbles.append(UserChatBubble(content))
             
             elif role == 'assistant':
                 if '```wiki' in content:
-                    bubbles.append(WikitextBubble(msg.get('author', 'Assistant'), content))
+                    bubbles.append(WikitextBubble(author, content))
                 else:
-                    bubbles.append(AgentChatBubble(msg.get('author', 'Assistant'), content))
+                    bubbles.append(AgentChatBubble(author, content))
 
             elif role == 'tool':
-                bubbles.append(ToolCallBubble(msg.get('author', 'Assistant'), msg.get('name', 'Unknown Tool'), msg.get('input', '{}')))
-                
+                bubbles.append(ToolCallBubble(author, tool_name, msg.get('input', '{}')))
+            
+            elif role == 'tool_response':
+                if tool_name != 'transfer_to_agent':
+                    bubbles.append(ToolResponseBubble(author, tool_name, msg.get('output', '{}')))
+
+            elif role == 'system':
+                bubbles.append(SystemMessage(content))
+            
         return html.Div(bubbles, className="p-3")
 
     @app.callback(
@@ -256,8 +282,23 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def handle_user_actions(send_clicks, research_clicks, format_clicks, user_input, active_session_id, messages_data):
-        if not ctx.triggered_id or not active_session_id:
+        if not ctx.triggered_id:
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+        if not active_session_id or active_session_id.startswith('error-'):
+            error_message = "Cannot send message: No active session. Please start a new session."
+            new_messages = messages_data.copy()
+            session_id_to_update = active_session_id if active_session_id else f"error-{uuid.uuid4()}"
+            
+            if session_id_to_update not in new_messages:
+                new_messages[session_id_to_update] = []
+
+            new_messages[session_id_to_update].append({
+                "role": "assistant",
+                "author": "System",
+                "content": error_message
+            })
+            return new_messages, dash.no_update, dash.no_update, False
 
         input_text = ""
         clear_input = False
@@ -304,7 +345,8 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def stream_agent_response(set_progress, trigger_data, user_id, active_session_id, messages_data, sessions_data):
-        if not trigger_data: raise dash.exceptions.PreventUpdate
+        if not trigger_data or (active_session_id and active_session_id.startswith('error-')):
+            raise dash.exceptions.PreventUpdate
 
         new_messages = messages_data.copy()
         new_sessions = sessions_data.copy()
@@ -335,7 +377,9 @@ def register_callbacks(app):
 
                             author = event.get("author", "Assistant")
                             content = event.get("content", {})
-                            if not content or not content.get("parts"): continue
+                            if not content or not content.get("parts"):
+                                set_progress((new_messages, new_sessions))
+                                continue
 
                             for part in content.get("parts"):
                                 if "text" in part and part["text"]:
@@ -356,12 +400,33 @@ def register_callbacks(app):
                                     tool_input = json.dumps(tool_call.get('args', {}), indent=2)
                                     tool_message = {"role": "tool", "name": tool_name, "input": tool_input, "author": author}
                                     new_messages[active_session_id].append(tool_message)
+                                
+                                elif "functionResponse" in part:
+                                    is_first_model_chunk = True
+                                    tool_response = part["functionResponse"]
+                                    tool_name = tool_response.get('name', '?')
+                                    tool_output = json.dumps(tool_response.get('response', {}), indent=2)
+                                    response_message = {"role": "tool_response", "name": tool_name, "output": tool_output, "author": author}
+                                    new_messages[active_session_id].append(response_message)
+
+                                else:
+                                    unsupported_message = {
+                                        "role": "system",
+                                        "author": "System",
+                                        "content": f"Unsupported message part type. Full part: {json.dumps(part)}",
+                                    }
+                                    print(f"Unsupported message part type: {part}")
+                                    new_messages[active_session_id].append(unsupported_message)
+                                
                             set_progress((new_messages, new_sessions))
-                    except json.JSONDecodeError:
+                    except json.JSONDecodeError as e:
+                        print(f"JSON decode error: {e} - Bad chunk: {chunk_str}")
                         pass
             return new_messages, new_sessions, False
         except requests.exceptions.RequestException as e:
             error_content = f"Error communicating with agent: {e}"
+            if hasattr(e, 'response') and e.response is not None:
+                error_content += f" (Status code: {e.response.status_code})"
             new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error_content})
             return new_messages, new_sessions, False
 

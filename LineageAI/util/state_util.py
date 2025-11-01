@@ -6,6 +6,22 @@ def set_current_subject(subject_data: Dict[str, Any], tool_context: ToolContext,
     """Sets the primary individual being researched in the session state and optionally updates the session title."""
     if 'FirstName' in subject_data and 'RealName' not in subject_data:
         subject_data['RealName'] = subject_data.pop('FirstName')
+
+    # If title is not provided, construct it from subject_data
+    if not title:
+        first_name = subject_data.get('RealName', subject_data.get('FirstName', ''))
+        last_name = subject_data.get('LastNameAtBirth', '')
+        name = subject_data.get('Name', '')
+        
+        if first_name and last_name:
+            title = f"{first_name} {last_name}"
+        elif name:
+            title = name
+        elif first_name:
+            title = first_name
+        elif last_name:
+            title = last_name
+
     subject = Subject(**subject_data)
     tool_context.state['current_subject'] = subject
     if title:
