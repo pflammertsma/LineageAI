@@ -40,50 +40,51 @@ def register_callbacks(app):
 
     def _parse_events_to_messages(events):
         messages = []
+        session_title = None
         if not events:
-            return messages
+            return messages, session_title
 
-        for i, event in enumerate(events):
-            # Check for a user message
-            if ("new_message" in event and event["new_message"].get("role") == "user") or event.get("author") == "user":
-                if "new_message" in event:
-                    parts = event["new_message"].get("parts", [])
-                else:
-                    parts = event.get("content", {}).get("parts", [])
-                if parts:
-                    full_text = "".join(p.get("text", "") for p in parts)
+        for event in events:
+            # Handle user-typed messages
+            if event.get("author") == "user":
+                if event.get("content", {}).get("parts"):
+                    full_text = "".join(p.get("text", "") for p in event["content"]["parts"])
                     messages.append({"role": "user", "content": full_text})
                 continue
 
-            # Check for assistant/tool messages
+            # Handle agent/tool messages
             author = event.get("author")
-            content = event.get("content")
-            if not (author and content and "parts" in content):
+            content = event.get("content", {})
+            
+            if not content or not content.get("parts"):
                 continue
 
-            for part in content["parts"]:
-                if "text" in part and part["text"]:
-                    if messages and messages[-1].get("role") == "assistant" and messages[-1].get("author") == author:
-                        messages[-1]["content"] += part["text"]
-                    else:
-                        messages.append({"role": "assistant", "author": author, "content": part["text"]})
-                
+            for part in content.get("parts"):
+                if "functionResponse" in part:
+                    tool_response = part["functionResponse"]
+                    tool_name = tool_response.get('name', '?')
+                    response_data = tool_response.get('response', {})
+                    
+                    if tool_name == 'set_current_subject':
+                        new_title = response_data.get('session_title')
+                        if new_title:
+                            session_title = new_title
+                        continue  # Intentionally skip creating a message bubble
+
+                    # Handle other function responses
+                    tool_output = json.dumps(response_data, indent=2)
+                    messages.append({"role": "tool_response", "name": tool_name, "output": tool_output, "author": author})
+
                 elif "functionCall" in part:
                     tool_call = part["functionCall"]
                     tool_name = tool_call.get('name', '?')
                     tool_input = json.dumps(tool_call.get('args', {}), indent=2)
                     messages.append({"role": "tool", "name": tool_name, "input": tool_input, "author": author})
-                    
-                elif "functionResponse" in part:
-                    tool_response = part["functionResponse"]
-                    tool_name = tool_response.get('name', '?')
-                    tool_output = json.dumps(tool_response.get('response', {}), indent=2)
-                    messages.append({"role": "tool_response", "name": tool_name, "output": tool_output, "author": author})
-                    
-                elif event.get("role") == "system":
-                    messages.append({"role": "system", "content": part["text"]})
+
+                elif "text" in part and part["text"]:
+                    messages.append({"role": "assistant", "author": author, "content": part["text"]})
         
-        return messages
+        return messages, session_title
 
     @app.callback(Output('user-id-store', 'data'), Input('user-id-store', 'data'))
     def initialize_user_id(current_id):
@@ -136,8 +137,10 @@ def register_callbacks(app):
                     
                     new_messages = messages_data.copy()
                     session_history_events = session_details.get('events', [])
-                    parsed_messages = _parse_events_to_messages(session_history_events)
+                    parsed_messages, session_title = _parse_events_to_messages(session_history_events)
                     new_messages[latest_session_id] = parsed_messages
+                    if session_title:
+                        sessions[latest_session_id] = session_title
                     
                     return sessions, latest_session_id, new_messages, dash.no_update, dash.no_update
                     
@@ -361,80 +364,40 @@ def register_callbacks(app):
         try:
             with requests.post(f"{API_BASE_URL}/run_sse", headers={"Content-Type": "application/json"}, data=json.dumps(payload), stream=True) as r:
                 r.raise_for_status()
-                is_first_model_chunk = True
 
                 for chunk in r.iter_lines():
                     if not chunk: continue
                     chunk_str = chunk.decode('utf-8')
                     if chunk_str.startswith('data: '): chunk_str = chunk_str[6:]
+                    
                     try:
                         data = json.loads(chunk_str)
                         events = data if isinstance(data, list) else [data]
-                        for event in events:
-                            state_delta = event.get('actions', {}).get('stateDelta', {})
-                            if state_delta.get('session_title'):
-                                new_sessions[active_session_id] = state_delta['session_title']
+                        
+                        parsed_messages, session_title = _parse_events_to_messages(events)
 
-                            author = event.get("author", "Assistant")
-                            content = event.get("content", {})
-                            if not content or not content.get("parts"):
-                                continue
+                        if session_title:
+                            new_sessions[active_session_id] = session_title
+                        
+                        if parsed_messages:
+                            if active_session_id not in new_messages:
+                                new_messages[active_session_id] = []
+                            new_messages[active_session_id].extend(parsed_messages)
 
-                            for part in content.get("parts"):
-                                if "text" in part and part["text"]:
-                                    if is_first_model_chunk:
-                                        new_messages[active_session_id].append({"role": "assistant", "author": author, "content": part["text"]})
-                                        is_first_model_chunk = False
-                                    else:
-                                        last_msg = new_messages[active_session_id][-1]
-                                        if last_msg["role"] == "assistant" and last_msg["author"] == author:
-                                            last_msg['content'] += part["text"]
-                                        else:
-                                            new_messages[active_session_id].append({"role": "assistant", "author": author, "content": part["text"]})
-
-                                elif "functionCall" in part:
-                                    is_first_model_chunk = True
-                                    tool_call = part["functionCall"]
-                                    tool_name = tool_call.get('name', '?')
-                                    tool_input = json.dumps(tool_call.get('args', {}), indent=2)
-                                    tool_message = {"role": "tool", "name": tool_name, "input": tool_input, "author": author}
-                                    new_messages[active_session_id].append(tool_message)
-                                
-                                elif "functionResponse" in part:
-                                    is_first_model_chunk = True
-                                    tool_response = part["functionResponse"]
-                                    tool_name = tool_response.get('name', '?')
-                                    response_data = tool_response.get('response', {})
-                                    
-                                    if tool_name == 'set_current_subject':
-                                        new_title = response_data.get('session_title')
-                                        if new_title:
-                                            new_sessions[active_session_id] = new_title
-                                            # We have the title, no need to show the full response bubble for this tool
-                                            continue
-
-                                    tool_output = json.dumps(response_data, indent=2)
-                                    response_message = {"role": "tool_response", "name": tool_name, "output": tool_output, "author": author}
-                                    new_messages[active_session_id].append(response_message)
-
-                                else:
-                                    unsupported_message = {
-                                        "role": "system",
-                                        "author": "System",
-                                        "content": f"Unsupported message part type. Full part: {json.dumps(part)}",
-                                    }
-                                    print(f"Unsupported message part type: {part}")
-                                    new_messages[active_session_id].append(unsupported_message)
-                                
                         set_progress((new_messages, new_sessions))
+
                     except json.JSONDecodeError as e:
                         print(f"JSON decode error: {e} - Bad chunk: {chunk_str}")
                         pass
+            
             return new_messages, new_sessions, False
         except requests.exceptions.RequestException as e:
             error_content = f"Error communicating with agent: {e}"
             if hasattr(e, 'response') and e.response is not None:
                 error_content += f" (Status code: {e.response.status_code})"
+            
+            if active_session_id not in new_messages:
+                new_messages[active_session_id] = []
             new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error_content})
             return new_messages, new_sessions, False
 
