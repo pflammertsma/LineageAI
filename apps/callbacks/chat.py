@@ -94,8 +94,10 @@ def register_callbacks(app):
                     tool_input = json.dumps(tool_call.get('args', {}), indent=2)
                     messages.append({"role": "tool", "name": tool_name, "input": tool_input, "author": author})
 
-                elif "text" in part and part["text"] and part["text"].strip():
-                    messages.append({"role": "assistant", "author": author, "content": part["text"]})
+                elif "text" in part:
+                    # Only display text if it's not blank
+                    if part["text"].strip():
+                        messages.append({"role": "assistant", "author": author, "content": part["text"]})
                     
                 else:
                     print(f"Unknown message part: {part}")
