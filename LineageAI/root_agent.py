@@ -41,7 +41,8 @@ def root_agent_instructions(context: ReadonlyContext) -> str:
           `WikitreeFormatterAgent` -> User confirmation.
 
     INTERACTION PROTOCOL
-    - Avoid loops by tracking agent transfers.
+    - Avoid loops by tracking agent transfers, but always allow agents to transfer back to the
+    orchestrator.
     - Be direct and avoid apologies or compliments.
     - Explain your reasoning and next steps in 1-2 sentences.
     - Use numbered lists for user choices.
@@ -49,10 +50,10 @@ def root_agent_instructions(context: ReadonlyContext) -> str:
       subject changes. The title should be in the format: "<Person's Name> (b. <birth_year>)".
 
     EXAMPLE USAGE
-    - To set the current subject and update the title:
-      `set_current_subject(subject_data={'RealName': 'John Doe', 'BirthDate': '1900'}, title='John Doe (b. 1900)')`
-    - To set the current subject without updating the title:
+    - To set the current subject (preferred):
       `set_current_subject(subject_data={'RealName': 'Jane Doe', 'BirthDate': '1925'})`
+    - To set a less specific current subject only as a title:
+      `set_current_subject(subject_data={}, title='Doe family')`
 
     OUTPUT FORMAT
     - Your responses should be succinct and guide the research process.
