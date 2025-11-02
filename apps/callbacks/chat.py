@@ -6,7 +6,7 @@ import json
 import uuid
 import time
 import re
-from ..layout.components import UserChatBubble, AgentChatBubble, WikitextBubble, ToolCallBubble, SystemMessage, ToolResponseBubble
+from ..layout.components import UserChatBubble, AgentChatBubble, WikitextBubble, ToolCallBubble, SystemMessage, ToolResponseBubble, ErrorBubble
 
 API_BASE_URL = "http://localhost:8000"
 APP_NAME = "LineageAI"
@@ -47,15 +47,16 @@ def register_callbacks(app):
         for event in events:
             # Handle error events
             if event.get("finishReason") and event.get("finishReason") != "STOP":
-                error_code = event.get("errorCode", "Unknown Error")
+                error_message = event.get("errorCode", "Unknown Error")
                 author = event.get("author", "System")
-                error_message = f"Agent finished with an error: `{error_code}`"
+                details = json.dumps(event, indent=2)
                 
-                # Add debugging info in a code block
-                error_details = json.dumps(event, indent=2)
-                formatted_message = f"{error_message}\n\n```json\n{error_details}\n```"
-                
-                messages.append({"role": "system", "content": formatted_message, "author": author})
+                messages.append({
+                    "role": "error",
+                    "author": author,
+                    "main_message": error_message,
+                    "details": details
+                })
                 continue
 
             # Handle user-typed messages
@@ -328,6 +329,13 @@ def register_callbacks(app):
             elif role == 'tool_response':
                 if tool_name != 'transfer_to_agent':
                     bubbles.append(ToolResponseBubble(author, tool_name, msg.get('output', '{}')))
+
+            elif role == 'error':
+                bubbles.append(ErrorBubble(
+                    author=msg.get('author', 'System'),
+                    main_message=msg.get('main_message', 'An error occurred.'),
+                    details=msg.get('details', '{}')
+                ))
 
             elif role == 'system':
                 bubbles.append(SystemMessage(content))

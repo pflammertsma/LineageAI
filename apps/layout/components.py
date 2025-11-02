@@ -170,3 +170,20 @@ def ToolResponseBubble(author: str, tool_name: str, tool_output: str) -> html.Di
         ),
     ], start_collapsed=True, className="mb-2 w-75 tool-response-accordion")
     return html.Div([author_div, accordion])
+
+def ErrorBubble(author: str, main_message: str, details: str) -> html.Div:
+    """A component to render an error bubble with an accordion."""
+    author_div = html.Div(author, className="small text-secondary mb-1")
+    title = html.Div([
+        html.I(className="bi bi-exclamation-triangle-fill me-2 text-danger"), # Error icon
+        main_message
+    ])
+
+    accordion = dbc.Accordion([
+        dbc.AccordionItem(
+            html.Pre(html.Code(details)),
+            title=title
+        ),
+    ], start_collapsed=True, className="mb-2 w-75 error-accordion")
+    
+    return html.Div([author_div, accordion])
