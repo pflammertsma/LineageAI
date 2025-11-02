@@ -7,14 +7,40 @@ import json
 def SystemMessage(content: str, with_spinner: bool = False) -> html.Div:
     """A component to render a system message."""
     
-    children = [html.Span(content, className="ms-2")]
+    children = []
     if with_spinner:
-        children.insert(0, dbc.Spinner())
+        children.append(dbc.Spinner())
+        children.append(html.Span(content, className="ms-2"))
+        return html.Div(children, className="d-flex justify-content-center align-items-center h-100")
+
+    # Check for code block for accordion
+    if "\n```" in content:
+        parts = content.split("\n```", 1)
+        main_message = parts[0]
+        code_block_part = parts[1]
+
+        children.append(dcc.Markdown(main_message))
+
+        if code_block_part:
+            lang_and_code = code_block_part.split("\n", 1)
+            lang = lang_and_code[0].strip() or "Details"
+            code = lang_and_code[1].strip().rstrip("`")
+
+            accordion = dbc.Accordion([
+                dbc.AccordionItem(
+                    dcc.Markdown(f"```{lang}\n{code}\n```"),
+                    title=lang.capitalize()
+                ),
+            ], start_collapsed=True, className="mb-2 w-75 system-message-accordion")
+            children.append(accordion)
         
-    return html.Div(
-        children,
-        className="d-flex justify-content-center align-items-center h-100"
-    )
+        return html.Div(children, className="system-message-container")
+
+    else:
+        # Default rendering for simple messages
+        return html.Div([
+            dcc.Markdown(content)
+        ], className="d-flex justify-content-center align-items-center h-100")
     
 def UserChatBubble(content: str) -> dbc.Alert:
     """A component to render a user chat bubble."""

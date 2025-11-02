@@ -45,6 +45,19 @@ def register_callbacks(app):
             return messages, session_title
 
         for event in events:
+            # Handle error events
+            if event.get("finishReason") and event.get("finishReason") != "STOP":
+                error_code = event.get("errorCode", "Unknown Error")
+                author = event.get("author", "System")
+                error_message = f"Agent finished with an error: `{error_code}`"
+                
+                # Add debugging info in a code block
+                error_details = json.dumps(event, indent=2)
+                formatted_message = f"{error_message}\n\n```json\n{error_details}\n```"
+                
+                messages.append({"role": "system", "content": formatted_message, "author": author})
+                continue
+
             # Handle user-typed messages
             if event.get("author") == "user":
                 if event.get("content", {}).get("parts"):
@@ -83,6 +96,9 @@ def register_callbacks(app):
 
                 elif "text" in part and part["text"] and part["text"].strip():
                     messages.append({"role": "assistant", "author": author, "content": part["text"]})
+                    
+                else:
+                    print(f"Unknown message part: {part}")
         
         return messages, session_title
 
