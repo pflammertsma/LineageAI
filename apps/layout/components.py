@@ -22,14 +22,17 @@ def SystemMessage(content: str, with_spinner: bool = False) -> html.Div:
         children.append(dcc.Markdown(main_message))
 
         if code_block_part:
-            lang_and_code = code_block_part.split("\n", 1)
-            lang = lang_and_code[0].strip() or "Details"
-            code = lang_and_code[1].strip().rstrip("`")
+            # The language is the first line, code is the rest
+            parts = code_block_part.split('\n', 1)
+            code = parts[1] if len(parts) > 1 else ''
+            # remove the trailing ```
+            code = code.rsplit('```', 1)[0]
+
 
             accordion = dbc.Accordion([
                 dbc.AccordionItem(
-                    dcc.Markdown(f"```{lang}\n{code}\n```"),
-                    title=lang.capitalize()
+                    html.Pre(html.Code(code.strip())),
+                    title="Error details"
                 ),
             ], start_collapsed=True, className="mb-2 w-75 system-message-accordion")
             children.append(accordion)
