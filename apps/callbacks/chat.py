@@ -104,12 +104,10 @@ def register_callbacks(app):
         prevent_initial_call='initial_duplicate',
     )
     def initialize_sessions(user_id, existing_sessions, active_session_id, messages_data):
-        if not user_id or active_session_id:
+        # This callback should only run once on startup to populate the session list
+        # and select the most recent session. It should not interfere with user selection later.
+        if not user_id or existing_sessions or active_session_id:
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
-
-        # If sessions are already loaded, do nothing to them, but set the active session
-        if existing_sessions:
-            return dash.no_update, list(existing_sessions.keys())[-1], dash.no_update, dash.no_update, dash.no_update
 
         try:
             url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions"
@@ -207,19 +205,66 @@ def register_callbacks(app):
         if not sessions: 
             spinner = dbc.Spinner(size="sm")
             return spinner, spinner
-        buttons = [dbc.Button(name, id=f'{{"type": "session-btn", "index": "{sid}"}}', color="primary" if sid == active_session_id else "light", className="w-100 mb-1 text-start") for sid, name in reversed(list(sessions.items()))]
-        return buttons, buttons
+        items = [dbc.ListGroupItem(name, id={"type": "session-btn", "index": sid}, action=True, active=(sid == active_session_id), className="session-list-item") for sid, name in reversed(list(sessions.items()))]
+        list_group = dbc.ListGroup(items, flush=True)
+        return list_group, list_group
 
     @app.callback(
-        Output('active-session-store', 'data', allow_duplicate=True),
+        [Output('active-session-store', 'data', allow_duplicate=True),
+         Output('chat-history', 'children', allow_duplicate=True)],
         Input({"type": "session-btn", "index": ALL}, 'n_clicks'),
-        State({"type": "session-btn", "index": ALL}, 'id'),
+        State('active-session-store', 'data'),
         prevent_initial_call=True
     )
-    def select_session(n_clicks, ids):
-        if not ctx.triggered or not any(n_clicks): return dash.no_update
-        button_id = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
-        return button_id['index']
+    def show_loading_spinner_on_session_change(n_clicks, active_session_id):
+        if not ctx.triggered_id or not any(n_clicks):
+            return dash.no_update, dash.no_update
+
+        clicked_session_id = ctx.triggered_id['index']
+
+        if clicked_session_id == active_session_id:
+            return dash.no_update, dash.no_update
+
+        loading_spinner = SystemMessage("Loading session...", with_spinner=True)
+        return clicked_session_id, loading_spinner
+
+    @app.callback(
+        Output('messages-store', 'data', allow_duplicate=True),
+        Input('active-session-store', 'data'),
+        [State('user-id-store', 'data'),
+         State('messages-store', 'data')],
+        prevent_initial_call=True
+    )
+    def fetch_session_history(active_session_id, user_id, messages_data):
+        if not active_session_id or not user_id:
+            return dash.no_update
+
+        # If messages for this session are already loaded, do nothing
+        if active_session_id in messages_data and messages_data[active_session_id]:
+            return dash.no_update
+
+        try:
+            url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{active_session_id}"
+            response = requests.get(url)
+            response.raise_for_status()
+            session_details = response.json()
+            
+            new_messages = messages_data.copy()
+            session_history_events = session_details.get('events', [])
+            parsed_messages, _ = _parse_events_to_messages(session_history_events) # We don't need the title here
+            new_messages[active_session_id] = parsed_messages
+            
+            return new_messages
+            
+        except requests.exceptions.RequestException as e:
+            print(f"API call to fetch session messages failed: {e}")
+            # Optionally, add an error message to the chat for the failed session load
+            new_messages = messages_data.copy()
+            new_messages[active_session_id] = [{
+                "role": "system",
+                "content": f"Failed to load session history: {e}"
+            }]
+            return new_messages
 
     @app.callback(
         Output('conversation-title', 'children'),

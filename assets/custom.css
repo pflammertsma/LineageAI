@@ -364,3 +364,18 @@ span.linenos.special {
         max-height: 100vh;
     }
 }
+
+/* --- Session List --- */
+.session-list-item {
+    cursor: pointer;
+}
+
+.session-list-item:hover {
+    background-color: var(--bg-surface);
+}
+
+/* Ensure the active item's hover state doesn't look weird with our theme */
+.list-group-item-action.active:hover {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
