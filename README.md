@@ -105,14 +105,14 @@ pip install -r apps/requirements.txt
 
 In one terminal, navigate to the project's root directory and run the agent as an API server:
 ```
-adk api_server
+adk api_server --log_level DEBUG
 ```
 
 **3. Run the Streamlit App**
 
-In a second terminal, navigate to the project's root directory and run the Streamlit app:
+In a second terminal, navigate to the project's root directory and run the Plotly Dash:
 ```
-streamlit run apps/lineage_app.py
+python apps/lineage_app.py
 ```
 
 This will open a new tab in your browser with the custom chat interface.
