@@ -5,4 +5,6 @@ from typing import List, Dict, Any
 class Subject:
     RealName: str = None
     BirthDate: str = None
+    DeathDate: str = None
+    WikiTreeID: str = None
     found_records: List[Dict[str, Any]] = field(default_factory=list)
