@@ -25,9 +25,22 @@ def register_callbacks(app):
     @app.callback(
         [Output('desktop-api-status-indicator', 'children'),
          Output('mobile-api-status-indicator', 'children')],
-        Input('api-status-interval', 'n_intervals')
+        [Input('api-status-interval', 'n_intervals'),
+         Input('is-thinking-store', 'data')]
     )
-    def update_api_status(n):
+    def update_api_status(n_intervals, is_thinking):
+        triggered_id = ctx.triggered_id
+
+        if triggered_id == 'is-thinking-store':
+            if is_thinking:
+                # When thinking starts, assume online and disable interval checks elsewhere.
+                status_badge = dbc.Badge("Online", color="success", className="ms-2")
+                return status_badge, status_badge
+            else:
+                # When thinking stops, do a fresh check immediately.
+                pass # Fall through to the check logic.
+        
+        # This part runs for n_intervals and when thinking stops.
         try:
             response = requests.get(f"{API_BASE_URL}/docs", timeout=2)
             if response.status_code == 200:
@@ -35,6 +48,7 @@ def register_callbacks(app):
                 return status_badge, status_badge
         except requests.exceptions.RequestException as e:
             print(f"API status check failed: {e}")
+        
         status_badge = dbc.Badge("Offline", color="danger", className="ms-2")
         return status_badge, status_badge
 
@@ -458,7 +472,8 @@ def register_callbacks(app):
     @app.callback(
         [Output('thinking-indicator', 'style'),
          Output('chat-history', 'style'),
-         Output('chat-history', 'className')],
+         Output('chat-history', 'className'),
+         Output('api-status-interval', 'disabled')],
         Input('is-thinking-store', 'data'),
         [State('thinking-indicator', 'style'),
          State('chat-history', 'style'),
@@ -466,18 +481,20 @@ def register_callbacks(app):
     )
     def update_thinking_indicator(is_thinking, ti_style, ch_style, ch_className):
         ch_className = ch_className or ""
+        disabled = False
         if is_thinking:
             ti_style['opacity'] = 1
             ti_style['max-height'] = '100px'
             ch_style['padding-bottom'] = '1em'
             if "fade-out-bottom" not in ch_className:
                 ch_className += " fade-out-bottom"
+            disabled = True
         else:
             ti_style['opacity'] = 0
             ti_style['max-height'] = '0px'
             ch_style['padding-bottom'] = '0px'
             ch_className = ch_className.replace(" fade-out-bottom", "")
-        return ti_style, ch_style, ch_className
+        return ti_style, ch_style, ch_className, disabled
 
     # --- Sidebar Collapse Callbacks ---
 
