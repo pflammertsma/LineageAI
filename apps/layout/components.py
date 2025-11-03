@@ -3,6 +3,27 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 import uuid
 import json
+from typing import Any, List
+
+def FormattedText(content: str) -> List[Any]:
+    if "```" in content:
+        parts = content.split("```", 1)
+        main_message = parts[0]
+        code_block_part = parts[1]
+        code = "" # Initialize code
+
+        if code_block_part:
+            # The language is the first line, code is the rest
+            code_parts = code_block_part.split('\n', 1)
+            if len(code_parts) > 1:
+                # remove the trailing ```
+                code = code_parts[1].rsplit('```', 1)[0]
+        
+        return [dcc.Markdown(main_message), html.Pre(html.Code(code.strip()))]
+
+    else:
+        # Default rendering for simple messages
+        return [dcc.Markdown(content)]
 
 def SystemMessage(content: str, with_spinner: bool = False) -> html.Div:
     """A component to render a system message."""
@@ -12,43 +33,30 @@ def SystemMessage(content: str, with_spinner: bool = False) -> html.Div:
         children.append(dbc.Spinner())
         children.append(html.Span(content, className="ms-2"))
         return html.Div(children, className="d-flex justify-content-center align-items-center h-100")
+    
+    formatted_content = FormattedText(content)
+    
+    # Check if there is a code block
+    if len(formatted_content) > 1:
+        main_message = formatted_content[0]
+        code_block = formatted_content[1]
 
-    # Check for code block for accordion
-    if "\n```" in content:
-        parts = content.split("\n```", 1)
-        main_message = parts[0]
-        code_block_part = parts[1]
-
-        children.append(dcc.Markdown(main_message))
-
-        if code_block_part:
-            # The language is the first line, code is the rest
-            parts = code_block_part.split('\n', 1)
-            code = parts[1] if len(parts) > 1 else ''
-            # remove the trailing ```
-            code = code.rsplit('```', 1)[0]
-
-
-            accordion = dbc.Accordion([
-                dbc.AccordionItem(
-                    html.Pre(html.Code(code.strip())),
-                    title="Error details"
-                ),
-            ], start_collapsed=True, className="mb-2 w-75 system-message-accordion")
-            children.append(accordion)
+        accordion = dbc.Accordion([
+            dbc.AccordionItem(
+                code_block,
+                title="Error details"
+            ),
+        ], start_collapsed=True, className="mb-2 w-75 system-message-accordion")
         
+        children = [main_message, accordion]
         return html.Div(children, className="system-message-container")
-
     else:
-        # Default rendering for simple messages
-        return html.Div([
-            dcc.Markdown(content)
-        ], className="d-flex justify-content-center align-items-center h-100")
+        return html.Div(formatted_content, className="d-flex justify-content-center align-items-center h-100")
     
 def UserChatBubble(content: str) -> dbc.Alert:
     """A component to render a user chat bubble."""
     return dbc.Alert(
-        dcc.Markdown(content),
+        FormattedText(content),
         color="primary",
         style={
             "width": "fit-content",
@@ -65,7 +73,7 @@ def AgentChatBubble(author: str, content: str) -> html.Div:
     return html.Div([
         author_div,
         dbc.Alert(
-            dcc.Markdown(content),
+            FormattedText(content),
             color="secondary",
             style={
                 "maxWidth": "80%",
@@ -109,6 +117,26 @@ def WikitextBubble(author: str, content: str) -> html.Div:
         )
     ])
 
+def AgentTransferLine(author: str, tool_name: str, tool_input: str) -> html.Div:
+    """A component to render an agent transfer line."""
+    try:
+        tool_input_json = json.loads(tool_input)
+        agent_name = tool_input_json.get('agent_name', 'Agent')
+        
+        children = [
+            html.Span(author),
+            html.I(className="bi bi-arrow-right mx-2"),
+            html.Span(agent_name, className="fw-bold")
+        ]
+        
+    except json.JSONDecodeError:
+        children = [
+            html.I(className="bi bi-arrow-right-circle me-2"),
+            "Transfer to Agent"
+        ]
+        
+    return html.Div(children, className="small text-secondary mb-1 d-flex align-items-center")
+
 def ToolCallBubble(author: str, tool_name: str, tool_input: str) -> html.Div:
     """A component to render a tool call bubble."""
     author_div = html.Div(author, className="small text-secondary mb-1")
@@ -117,6 +145,7 @@ def ToolCallBubble(author: str, tool_name: str, tool_input: str) -> html.Div:
         tool_name
     ])
     if tool_name == 'transfer_to_agent':
+        # Note that this is no longer expected to be used in favor of AgentTransferLine
         try:
             tool_input_json = json.loads(tool_input)
             agent_name = tool_input_json.get('agent_name', 'Agent')
