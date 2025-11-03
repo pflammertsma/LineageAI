@@ -144,27 +144,7 @@ def register_callbacks(app):
 
             if sessions:
                 latest_session_id = sorted(sessions.keys(), reverse=True)[0]
-
-                # Now, fetch the messages for the latest session
-                try:
-                    url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{latest_session_id}"
-                    response = requests.get(url)
-                    response.raise_for_status()
-                    session_details = response.json()
-                    
-                    new_messages = messages_data.copy()
-                    session_history_events = session_details.get('events', [])
-                    parsed_messages, session_title = _parse_events_to_messages(session_history_events)
-                    new_messages[latest_session_id] = parsed_messages
-                    if session_title:
-                        sessions[latest_session_id] = session_title
-                    
-                    return sessions, latest_session_id, new_messages, dash.no_update, dash.no_update
-                    
-                except requests.exceptions.RequestException as e:
-                    print(f"API call to fetch session messages failed: {e}")
-                    # Fallback to just loading the session without history
-                    return sessions, latest_session_id, dash.no_update, dash.no_update, dash.no_update
+                return sessions, latest_session_id, dash.no_update, dash.no_update, dash.no_update
             else:
                 print("Sessions: No sessions found on server")
         except requests.exceptions.RequestException as e:

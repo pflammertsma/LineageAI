@@ -425,7 +425,19 @@ def open_archives_agent_instructions(context: ReadonlyContext) -> str:
     --------------------------
     
     After you find relevant records for the primary subject using `open_archives_search`, you MUST
-    call `add_records_to_subject` with the list of record objects you found.
+    call `add_records_to_subject` with the list of record objects you found. The content of the
+    `records` parameter is free form, and can be provided as needed to represent any kind of source
+    data.
+    
+    The `subject_data` parameter should always be provided to ensure that we are providing records
+    regarding the primary individual. For example:
+    
+    ```
+    add_records_to_subject(
+        records=[{...}],
+        subject_data={"RealName": "Jane", "LastNameAtBirth": "Doe", "BirthDate": "1925-04-10"}
+    )
+    ```
     
 
     TRANSFER PROTOCOL
