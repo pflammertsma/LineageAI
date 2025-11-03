@@ -6,7 +6,7 @@ import json
 import uuid
 import time
 import re
-from ..layout.components import UserChatBubble, AgentChatBubble, WikitextBubble, ToolCallBubble, SystemMessage, ToolResponseBubble, ErrorBubble
+from ..layout.components import UserChatBubble, AgentChatBubble, WikitextBubble, AgentTransferLine, ToolCallBubble, SystemMessage, ToolResponseBubble, ErrorBubble
 
 API_BASE_URL = "http://localhost:8000"
 APP_NAME = "LineageAI"
@@ -304,7 +304,10 @@ def register_callbacks(app):
                     bubbles.append(AgentChatBubble(author, content))
 
             elif role == 'tool':
-                bubbles.append(ToolCallBubble(author, tool_name, msg.get('input', '{}')))
+                if tool_name == 'transfer_to_agent':
+                    bubbles.append(AgentTransferLine(author, tool_name, msg.get('input', '{}')))
+                else:
+                    bubbles.append(ToolCallBubble(author, tool_name, msg.get('input', '{}')))
             
             elif role == 'tool_response':
                 if tool_name != 'transfer_to_agent':
