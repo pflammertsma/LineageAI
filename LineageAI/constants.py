@@ -11,11 +11,19 @@ MODEL_FAST = "gemini-2.5-flash-lite" # Cheapest but fastest
 _REQUEST_LOGGING = False
 
 # --- Configure Logging ---
-filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), f'{APP_NAME}.log') # doesn't work??
-logging.basicConfig(filename=filename, level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-logger.info("Invocation start")
-logger.propagate = True
+logger = logging.getLogger(APP_NAME)
+
+# --- Add a file handler to write logs to a file ---
+log_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), f'{APP_NAME}.log')
+file_handler = logging.FileHandler(log_filename)
+file_handler.setLevel(logging.DEBUG) # Set level for the file handler
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+logger.debug(f"Logging to {log_filename}")
 
 requests_log = logging.getLogger("requests.packages.urllib3")
 if _REQUEST_LOGGING:
