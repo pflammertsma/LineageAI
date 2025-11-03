@@ -368,7 +368,7 @@ def register_callbacks(app):
         elif ctx.triggered_id == 'start-research-btn':
             input_text = "Use the researcher agent to perform research. Look for any relevant genealogical records."
         elif ctx.triggered_id == 'format-biography-btn':
-            input_text = "Use the formatter agent to format a biography that includes as much relevant details about a profiles we've been talking about, including references and only links to known profiles."
+            input_text = "Use the formatter agent to format a biography that includes as much relevant details about the profile we've been talking about, including references and only links to known profiles."
 
         if not input_text:
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update
