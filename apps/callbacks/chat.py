@@ -317,10 +317,12 @@ def register_callbacks(app):
     )
     def update_chat_history(messages_data, active_session_id):
         if not active_session_id:
+            # FIXME this loading message goes away prematurely, while the session is active but messages haven't finished loading yet
             return SystemMessage("Loading session...", with_spinner=True)
 
         messages = messages_data.get(active_session_id, [])
         if not messages:
+            # FIXME this message appears unexpectedly when loading a session because the session is active but messages haven't finished loading yet
             return SystemMessage("What can I help you with?")
 
         bubbles = []
