@@ -548,6 +548,7 @@ def register_callbacks(app):
                     var input = document.getElementById('wikitree-profile-id-input');
                     if (input) {
                         input.focus();
+                        input.select();
                     }
                 }, 100);
             }
