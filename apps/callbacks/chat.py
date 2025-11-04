@@ -6,7 +6,7 @@ import json
 import uuid
 import time
 import re
-from ..layout.components import UserChatBubble, AgentChatBubble, WikitextBubble, AgentTransferLine, ToolCallBubble, SystemMessage, ToolResponseBubble, ErrorBubble
+from ..layout.components import SystemMessage, ErrorBubble, UserChatBubble, AgentChatBubble, AgentTransferLine, ToolCallBubble, ToolResponseBubble, WikitextBubble
 
 API_BASE_URL = "http://localhost:8000"
 APP_NAME = "LineageAI"
@@ -347,7 +347,10 @@ def register_callbacks(app):
             
             elif role == 'tool_response':
                 if tool_name != 'transfer_to_agent':
-                    bubbles.append(ToolResponseBubble(author, tool_name, msg.get('output', '{}')))
+                    show_author = True
+                    if i > 0 and messages[i-1].get('role') == 'tool':
+                        show_author = False
+                    bubbles.append(ToolResponseBubble(author, tool_name, msg.get('output', '{}'), show_author=show_author))
 
             elif role == 'error':
                 bubbles.append(ErrorBubble(
@@ -362,19 +365,19 @@ def register_callbacks(app):
         return html.Div(bubbles, className="p-3")
 
     @app.callback(
-        Output('messages-store', 'data', allow_duplicate=True),
-        Output('user-input', 'value'),
-        Output('api-trigger-store', 'data'),
-        Output('is-thinking-store', 'data'),
-        Input('send-btn', 'n_clicks'),
-        Input('start-research-btn', 'n_clicks'),
-        Input('format-biography-btn', 'n_clicks'),
-        Input('fetch-profile-ok-btn', 'n_clicks'),
-        Input('wikitree-profile-id-input', 'n_submit'),
-        State('user-input', 'value'),
-        State('wikitree-profile-id-input', 'value'),
-        State('active-session-store', 'data'),
-        State('messages-store', 'data'),
+        [Output('messages-store', 'data', allow_duplicate=True),
+         Output('user-input', 'value'),
+         Output('api-trigger-store', 'data'),
+         Output('is-thinking-store', 'data')],
+        [Input('send-btn', 'n_clicks'),
+         Input('start-research-btn', 'n_clicks'),
+         Input('format-biography-btn', 'n_clicks'),
+         Input('fetch-profile-ok-btn', 'n_clicks'),
+         Input('wikitree-profile-id-input', 'n_submit')],
+        [State('user-input', 'value'),
+         State('wikitree-profile-id-input', 'value'),
+         State('active-session-store', 'data'),
+         State('messages-store', 'data')],
         prevent_initial_call=True
     )
     def handle_user_actions(send_clicks, research_clicks, format_clicks, fetch_clicks, n_submit, user_input, profile_id, active_session_id, messages_data):

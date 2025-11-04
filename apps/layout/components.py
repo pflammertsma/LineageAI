@@ -177,20 +177,19 @@ def ToolCallBubble(author: str, tool_name: str, tool_input: str) -> html.Div:
     ], start_collapsed=True, className="mb-2 w-75 tool-call-accordion")
     return html.Div([author_div, accordion])
 
-def ToolResponseBubble(author: str, tool_name: str, tool_output: str) -> html.Div:
+def ToolResponseBubble(author: str, tool_name: str, tool_output: str, show_author=True) -> html.Div:
     """A component to render a tool response bubble."""
-    author_div = html.Div(author, className="small text-secondary mb-1")
     title = html.Div([
         html.I(className="bi bi-check-circle-fill me-2"),
         tool_name
     ])
-
-    try:
-        # Pretty-print if tool_output is a JSON string
-        parsed_output = json.loads(tool_output)
-        tool_output = json.dumps(parsed_output, indent=2)
-    except (json.JSONDecodeError, TypeError):
-        pass # Keep original if not a valid JSON string
+    if show_author:
+        author_line = html.Div([
+            html.Div(author, className="agent-name"),
+            html.Div(f"Responded", className="agent-role"),
+        ], className="agent-title")
+    else:
+        author_line = None
 
     accordion = dbc.Accordion([
         dbc.AccordionItem(
@@ -198,7 +197,7 @@ def ToolResponseBubble(author: str, tool_name: str, tool_output: str) -> html.Di
             title=title
         ),
     ], start_collapsed=True, className="mb-2 w-75 tool-response-accordion")
-    return html.Div([author_div, accordion])
+    return html.Div([author_line, accordion])
 
 def ErrorBubble(author: str, main_message: str, details: str) -> html.Div:
     """A component to render an error bubble with an accordion."""
