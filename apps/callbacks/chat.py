@@ -12,6 +12,7 @@ API_BASE_URL = "http://localhost:8000"
 APP_NAME = "LineageAI"
 
 def register_callbacks(app):
+
     @app.callback(
         Output("offcanvas-sidebar", "is_open"),
         Input("open-sidebar-btn", "n_clicks"),
@@ -21,6 +22,27 @@ def register_callbacks(app):
         if n1:
             return not is_open
         return is_open
+
+    @app.callback(
+        Output('sidebar-collapsed-store', 'data'),
+        Input('collapse-sidebar-btn', 'n_clicks'),
+        State('sidebar-collapsed-store', 'data'),
+        prevent_initial_call=True
+    )
+    def toggle_sidebar_collapse(n_clicks, is_collapsed):
+        if n_clicks:
+            return not is_collapsed
+        return dash.no_update
+
+    @app.callback(
+        Output('sidebar', 'style'),
+        Input('sidebar-collapsed-store', 'data')
+    )
+    def update_sidebar_style(is_collapsed):
+        if is_collapsed:
+            return {"width": "0px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"}
+        else:
+            return {"width": "280px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"}
 
     @app.callback(
         [Output('desktop-api-status-indicator', 'children'),
@@ -347,12 +369,15 @@ def register_callbacks(app):
         Input('send-btn', 'n_clicks'),
         Input('start-research-btn', 'n_clicks'),
         Input('format-biography-btn', 'n_clicks'),
+        Input('fetch-profile-ok-btn', 'n_clicks'),
+        Input('wikitree-profile-id-input', 'n_submit'),
         State('user-input', 'value'),
+        State('wikitree-profile-id-input', 'value'),
         State('active-session-store', 'data'),
         State('messages-store', 'data'),
         prevent_initial_call=True
     )
-    def handle_user_actions(send_clicks, research_clicks, format_clicks, user_input, active_session_id, messages_data):
+    def handle_user_actions(send_clicks, research_clicks, format_clicks, fetch_clicks, n_submit, user_input, profile_id, active_session_id, messages_data):
         if not ctx.triggered_id:
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
@@ -383,6 +408,11 @@ def register_callbacks(app):
             input_text = "Use the researcher agent to perform research. Look for any relevant genealogical records."
         elif ctx.triggered_id == 'format-biography-btn':
             input_text = "Use the formatter agent to format a biography that includes as much relevant details about the profile we've been talking about, including references and only links to known profiles."
+        elif ctx.triggered_id == 'fetch-profile-ok-btn' or ctx.triggered_id == 'wikitree-profile-id-input':
+            if profile_id:
+                input_text = f"Read {profile_id} from WikiTree, fetching it as the data may have changed if you have read it previously."
+            else:
+                return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
         if not input_text:
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -496,25 +526,35 @@ def register_callbacks(app):
             ch_className = ch_className.replace(" fade-out-bottom", "")
         return ti_style, ch_style, ch_className, disabled
 
-    # --- Sidebar Collapse Callbacks ---
-
     @app.callback(
-        Output('sidebar-collapsed-store', 'data'),
-        Input('collapse-sidebar-btn', 'n_clicks'),
-        State('sidebar-collapsed-store', 'data'),
+        Output("profile-modal", "is_open"),
+        [Input("fetch-profile-btn", "n_clicks"),
+         Input("fetch-profile-cancel-btn", "n_clicks"),
+         Input("fetch-profile-ok-btn", "n_clicks"),
+         Input("wikitree-profile-id-input", "n_submit")],
+        [State("profile-modal", "is_open")],
+        prevent_initial_call=True,
+    )
+    def toggle_profile_modal(n1, n2, n3, n4, is_open):
+        if n1 or n2 or n3 or n4:
+            return not is_open
+        return is_open
+
+    app.clientside_callback(
+        """
+        function(is_open) {
+            if (is_open) {
+                setTimeout(function() {
+                    var input = document.getElementById('wikitree-profile-id-input');
+                    if (input) {
+                        input.focus();
+                    }
+                }, 100);
+            }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output('wikitree-profile-id-input', 'className', allow_duplicate=True),
+        Input('profile-modal', 'is_open'),
         prevent_initial_call=True
     )
-    def toggle_sidebar_collapse(n_clicks, is_collapsed):
-        if n_clicks:
-            return not is_collapsed
-        return dash.no_update
-
-    @app.callback(
-        Output('sidebar', 'style'),
-        Input('sidebar-collapsed-store', 'data')
-    )
-    def update_sidebar_style(is_collapsed):
-        if is_collapsed:
-            return {"width": "0px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"}
-        else:
-            return {"width": "280px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"}

@@ -97,6 +97,7 @@ def create_layout(app):
             dbc.Row([
                 dbc.Col(dbc.Button("Start Research", id="start-research-btn", color="secondary"), width="auto"),
                 dbc.Col(dbc.Button("Format Biography", id="format-biography-btn", color="secondary"), width="auto"),
+                dbc.Col(dbc.Button("Fetch profile...", id="fetch-profile-btn", color="secondary"), width="auto"),
             ], className="mb-2"),
             dbc.InputGroup([
                 dcc.Textarea(id="user-input", placeholder="Type your message...", style={'resize': 'none'}, className="user-input-textarea", rows=1),
@@ -104,6 +105,17 @@ def create_layout(app):
             ]),
         ]
     )
+
+    profile_modal = dbc.Modal([
+        dbc.ModalHeader("Fetch WikiTree Profile"),
+        dbc.ModalBody(
+            dbc.Input(id="wikitree-profile-id-input", placeholder="Enter WikiTree ID (e.g., Hoogstraten-45)")
+        ),
+        dbc.ModalFooter([
+            dbc.Button("Cancel", id="fetch-profile-cancel-btn", className="ms-auto", n_clicks=0),
+            dbc.Button("OK", id="fetch-profile-ok-btn", className="ms-2", n_clicks=0),
+        ]),
+    ], id="profile-modal", is_open=False)
 
     main_content = html.Div(
         id="main-content",
@@ -136,6 +148,7 @@ def create_layout(app):
             store_components, 
             desktop_sidebar, 
             main_content, 
-            mobile_sidebar
+            mobile_sidebar,
+            profile_modal
         ]
     )
