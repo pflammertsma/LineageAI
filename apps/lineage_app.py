@@ -23,7 +23,9 @@ from dash import DiskcacheManager
 import diskcache
 
 from apps.layout.main import create_layout
-from apps.callbacks.chat import register_callbacks
+from apps.callbacks.chat import register_chat_callbacks
+from apps.callbacks.sidebar_callbacks import register_sidebar_callbacks
+from apps.callbacks.session_callbacks import register_session_callbacks
 
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheManager(cache)
@@ -71,7 +73,9 @@ app.index_string = '''
 app.layout = create_layout(app)
 
 # Register callbacks
-register_callbacks(app)
+register_chat_callbacks(app)
+register_sidebar_callbacks(app)
+register_session_callbacks(app)
 
 if __name__ == "__main__":
     # TODO: Disable use_reloader in production for stability.

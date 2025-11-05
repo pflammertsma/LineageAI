@@ -6,43 +6,14 @@ import json
 import uuid
 import time
 import re
+
 from ..layout.components import SystemMessage, ErrorBubble, UserChatBubble, AgentChatBubble, AgentTransferLine, ToolCallBubble, ToolResponseBubble, WikitextBubble
+from .utils import _parse_events_to_messages
 
 API_BASE_URL = "http://localhost:8000"
 APP_NAME = "LineageAI"
 
-def register_callbacks(app):
-
-    @app.callback(
-        Output("offcanvas-sidebar", "is_open"),
-        Input("open-sidebar-btn", "n_clicks"),
-        [State("offcanvas-sidebar", "is_open")],
-    )
-    def toggle_sidebar(n1, is_open):
-        if n1:
-            return not is_open
-        return is_open
-
-    @app.callback(
-        Output('sidebar-collapsed-store', 'data'),
-        Input('collapse-sidebar-btn', 'n_clicks'),
-        State('sidebar-collapsed-store', 'data'),
-        prevent_initial_call=True
-    )
-    def toggle_sidebar_collapse(n_clicks, is_collapsed):
-        if n_clicks:
-            return not is_collapsed
-        return dash.no_update
-
-    @app.callback(
-        Output('sidebar', 'style'),
-        Input('sidebar-collapsed-store', 'data')
-    )
-    def update_sidebar_style(is_collapsed):
-        if is_collapsed:
-            return {"width": "0px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"}
-        else:
-            return {"width": "280px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"}
+def register_chat_callbacks(app):
 
     @app.callback(
         [Output('desktop-api-status-indicator', 'children'),
@@ -55,14 +26,11 @@ def register_callbacks(app):
 
         if triggered_id == 'is-thinking-store':
             if is_thinking:
-                # When thinking starts, assume online and disable interval checks elsewhere.
                 status_badge = dbc.Badge("Online", color="success", className="ms-2")
                 return status_badge, status_badge
             else:
-                # When thinking stops, do a fresh check immediately.
-                pass # Fall through to the check logic.
+                pass
         
-        # This part runs for n_intervals and when thinking stops.
         try:
             response = requests.get(f"{API_BASE_URL}/docs", timeout=2)
             if response.status_code == 200:
@@ -74,242 +42,6 @@ def register_callbacks(app):
         status_badge = dbc.Badge("Offline", color="danger", className="ms-2")
         return status_badge, status_badge
 
-    def _parse_events_to_messages(events):
-        messages = []
-        session_title = None
-        if not events:
-            return messages, session_title
-
-        for event in events:
-            # Handle error events
-            if event.get("finishReason") and event.get("finishReason") != "STOP":
-                error_message = event.get("errorCode", "Unknown Error")
-                author = event.get("author", "System")
-                details = json.dumps(event, indent=2)
-                
-                messages.append({
-                    "role": "error",
-                    "author": author,
-                    "main_message": error_message,
-                    "details": details
-                })
-                continue
-
-            # Handle user-typed messages
-            if event.get("author") == "user":
-                if event.get("content", {}).get("parts"):
-                    full_text = "".join(p.get("text", "") for p in event["content"]["parts"])
-                    messages.append({"role": "user", "content": full_text})
-                continue
-
-            # Handle agent/tool messages
-            author = event.get("author")
-            content = event.get("content", {})
-            
-            if not content or not content.get("parts"):
-                continue
-
-            for part in content.get("parts"):
-                if "functionResponse" in part:
-                    tool_response = part["functionResponse"]
-                    tool_name = tool_response.get('name', '?')
-                    response_data = tool_response.get('response', {})
-                    
-                    if tool_name == 'set_current_subject':
-                        new_title = response_data.get('session_title')
-                        if new_title:
-                            session_title = new_title
-                        continue  # Intentionally skip creating a message bubble
-
-                    # Handle other function responses
-                    tool_output = json.dumps(response_data, indent=2)
-                    messages.append({"role": "tool_response", "name": tool_name, "output": tool_output, "author": author})
-
-                elif "functionCall" in part:
-                    tool_call = part["functionCall"]
-                    tool_name = tool_call.get('name', '?')
-                    tool_input = json.dumps(tool_call.get('args', {}), indent=2)
-                    messages.append({"role": "tool", "name": tool_name, "input": tool_input, "author": author})
-
-                elif "text" in part:
-                    # Only display text if it's not blank
-                    if part["text"].strip():
-                        messages.append({"role": "assistant", "author": author, "content": part["text"]})
-                    
-                else:
-                    print(f"Unknown message part: {part}")
-        
-        return messages, session_title
-
-    @app.callback(Output('user-id-store', 'data'), Input('user-id-store', 'data'))
-    def initialize_user_id(current_id):
-        if current_id is None: return f"user-{uuid.uuid4()}"
-        return dash.no_update
-
-    @app.callback(
-        [Output('sessions-store', 'data', allow_duplicate=True),
-         Output('active-session-store', 'data', allow_duplicate=True),
-         Output('messages-store', 'data', allow_duplicate=True),
-         Output('desktop-new-session-btn', 'n_clicks'),
-         Output('mobile-new-session-btn', 'n_clicks')],
-        Input('user-id-store', 'data'),
-        [State('sessions-store', 'data'),
-         State('active-session-store', 'data'),
-         State('messages-store', 'data')],
-        prevent_initial_call='initial_duplicate',
-    )
-    def initialize_sessions(user_id, existing_sessions, active_session_id, messages_data):
-        # This callback should only run once on startup to populate the session list
-        # and select the most recent session. It should not interfere with user selection later.
-        if not user_id or existing_sessions or active_session_id:
-            return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
-
-        try:
-            url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions"
-            response = requests.get(url)
-            response.raise_for_status()
-            sessions_data = response.json()
-            sessions = {}
-            if isinstance(sessions_data, list):
-                if sessions_data and isinstance(sessions_data[0], dict):
-                    sessions = {s['id']: s.get('title', f'Session {i+1}') for i, s in enumerate(sessions_data)}
-                elif sessions_data:
-                    sessions = {sid: f"Session {i+1}" for i, sid in enumerate(sorted(sessions_data))}
-            elif isinstance(sessions_data, dict):
-                sessions = sessions_data
-
-            if sessions:
-                latest_session_id = sorted(sessions.keys(), reverse=True)[0]
-                return sessions, latest_session_id, dash.no_update, dash.no_update, dash.no_update
-            else:
-                print("Sessions: No sessions found on server")
-        except requests.exceptions.RequestException as e:
-            print(f"API call to fetch sessions failed: {e}")
-            # If the API call fails, we'll proceed to create a new session locally.
-            pass
-
-        # If no sessions are found on the server, or if the API call fails,
-        # trigger the creation of a new session.
-        print("Sessions: Creating new session")
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, 1
-
-    @app.callback(
-        [Output('sessions-store', 'data', allow_duplicate=True), 
-         Output('active-session-store', 'data', allow_duplicate=True), 
-         Output('messages-store', 'data', allow_duplicate=True)],
-        [Input('desktop-new-session-btn', 'n_clicks'),
-         Input('mobile-new-session-btn', 'n_clicks')],
-        [State('user-id-store', 'data'), 
-         State('sessions-store', 'data'), 
-         State('messages-store', 'data')],
-        prevent_initial_call=True
-    )
-    def create_session(desktop_clicks, mobile_clicks, user_id, sessions_data, messages_data):
-        if not ctx.triggered_id or user_id is None: return dash.no_update, dash.no_update, dash.no_update
-        session_id = f"session-{int(time.time())}"
-        try:
-            response = requests.post(f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}", headers={"Content-Type": "application/json"}, data=json.dumps({}))
-            response.raise_for_status()
-            new_sessions = sessions_data.copy()
-            new_sessions[session_id] = f"Session {len(new_sessions) + 1}"
-            new_messages = messages_data.copy()
-            if session_id not in new_messages: new_messages[session_id] = []
-            return new_sessions, session_id, new_messages
-        except requests.exceptions.RequestException as e:
-            error_message = f"Failed to create session: {e}"
-            print(error_message)
-            new_messages = messages_data.copy()
-            # Use a temporary session ID for the error message
-            error_session_id = f"error-{uuid.uuid4()}"
-            new_messages[error_session_id] = [{
-                "role": "assistant", 
-                "author": "System", 
-                "content": error_message
-            }]
-            # Also update the sessions store to include the error session
-            new_sessions = sessions_data.copy()
-            new_sessions[error_session_id] = "Error"
-            return new_sessions, error_session_id, new_messages
-
-    @app.callback(
-        [Output('desktop-session-list-container', 'children'),
-         Output('mobile-session-list-container', 'children')],
-        [Input('sessions-store', 'data'), Input('active-session-store', 'data')]
-    )
-    def update_session_list(sessions, active_session_id):
-        if not sessions: 
-            spinner = dbc.Spinner(size="sm")
-            return spinner, spinner
-        items = [dbc.ListGroupItem(name, id={"type": "session-btn", "index": sid}, action=True, active=(sid == active_session_id), className="session-list-item") for sid, name in reversed(list(sessions.items()))]
-        list_group = dbc.ListGroup(items, flush=True)
-        return list_group, list_group
-
-    @app.callback(
-        [Output('active-session-store', 'data', allow_duplicate=True),
-         Output('chat-history', 'children', allow_duplicate=True)],
-        Input({"type": "session-btn", "index": ALL}, 'n_clicks'),
-        State('active-session-store', 'data'),
-        prevent_initial_call=True
-    )
-    def show_loading_spinner_on_session_change(n_clicks, active_session_id):
-        if not ctx.triggered_id or not any(n_clicks):
-            return dash.no_update, dash.no_update
-
-        clicked_session_id = ctx.triggered_id['index']
-
-        if clicked_session_id == active_session_id:
-            return dash.no_update, dash.no_update
-
-        loading_spinner = SystemMessage("Loading session…", with_spinner=True)
-        return clicked_session_id, loading_spinner
-
-    @app.callback(
-        Output('messages-store', 'data', allow_duplicate=True),
-        Input('active-session-store', 'data'),
-        [State('user-id-store', 'data'),
-         State('messages-store', 'data')],
-        prevent_initial_call=True
-    )
-    def fetch_session_history(active_session_id, user_id, messages_data):
-        if not active_session_id or not user_id:
-            return dash.no_update
-
-        # If messages for this session are already loaded, do nothing
-        if active_session_id in messages_data and messages_data[active_session_id]:
-            return dash.no_update
-
-        try:
-            url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{active_session_id}"
-            response = requests.get(url)
-            response.raise_for_status()
-            session_details = response.json()
-            
-            new_messages = messages_data.copy()
-            session_history_events = session_details.get('events', [])
-            parsed_messages, _ = _parse_events_to_messages(session_history_events) # We don't need the title here
-            new_messages[active_session_id] = parsed_messages
-            
-            return new_messages
-            
-        except requests.exceptions.RequestException as e:
-            print(f"API call to fetch session messages failed: {e}")
-            # Optionally, add an error message to the chat for the failed session load
-            new_messages = messages_data.copy()
-            new_messages[active_session_id] = [{
-                "role": "system",
-                "content": f"Failed to load session history: {e}"
-            }]
-            return new_messages
-
-    @app.callback(
-        Output('conversation-title', 'children'),
-        [Input('active-session-store', 'data'),
-         Input('sessions-store', 'data')]
-    )
-    def update_conversation_title(active_session_id, sessions):
-        if not active_session_id or not sessions: return "Conversation"
-        return sessions.get(active_session_id, "Conversation")
-
     @app.callback(
         Output('chat-history', 'children'),
         [Input('messages-store', 'data'),
@@ -317,15 +49,12 @@ def register_callbacks(app):
     )
     def update_chat_history(messages_data, active_session_id):
         if not active_session_id:
-            # If there's no active session, show a loading spinner.
             return SystemMessage("Loading sessions…", with_spinner=True)
         if active_session_id not in messages_data:
-            # If the session's messages haven't been loaded yet, show a loading spinner.
             return SystemMessage("Restoring session…", with_spinner=True)
 
         messages = messages_data.get(active_session_id, [])
         if not messages:
-            # If the session is loaded but has no messages, show the welcome message.
             return SystemMessage("What can I help you with?")
 
         bubbles = []
