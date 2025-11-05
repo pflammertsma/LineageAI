@@ -72,25 +72,23 @@ def register_session_callbacks(app):
         session_id = f"session-{int(time.time())}"
         _, error = api_client.create_session(user_id, session_id)
 
+        new_sessions = sessions_data.copy()
+        new_messages = messages_data.copy()
+
         if not error:
-            new_sessions = sessions_data.copy()
             new_sessions[session_id] = f"Session {len(new_sessions) + 1}"
-            new_messages = messages_data.copy()
             if session_id not in new_messages: new_messages[session_id] = []
-            return new_sessions, session_id, new_messages
         else:
             error_message = f"Failed to create session: {error}"
             print(error_message)
-            new_messages = messages_data.copy()
-            error_session_id = f"error-{uuid.uuid4()}"
-            new_messages[error_session_id] = [{
+            new_sessions[session_id] = "Creation Failed"
+            new_messages[session_id] = [{
                 "role": "assistant", 
                 "author": "System", 
                 "content": error_message
             }]
-            new_sessions = sessions_data.copy()
-            new_sessions[error_session_id] = "Error"
-            return new_sessions, error_session_id, new_messages
+            
+        return new_sessions, session_id, new_messages
 
     @app.callback(
         [Output('desktop-session-list-container', 'children'),
@@ -162,3 +160,15 @@ def register_session_callbacks(app):
     def update_conversation_title(active_session_id, sessions):
         if not active_session_id or not sessions: return "Conversation"
         return sessions.get(active_session_id, "Conversation")
+
+    @app.callback(
+        Output('chat-history', 'children', allow_duplicate=True),
+        [Input('desktop-new-session-btn', 'n_clicks'),
+         Input('mobile-new-session-btn', 'n_clicks')],
+        prevent_initial_call=True
+    )
+    def show_creating_session_spinner(desktop_clicks, mobile_clicks):
+        if not ctx.triggered_id:
+            return dash.no_update
+        
+        return SystemMessage("Creating session...", with_spinner=True)
