@@ -1,16 +1,12 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, ALL, ctx
-import requests
-import json
 import uuid
 import time
 
 from .utils import _parse_events_to_messages
 from ..layout.components import SystemMessage
-
-API_BASE_URL = "http://localhost:8000"
-APP_NAME = "LineageAI"
+from .. import api_client
 
 def register_session_callbacks(app):
 
@@ -35,11 +31,12 @@ def register_session_callbacks(app):
         if not user_id or existing_sessions or active_session_id:
             return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-        try:
-            url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions"
-            response = requests.get(url)
-            response.raise_for_status()
-            sessions_data = response.json()
+        sessions_data, error = api_client.get_sessions(user_id)
+
+        if error:
+            print(f"API call to fetch sessions failed: {error}")
+            # Fall through to create a new session
+        else:
             sessions = {}
             if isinstance(sessions_data, list):
                 if sessions_data and isinstance(sessions_data[0], dict):
@@ -54,12 +51,9 @@ def register_session_callbacks(app):
                 return sessions, latest_session_id, dash.no_update, dash.no_update, dash.no_update
             else:
                 print("Sessions: No sessions found on server")
-        except requests.exceptions.RequestException as e:
-            print(f"API call to fetch sessions failed: {e}")
-            pass
 
         print("Sessions: Creating new session")
-        return dash.no_update, dash.no_update, dash.no_update, 1, 1 # Corrected from dash.no_update to 1
+        return dash.no_update, dash.no_update, dash.no_update, 1, 1
 
     @app.callback(
         [Output('sessions-store', 'data', allow_duplicate=True), 
@@ -74,17 +68,18 @@ def register_session_callbacks(app):
     )
     def create_session(desktop_clicks, mobile_clicks, user_id, sessions_data, messages_data):
         if not ctx.triggered_id or user_id is None: return dash.no_update, dash.no_update, dash.no_update
+        
         session_id = f"session-{int(time.time())}"
-        try:
-            response = requests.post(f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}", headers={"Content-Type": "application/json"}, data=json.dumps({}))
-            response.raise_for_status()
+        _, error = api_client.create_session(user_id, session_id)
+
+        if not error:
             new_sessions = sessions_data.copy()
             new_sessions[session_id] = f"Session {len(new_sessions) + 1}"
             new_messages = messages_data.copy()
             if session_id not in new_messages: new_messages[session_id] = []
             return new_sessions, session_id, new_messages
-        except requests.exceptions.RequestException as e:
-            error_message = f"Failed to create session: {e}"
+        else:
+            error_message = f"Failed to create session: {error}"
             print(error_message)
             new_messages = messages_data.copy()
             error_session_id = f"error-{uuid.uuid4()}"
@@ -143,27 +138,21 @@ def register_session_callbacks(app):
         if active_session_id in messages_data and messages_data[active_session_id]:
             return dash.no_update
 
-        try:
-            url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{active_session_id}"
-            response = requests.get(url)
-            response.raise_for_status()
-            session_details = response.json()
-            
-            new_messages = messages_data.copy()
+        session_details, error = api_client.get_session_history(user_id, active_session_id)
+        new_messages = messages_data.copy()
+
+        if error:
+            print(f"API call to fetch session messages failed: {error}")
+            new_messages[active_session_id] = [{
+                "role": "system",
+                "content": f"Failed to load session history: {error}"
+            }]
+        else:
             session_history_events = session_details.get('events', [])
             parsed_messages, _ = _parse_events_to_messages(session_history_events)
             new_messages[active_session_id] = parsed_messages
             
-            return new_messages
-            
-        except requests.exceptions.RequestException as e:
-            print(f"API call to fetch session messages failed: {e}")
-            new_messages = messages_data.copy()
-            new_messages[active_session_id] = [{
-                "role": "system",
-                "content": f"Failed to load session history: {e}"
-            }]
-            return new_messages
+        return new_messages
 
     @app.callback(
         Output('conversation-title', 'children'),

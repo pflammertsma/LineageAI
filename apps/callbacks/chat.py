@@ -1,17 +1,13 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, ALL, ctx
-import requests
-import json
 import uuid
 import time
 import re
 
 from ..layout.components import SystemMessage, ErrorBubble, UserChatBubble, AgentChatBubble, AgentTransferLine, ToolCallBubble, ToolResponseBubble, WikitextBubble
 from .utils import _parse_events_to_messages
-
-API_BASE_URL = "http://localhost:8000"
-APP_NAME = "LineageAI"
+from .. import api_client
 
 def register_chat_callbacks(app):
 
@@ -29,17 +25,13 @@ def register_chat_callbacks(app):
                 status_badge = dbc.Badge("Online", color="success", className="ms-2")
                 return status_badge, status_badge
             else:
-                pass
+                pass # Fall through to the check logic.
         
-        try:
-            response = requests.get(f"{API_BASE_URL}/docs", timeout=2)
-            if response.status_code == 200:
-                status_badge = dbc.Badge("Online", color="success", className="ms-2")
-                return status_badge, status_badge
-        except requests.exceptions.RequestException as e:
-            print(f"API status check failed: {e}")
-        
-        status_badge = dbc.Badge("Offline", color="danger", className="ms-2")
+        is_online, _ = api_client.check_api_status()
+        if is_online:
+            status_badge = dbc.Badge("Online", color="success", className="ms-2")
+        else:
+            status_badge = dbc.Badge("Offline", color="danger", className="ms-2")
         return status_badge, status_badge
 
     @app.callback(
@@ -190,51 +182,33 @@ def register_chat_callbacks(app):
         new_sessions = sessions_data.copy()
 
         payload = {
-            "app_name": APP_NAME,
+            "app_name": api_client.APP_NAME,
             "user_id": user_id,
             "session_id": active_session_id,
             "new_message": {"role": "user", "parts": [{"text": trigger_data['user_input']}]}
         }
 
-        try:
-            with requests.post(f"{API_BASE_URL}/run_sse", headers={"Content-Type": "application/json"}, data=json.dumps(payload), stream=True) as r:
-                r.raise_for_status()
+        for data, error in api_client.stream_agent_response(payload):
+            if error:
+                if active_session_id not in new_messages:
+                    new_messages[active_session_id] = []
+                new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error})
+                break # Stop processing on error
 
-                for chunk in r.iter_lines():
-                    if not chunk: continue
-                    chunk_str = chunk.decode('utf-8')
-                    if chunk_str.startswith('data: '): chunk_str = chunk_str[6:]
-                    
-                    try:
-                        data = json.loads(chunk_str)
-                        events = data if isinstance(data, list) else [data]
-                        
-                        parsed_messages, session_title = _parse_events_to_messages(events)
+            events = data if isinstance(data, list) else [data]
+            parsed_messages, session_title = _parse_events_to_messages(events)
 
-                        if session_title:
-                            new_sessions[active_session_id] = session_title
-                        
-                        if parsed_messages:
-                            if active_session_id not in new_messages:
-                                new_messages[active_session_id] = []
-                            new_messages[active_session_id].extend(parsed_messages)
-
-                        set_progress((new_messages, new_sessions))
-
-                    except json.JSONDecodeError as e:
-                        print(f"JSON decode error: {e} - Bad chunk: {chunk_str}")
-                        pass
+            if session_title:
+                new_sessions[active_session_id] = session_title
             
-            return new_messages, new_sessions, False
-        except requests.exceptions.RequestException as e:
-            error_content = f"Error communicating with agent: {e}"
-            if hasattr(e, 'response') and e.response is not None:
-                error_content += f" (Status code: {e.response.status_code})"
-            
-            if active_session_id not in new_messages:
-                new_messages[active_session_id] = []
-            new_messages[active_session_id].append({"role": "assistant", "author": "Error", "content": error_content})
-            return new_messages, new_sessions, False
+            if parsed_messages:
+                if active_session_id not in new_messages:
+                    new_messages[active_session_id] = []
+                new_messages[active_session_id].extend(parsed_messages)
+
+            set_progress((new_messages, new_sessions))
+        
+        return new_messages, new_sessions, False
 
     @app.callback(
         [Output('thinking-indicator', 'style'),
