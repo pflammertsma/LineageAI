@@ -47,9 +47,18 @@ def _parse_events_to_messages(events):
                         session_title = new_title
                     continue  # Intentionally skip creating a message bubble
 
-                # Handle other function responses
-                tool_output = json.dumps(response_data, indent=2)
-                messages.append({"role": "tool_response", "name": tool_name, "output": tool_output, "author": author})
+                # Check for tool error response
+                if isinstance(response_data, dict) and response_data.get("status") == "error":
+                    messages.append({
+                        "role": "error",
+                        "author": author,
+                        "main_message": tool_name,
+                        "details": json.dumps(response_data, indent=2)
+                    })
+                else:
+                    # Handle successful function responses
+                    tool_output = json.dumps(response_data, indent=2)
+                    messages.append({"role": "tool_response", "name": tool_name, "output": tool_output, "author": author})
 
             elif "functionCall" in part:
                 tool_call = part["functionCall"]
