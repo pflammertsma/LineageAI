@@ -74,7 +74,7 @@ def create_layout(app):
         id="chat-history",
         style={"flexGrow": "1", "overflowY": "auto", "position": "relative", "transition": "padding-bottom 0.3s"},
         children=[html.Div(
-            [dbc.Spinner(), html.Span(" Initializing session...", className="ms-2")],
+            [dbc.Spinner(), html.Span(" Initializing session…", className="ms-2")],
             className="d-flex justify-content-center align-items-center h-100"
         )]
     )
@@ -85,7 +85,7 @@ def create_layout(app):
         style={"transition": "opacity 0.3s, max-height 0.3s", "opacity": 0, "max-height": "0px"},
         children=[
             dbc.Spinner(size="sm", spinner_class_name="me-2"),
-            html.Span("Thinking...")
+            html.Span("Thinking…")
         ]
     )
 
@@ -95,12 +95,18 @@ def create_layout(app):
         style={"flexShrink": "0", "zIndex": 2, "position": "relative"},
         children=[
             dbc.Row([
-                dbc.Col(dbc.Button("Start Research", id="start-research-btn", color="secondary"), width="auto"),
-                dbc.Col(dbc.Button("Format Biography", id="format-biography-btn", color="secondary"), width="auto"),
-                dbc.Col(dbc.Button("Fetch profile...", id="fetch-profile-btn", color="secondary"), width="auto"),
+                dbc.Col(
+                    dbc.ButtonGroup(
+                        [
+                            dbc.Button("Start Research", id="start-research-btn", color="secondary"),
+                            dbc.Button("Format Biography", id="format-biography-btn", color="secondary"),
+                            dbc.Button("Fetch profile…", id="fetch-profile-btn", color="secondary"),
+                        ]
+                    )
+                )
             ], className="mb-2"),
             dbc.InputGroup([
-                dcc.Textarea(id="user-input", placeholder="Type your message...", style={'resize': 'none'}, className="user-input-textarea", rows=1),
+                dcc.Textarea(id="user-input", placeholder="Type your message…", style={'resize': 'none'}, className="user-input-textarea", rows=1),
                 dbc.Button(html.I(className="bi bi-send-fill"), id="send-btn", color="primary", n_clicks=0, className="circle-button"),
             ]),
         ]

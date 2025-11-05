@@ -260,7 +260,7 @@ def register_callbacks(app):
         if clicked_session_id == active_session_id:
             return dash.no_update, dash.no_update
 
-        loading_spinner = SystemMessage("Loading session...", with_spinner=True)
+        loading_spinner = SystemMessage("Loading session…", with_spinner=True)
         return clicked_session_id, loading_spinner
 
     @app.callback(
@@ -318,10 +318,10 @@ def register_callbacks(app):
     def update_chat_history(messages_data, active_session_id):
         if not active_session_id:
             # If there's no active session, show a loading spinner.
-            return SystemMessage("Loading sessions...", with_spinner=True)
+            return SystemMessage("Loading sessions…", with_spinner=True)
         if active_session_id not in messages_data:
             # If the session's messages haven't been loaded yet, show a loading spinner.
-            return SystemMessage("Restoring session...", with_spinner=True)
+            return SystemMessage("Restoring session…", with_spinner=True)
 
         messages = messages_data.get(active_session_id, [])
         if not messages:
