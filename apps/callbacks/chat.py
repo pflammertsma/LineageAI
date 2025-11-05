@@ -5,7 +5,7 @@ import uuid
 import time
 import re
 
-from ..layout.components import SystemMessage, ErrorBubble, UserChatBubble, AgentChatBubble, AgentTransferLine, ToolCallBubble, ToolResponseBubble, WikitextBubble
+from ..layout.components import SystemMessage, ErrorBubble, AuthorLine, UserChatBubble, AgentChatBubble, AgentTransferLine, ToolCallBubble, ToolResponseBubble, WikitextBubble
 from .utils import _parse_events_to_messages
 from .. import api_client
 
@@ -50,44 +50,55 @@ def register_chat_callbacks(app):
             return SystemMessage("What can I help you with?")
 
         bubbles = []
+        last_printed_author = None
         for i, msg in enumerate(messages):
             role = msg.get('role')
             content = msg.get('content', '')
             author = msg.get('author', 'Assistant')
             tool_name = msg.get('name', 'Unknown Tool')
 
+            show_author = False
+            if role == 'tool':
+                show_author = True
+            elif role in ['assistant', 'error']:
+                if last_printed_author is None or author != last_printed_author:
+                    show_author = True
+            
+            author_line = AuthorLine(author) if show_author else None
+
             if role == 'user':
                 bubbles.append(UserChatBubble(content))
+                last_printed_author = None
             
             elif role == 'assistant':
                 if '```wiki' in content:
-                    bubbles.append(WikitextBubble(author, content))
+                    bubbles.append(WikitextBubble(content, author_line=author_line))
                 else:
-                    bubbles.append(AgentChatBubble(author, content))
+                    bubbles.append(AgentChatBubble(content, author_line=author_line))
 
             elif role == 'tool':
                 if tool_name == 'transfer_to_agent':
                     bubbles.append(AgentTransferLine(author, tool_name, msg.get('input', '{}')))
                 else:
-                    bubbles.append(ToolCallBubble(author, tool_name, msg.get('input', '{}')))
+                    bubbles.append(ToolCallBubble(tool_name, msg.get('input', '{}'), author_line=author_line))
             
             elif role == 'tool_response':
                 if tool_name != 'transfer_to_agent':
-                    show_author = True
-                    if i > 0 and messages[i-1].get('role') == 'tool':
-                        show_author = False
-                    bubbles.append(ToolResponseBubble(author, tool_name, msg.get('output', '{}'), show_author=show_author))
+                    bubbles.append(ToolResponseBubble(author, tool_name, msg.get('output', '{}'), author_line=author_line))
 
             elif role == 'error':
                 bubbles.append(ErrorBubble(
-                    author=msg.get('author', 'System'),
                     main_message=msg.get('main_message', 'An error occurred.'),
-                    details=msg.get('details', '{}')
+                    details=msg.get('details', '{}'),
+                    author_line=author_line
                 ))
 
             elif role == 'system':
                 bubbles.append(SystemMessage(content))
             
+            if show_author:
+                last_printed_author = author
+
         return html.Div(bubbles, className="p-3")
 
     @app.callback(

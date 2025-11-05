@@ -3,7 +3,11 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 import uuid
 import json
-from typing import Any, List
+from typing import Any, List, Optional
+
+def AuthorLine(author: str) -> html.Div:
+    """Creates the author line component."""
+    return html.Div(author, className="small text-secondary mb-1")
 
 def FormattedText(content: str) -> List[Any]:
     if "```" in content:
@@ -27,29 +31,19 @@ def FormattedText(content: str) -> List[Any]:
 
 def SystemMessage(content: str, with_spinner: bool = False) -> html.Div:
     """A component to render a system message."""
-    
-    children = []
     if with_spinner:
-        children.append(dbc.Spinner())
-        children.append(html.Span(content, className="ms-2"))
+        children = [dbc.Spinner(), html.Span(content, className="ms-2")]
         return html.Div(children, className="d-flex justify-content-center align-items-center h-100")
     
     formatted_content = FormattedText(content)
     
     # Check if there is a code block
     if len(formatted_content) > 1:
-        main_message = formatted_content[0]
-        code_block = formatted_content[1]
-
+        main_message, code_block = formatted_content
         accordion = dbc.Accordion([
-            dbc.AccordionItem(
-                code_block,
-                title="Error details"
-            ),
+            dbc.AccordionItem(code_block, title="Error details"),
         ], start_collapsed=True, className="mb-2 w-75 system-message-accordion")
-        
-        children = [main_message, accordion]
-        return html.Div(children, className="system-message-container")
+        return html.Div([main_message, accordion], className="system-message-container")
     else:
         return html.Div(formatted_content, className="d-flex justify-content-center align-items-center h-100")
     
@@ -67,11 +61,10 @@ def UserChatBubble(content: str) -> dbc.Alert:
         className="mb-2",
     )
 
-def AgentChatBubble(author: str, content: str) -> html.Div:
+def AgentChatBubble(content: str, author_line: Optional[html.Div] = None) -> html.Div:
     """A component to render an agent chat bubble."""
-    author_div = html.Div(author, className="small text-secondary mb-1")
     return html.Div([
-        author_div,
+        author_line,
         dbc.Alert(
             FormattedText(content),
             color="secondary",
@@ -86,25 +79,22 @@ def AgentChatBubble(author: str, content: str) -> html.Div:
 
 def Wikitext(wikitext: str) -> html.Div:
     """A custom component to render wikitext with syntax highlighting."""
-    container_id = f"wikitext-container-{uuid.uuid4()}"
-
     return html.Div(
         children=[
-            html.Pre(html.Code(wikitext, id=container_id))
+            html.Pre(html.Code(wikitext))
         ],
         className="highlight-container",
         style={"position": "relative"}
     )
 
-def WikitextBubble(author: str, content: str) -> html.Div:
+def WikitextBubble(content: str, author_line: Optional[html.Div] = None) -> html.Div:
     """A component to render a wikitext bubble."""
-    author_div = html.Div(author, className="small text-secondary mb-1")
     parts = content.split("```wiki")
     children = []
     for part in parts:
         children.append(Wikitext(part.strip("\n```")))
     return html.Div([
-        author_div,
+        author_line,
         dbc.Alert(
             children,
             color="secondary",
@@ -137,9 +127,8 @@ def AgentTransferLine(author: str, tool_name: str, tool_input: str) -> html.Div:
         
     return html.Div(children, className="small text-secondary mb-1 d-flex align-items-center")
 
-def ToolCallBubble(author: str, tool_name: str, tool_input: str) -> html.Div:
+def ToolCallBubble(tool_name: str, tool_input: str, author_line: Optional[html.Div] = None) -> html.Div:
     """A component to render a tool call bubble."""
-    author_div = html.Div(author, className="small text-secondary mb-1")
     title = html.Div([
         html.I(className="bi bi-lightning-fill me-2"),
         tool_name
@@ -175,21 +164,14 @@ def ToolCallBubble(author: str, tool_name: str, tool_input: str) -> html.Div:
             title=title
         ),
     ], start_collapsed=True, className="mb-2 w-75 tool-call-accordion")
-    return html.Div([author_div, accordion])
+    return html.Div([author_line, accordion])
 
-def ToolResponseBubble(author: str, tool_name: str, tool_output: str, show_author=True) -> html.Div:
+def ToolResponseBubble(author: str, tool_name: str, tool_output: str, author_line: Optional[html.Div] = None) -> html.Div:
     """A component to render a tool response bubble."""
     title = html.Div([
         html.I(className="bi bi-check-circle-fill me-2"),
         tool_name
     ])
-    if show_author:
-        author_line = html.Div([
-            html.Div(author, className="agent-name"),
-            html.Div(f"Responded", className="agent-role"),
-        ], className="agent-title")
-    else:
-        author_line = None
 
     accordion = dbc.Accordion([
         dbc.AccordionItem(
@@ -199,9 +181,8 @@ def ToolResponseBubble(author: str, tool_name: str, tool_output: str, show_autho
     ], start_collapsed=True, className="mb-2 w-75 tool-response-accordion")
     return html.Div([author_line, accordion])
 
-def ErrorBubble(author: str, main_message: str, details: str) -> html.Div:
+def ErrorBubble(main_message: str, details: str, author_line: Optional[html.Div] = None) -> html.Div:
     """A component to render an error bubble with an accordion."""
-    author_div = html.Div(author, className="small text-secondary mb-1")
     title = html.Div([
         html.I(className="bi bi-exclamation-triangle-fill me-2 text-danger"), # Error icon
         main_message
@@ -213,5 +194,4 @@ def ErrorBubble(author: str, main_message: str, details: str) -> html.Div:
             title=title
         ),
     ], start_collapsed=True, className="mb-2 w-75 error-accordion")
-    
-    return html.Div([author_div, accordion])
+    return html.Div([author_line, accordion])
