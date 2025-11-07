@@ -58,7 +58,8 @@ def register_session_callbacks(app):
     @app.callback(
         [Output('sessions-store', 'data', allow_duplicate=True), 
          Output('active-session-store', 'data', allow_duplicate=True), 
-         Output('messages-store', 'data', allow_duplicate=True)],
+         Output('messages-store', 'data', allow_duplicate=True),
+         Output('connection-error-store', 'data', allow_duplicate=True)],
         [Input('desktop-new-session-btn', 'n_clicks'),
          Input('mobile-new-session-btn', 'n_clicks')],
         [State('user-id-store', 'data'), 
@@ -67,7 +68,7 @@ def register_session_callbacks(app):
         prevent_initial_call=True
     )
     def create_session(desktop_clicks, mobile_clicks, user_id, sessions_data, messages_data):
-        if not ctx.triggered_id or user_id is None: return dash.no_update, dash.no_update, dash.no_update
+        if not ctx.triggered_id or user_id is None: return dash.no_update, dash.no_update, dash.no_update, dash.no_update
         
         session_id = f"session-{int(time.time())}"
         _, error = api_client.create_session(user_id, session_id)
@@ -78,17 +79,11 @@ def register_session_callbacks(app):
         if not error:
             new_sessions[session_id] = f"Session {len(new_sessions) + 1}"
             if session_id not in new_messages: new_messages[session_id] = []
+            return new_sessions, session_id, new_messages, None
         else:
             error_message = f"Failed to create session: {error}"
             print(error_message)
-            new_sessions[session_id] = "Creation Failed"
-            new_messages[session_id] = [{
-                "role": "assistant", 
-                "author": "System", 
-                "content": error_message
-            }]
-            
-        return new_sessions, session_id, new_messages
+            return dash.no_update, dash.no_update, dash.no_update, error_message
 
     @app.callback(
         [Output('desktop-session-list-container', 'children'),
@@ -97,8 +92,8 @@ def register_session_callbacks(app):
     )
     def update_session_list(sessions, active_session_id):
         if not sessions: 
-            spinner = dbc.Spinner(size="sm")
-            return spinner, spinner
+            no_sessions_message = html.P("No sessions.", className="text-muted text-center p-3")
+            return no_sessions_message, no_sessions_message
         items = [dbc.ListGroupItem(name, id={"type": "session-btn", "index": sid}, action=True, active=(sid == active_session_id), className="session-list-item") for sid, name in reversed(list(sessions.items()))]
         list_group = dbc.ListGroup(items, flush=True)
         return list_group, list_group
@@ -172,3 +167,39 @@ def register_session_callbacks(app):
             return dash.no_update
         
         return SystemMessage("Creating session...", with_spinner=True)
+
+    @app.callback(
+        [Output('connection-error-overlay', 'className'),
+         Output('connection-error-details', 'children'),
+         Output('main-content', 'className')],
+        Input('connection-error-store', 'data')
+    )
+    def toggle_connection_error_overlay(error):
+        base_class = "connection-error-overlay flex-column justify-content-center align-items-center"
+        if error:
+            return f"d-flex {base_class}", str(error), "d-none"
+        else:
+            return f"d-none {base_class}", "", "d-flex flex-column"
+
+    @app.callback(
+        [Output('connection-error-store', 'data'),
+         Output('desktop-new-session-btn', 'n_clicks', allow_duplicate=True),
+         Output('mobile-new-session-btn', 'n_clicks', allow_duplicate=True)],
+        Input('retry-connection-btn', 'n_clicks'),
+        prevent_initial_call=True
+    )
+    def retry_connection(n_clicks):
+        if n_clicks and n_clicks > 0:
+            return None, 1, 1
+        return dash.no_update, dash.no_update, dash.no_update
+
+    @app.callback(
+        Output("error-details-modal", "is_open"),
+        [Input("error-details-btn", "n_clicks"), Input("close-error-modal-btn", "n_clicks")],
+        [State("error-details-modal", "is_open")],
+        prevent_initial_call=True,
+    )
+    def toggle_error_modal(open_clicks, close_clicks, is_open):
+        if open_clicks or close_clicks:
+            return not is_open
+        return is_open

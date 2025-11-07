@@ -15,7 +15,6 @@ def create_sidebar_content(prefix: str, app):
                     html.Span("LineageAI", className="app-title")
                 ]
             ),
-            html.Div(id=f'{prefix}-api-status-indicator')
         ], className="d-flex justify-content-between align-items-center"),
         dbc.Nav(
             [dbc.Button("New Session", id=f'{prefix}-new-session-btn', color="primary", className="w-100")],
@@ -24,6 +23,7 @@ def create_sidebar_content(prefix: str, app):
         html.Hr(),
         html.Div(id=f'{prefix}-session-list-container', children=[dbc.Spinner(size="sm")]),
         html.Hr(),
+        html.Div(id=f'{prefix}-api-status-indicator')
     ]
 
 # --- App Layout ---
@@ -37,6 +37,7 @@ def create_layout(app):
         dcc.Store(id='messages-store', data={}),
         dcc.Store(id='api-trigger-store', data=None),
         dcc.Store(id='is-thinking-store', data=False),
+        dcc.Store(id='connection-error-store', data=None),
         
         dcc.Interval(id='api-status-interval', interval=60*1000, n_intervals=0),
     ])
@@ -147,14 +148,65 @@ def create_layout(app):
         ]
     )
 
+    main_content_container = html.Div(
+        id="main-content-container",
+        style={"flexGrow": 1, "position": "relative", "height": "100vh"},
+        children=[
+            main_content,
+            html.Div(
+                id="connection-error-overlay",
+                className="connection-error-overlay d-none flex-column justify-content-center align-items-center",
+                style={
+                    "position": "absolute",
+                    "top": 0,
+                    "left": 0,
+                    "right": 0,
+                    "bottom": 0,
+                    "zIndex": 100,
+                },
+                children=[
+                    html.H4("Connection Failed"),
+                    html.Div(
+                        [
+                            html.P("Could not connect to the server.", className="m-0"),
+                            dbc.Button(
+                                html.I(className="bi bi-info-circle"),
+                                id="error-details-btn",
+                                color="link",
+                                className="p-0 ms-2",
+                            ),
+                        ],
+                        className="d-flex align-items-center",
+                    ),
+                    dbc.Button("Retry", id="retry-connection-btn", color="primary", className="mt-3"),
+                ],
+            ),
+        ],
+    )
+
+    error_modal = dbc.Modal(
+        [
+            dbc.ModalHeader(dbc.ModalTitle("Error details")),
+            dbc.ModalBody(html.Pre(id="connection-error-details", style={'maxHeight': '400px', 'overflowY': 'auto'})),
+            dbc.ModalFooter(
+                dbc.Button(
+                    "Close", id="close-error-modal-btn", className="ms-auto", n_clicks=0
+                )
+            ),
+        ],
+        id="error-details-modal",
+        is_open=False,
+    )
+
     return html.Div(
         id="app-container", 
         className="d-flex", 
         children=[
             store_components, 
             desktop_sidebar, 
-            main_content, 
+            main_content_container, 
             mobile_sidebar,
-            profile_modal
+            profile_modal,
+            error_modal,
         ]
     )

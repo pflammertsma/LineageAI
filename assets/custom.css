@@ -379,3 +379,7 @@ span.linenos.special {
     background-color: var(--accent-primary);
     border-color: var(--accent-primary);
 }
+
+.connection-error-overlay {
+    background-color: var(--bg-surface);
+}
