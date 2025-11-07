@@ -383,3 +383,8 @@ span.linenos.special {
 .connection-error-overlay {
     background-color: var(--bg-surface);
 }
+
+.copyright {
+    color: var(--bs-tertiary-color) !important;
+    font-size: .75em
+}

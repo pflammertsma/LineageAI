@@ -27,11 +27,11 @@ def create_sidebar_content(prefix: str, app):
         html.Div(id=f'{prefix}-api-status-indicator'),
         html.Div(
             html.A(
-                "Copyright 2025, Paul Lammertsma",
+                "© 2025, Paul Lammertsma",
                 href="https://github.com/pflammertsma/LineageAI",
                 target="_blank",
                 rel="noopener noreferrer",
-                className="text-muted small",
+                className="copyright",
                 style={'textDecoration': 'none'}
             ),
             className="text-center p-2"
