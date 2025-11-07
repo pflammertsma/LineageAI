@@ -18,21 +18,15 @@ def register_chat_callbacks(app):
          Input('is-thinking-store', 'data')]
     )
     def update_api_status(n_intervals, is_thinking):
-        triggered_id = ctx.triggered_id
+        if ctx.triggered_id == 'is-thinking-store' and is_thinking:
+            return None, None
 
-        if triggered_id == 'is-thinking-store':
-            if is_thinking:
-                status_badge = dbc.Badge("Online", color="success", className="ms-2")
-                return status_badge, status_badge
-            else:
-                pass # Fall through to the check logic.
-        
         is_online, _ = api_client.check_api_status()
         if is_online:
-            status_badge = dbc.Badge("Online", color="success", className="ms-2")
+            return None, None
         else:
             status_badge = dbc.Badge("Offline", color="danger", className="ms-2")
-        return status_badge, status_badge
+            return status_badge, status_badge
 
     @app.callback(
         Output('chat-history', 'children'),

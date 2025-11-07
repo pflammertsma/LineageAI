@@ -22,8 +22,20 @@ def create_sidebar_content(prefix: str, app):
         ),
         html.Hr(),
         html.Div(id=f'{prefix}-session-list-container', children=[dbc.Spinner(size="sm")]),
+        html.Div(style={'flexGrow': 1}),
         html.Hr(),
-        html.Div(id=f'{prefix}-api-status-indicator')
+        html.Div(id=f'{prefix}-api-status-indicator'),
+        html.Div(
+            html.A(
+                "Copyright 2025, Paul Lammertsma",
+                href="https://github.com/pflammertsma/LineageAI",
+                target="_blank",
+                rel="noopener noreferrer",
+                className="text-muted small",
+                style={'textDecoration': 'none'}
+            ),
+            className="text-center p-2"
+        )
     ]
 
 # --- App Layout ---
@@ -48,7 +60,7 @@ def create_layout(app):
         style={"width": "280px", "height": "100vh", "transition": "width 0.3s", "overflow": "hidden"},
         children=[
             html.Div(
-                style={'width': '280px', 'padding': '1rem'},
+                style={'width': '280px', 'padding': '1rem', 'display': 'flex', 'flexDirection': 'column', 'height': '100%'},
                 children=create_sidebar_content(prefix='desktop', app=app)
             )
         ]
