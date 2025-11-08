@@ -31,11 +31,16 @@ def register_chat_callbacks(app):
     @app.callback(
         Output('chat-history', 'children'),
         [Input('messages-store', 'data'),
-         Input('active-session-store', 'data')]
+         Input('active-session-store', 'data')],
+        State('sessions-store', 'data')
     )
-    def update_chat_history(messages_data, active_session_id):
+    def update_chat_history(messages_data, active_session_id, sessions):
         if not active_session_id:
-            return SystemMessage("Loading sessions…", with_spinner=True)
+            if sessions:
+                return SystemMessage("Loading session…", with_spinner=True)
+            else:
+                return SystemMessage("You have no sessions. Create a new session to get started.")
+
         if active_session_id not in messages_data:
             return SystemMessage("Restoring session…", with_spinner=True)
 

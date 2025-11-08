@@ -146,7 +146,7 @@ def register_session_callbacks(app):
             
             button_content = html.I(className="bi bi-trash")
             if sid == deleting_session_id:
-                button_content = dbc.Spinner(size="sm")
+                button_content = dbc.Spinner(size="sm", color="light")
 
             item = dbc.ListGroupItem(
                 [
