@@ -433,3 +433,19 @@ span.linenos.special {
     color: var(--bs-tertiary-color) !important;
     font-size: .75em
 }
+
+.session-list-item .delete-session-btn {
+    visibility: hidden;
+}
+
+.session-list-item:hover .delete-session-btn {
+    visibility: visible;
+}
+
+.delete-session-btn i {
+    color: var(--text-primary);
+}
+
+.delete-session-btn:hover {
+    background-color: var(--bg-surface);
+}

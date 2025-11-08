@@ -60,6 +60,7 @@ def create_layout(app):
         dcc.Store(id='api-trigger-store', data=None),
         dcc.Store(id='is-thinking-store', data=False),
         dcc.Store(id='connection-error-store', data=None),
+        dcc.Store(id='deleting-session-store', data=None),
         
         dcc.Interval(id='api-status-interval', interval=60*1000, n_intervals=0),
     ])

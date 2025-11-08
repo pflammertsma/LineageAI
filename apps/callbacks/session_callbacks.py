@@ -132,13 +132,42 @@ def register_session_callbacks(app):
     @app.callback(
         [Output('desktop-session-list-container', 'children'),
          Output('mobile-session-list-container', 'children')],
-        [Input('sessions-store', 'data'), Input('active-session-store', 'data')]
+        [Input('sessions-store', 'data'), 
+         Input('active-session-store', 'data'),
+         Input('deleting-session-store', 'data')]
     )
-    def update_session_list(sessions, active_session_id):
+    def update_session_list(sessions, active_session_id, deleting_session_id):
         if not sessions: 
             no_sessions_message = html.P("No sessions.", className="text-muted text-center p-3")
             return no_sessions_message, no_sessions_message
-        items = [dbc.ListGroupItem(name, id={"type": "session-btn", "index": sid}, action=True, active=(sid == active_session_id), className="session-list-item") for sid, name in reversed(list(sessions.items()))]
+        
+        items = []
+        for sid, name in reversed(list(sessions.items())):
+            
+            button_content = html.I(className="bi bi-trash")
+            if sid == deleting_session_id:
+                button_content = dbc.Spinner(size="sm")
+
+            item = dbc.ListGroupItem(
+                [
+                    html.Span(name, className="session-name"),
+                    dbc.Button(
+                        button_content,
+                        id={"type": "delete-session-btn", "index": sid},
+                        color="link",
+                        className="delete-session-btn",
+                        n_clicks=0,
+                        size="sm",
+                        disabled=(sid == deleting_session_id)
+                    ),
+                ],
+                id={"type": "session-btn", "index": sid},
+                action=True,
+                active=(sid == active_session_id),
+                className="session-list-item d-flex justify-content-between align-items-center"
+            )
+            items.append(item)
+            
         list_group = dbc.ListGroup(items, flush=True)
         return list_group, list_group
 
@@ -247,3 +276,51 @@ def register_session_callbacks(app):
         if open_clicks or close_clicks:
             return not is_open
         return is_open
+
+    @app.callback(
+        Output('deleting-session-store', 'data', allow_duplicate=True),
+        Input({"type": "delete-session-btn", "index": ALL}, 'n_clicks'),
+        prevent_initial_call=True
+    )
+    def delete_session_start(n_clicks):
+        if not any(n_clicks):
+            raise dash.exceptions.PreventUpdate
+        
+        clicked_button = ctx.triggered_id
+        session_to_delete = clicked_button['index']
+        return session_to_delete
+
+    @app.callback(
+        [Output('sessions-store', 'data', allow_duplicate=True),
+         Output('messages-store', 'data', allow_duplicate=True),
+         Output('active-session-store', 'data', allow_duplicate=True),
+         Output('deleting-session-store', 'data', allow_duplicate=True)],
+        Input('deleting-session-store', 'data'),
+        [State('user-id-store', 'data'),
+         State('sessions-store', 'data'),
+         State('messages-store', 'data'),
+         State('active-session-store', 'data')],
+        prevent_initial_call=True,
+        background=True
+    )
+    def delete_session_finish(session_to_delete, user_id, sessions_data, messages_data, active_session_id):
+        if not session_to_delete:
+            raise dash.exceptions.PreventUpdate
+
+        _, error = api_client.delete_session(user_id, session_to_delete)
+
+        if error:
+            print(f"Failed to delete session: {error}")
+            return dash.no_update, dash.no_update, dash.no_update, None
+
+        new_sessions = {sid: name for sid, name in sessions_data.items() if sid != session_to_delete}
+        new_messages = {sid: msgs for sid, msgs in messages_data.items() if sid != session_to_delete}
+
+        new_active_session_id = active_session_id
+        if active_session_id == session_to_delete:
+            if new_sessions:
+                new_active_session_id = sorted(new_sessions.keys(), reverse=True)[0]
+            else:
+                new_active_session_id = None
+        
+        return new_sessions, new_messages, new_active_session_id, None
