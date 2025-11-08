@@ -86,6 +86,50 @@ def register_session_callbacks(app):
             return dash.no_update, dash.no_update, dash.no_update, error_message
 
     @app.callback(
+        [Output('sessions-store', 'data', allow_duplicate=True),
+         Output('active-session-store', 'data', allow_duplicate=True),
+         Output('messages-store', 'data', allow_duplicate=True),
+         Output('connection-error-store', 'data', allow_duplicate=True),
+         Output('api-trigger-store', 'data', allow_duplicate=True),
+         Output('is-thinking-store', 'data', allow_duplicate=True)],
+        [Input('desktop-help-link', 'n_clicks'),
+         Input('mobile-help-link', 'n_clicks')],
+        [State('user-id-store', 'data'),
+         State('sessions-store', 'data'),
+         State('messages-store', 'data')],
+        prevent_initial_call=True
+    )
+    def create_help_session(desktop_clicks, mobile_clicks, user_id, sessions_data, messages_data):
+        if not ctx.triggered_id or user_id is None:
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+        session_id = f"session-{int(time.time())}"
+        _, error = api_client.create_session(user_id, session_id)
+
+        new_sessions = sessions_data.copy()
+        new_messages = messages_data.copy()
+
+        if not error:
+            new_sessions[session_id] = "LineageAI Help"
+            
+            help_content = "I'm new to using LineageAI. Give me a brief explanation about genealogy and what LineageAI can do to perform research. Ask me what else I'd like to know, providing a list of suggestions including the websites and agents you work with."
+            
+            help_message = {
+                "role": "user",
+                "content": help_content
+            }
+            
+            new_messages[session_id] = [help_message, {"role": "thinking"}]
+            
+            trigger_data = {"user_input": help_content, "timestamp": time.time()}
+            
+            return new_sessions, session_id, new_messages, None, trigger_data, True
+        else:
+            error_message = f"Failed to create session: {error}"
+            print(error_message)
+            return dash.no_update, dash.no_update, dash.no_update, error_message, dash.no_update, False
+
+    @app.callback(
         [Output('desktop-session-list-container', 'children'),
          Output('mobile-session-list-container', 'children')],
         [Input('sessions-store', 'data'), Input('active-session-store', 'data')]
