@@ -195,3 +195,18 @@ def ErrorBubble(main_message: str, details: str, author_line: Optional[html.Div]
         ),
     ], start_collapsed=True, className="mb-2 w-75 error-accordion")
     return html.Div([author_line, accordion])
+
+def ThinkingBubble() -> html.Div:
+    """A component to render a thinking bubble."""
+    return html.Div([
+        dbc.Alert(
+            html.Div(className="dot-flashing"),
+            color="transparent",
+            style={
+                "maxWidth": "80%",
+                "marginLeft": "0",
+                "marginRight": "auto",
+            },
+            className="mb-2",
+        )
+    ])

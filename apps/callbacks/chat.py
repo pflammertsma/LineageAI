@@ -5,7 +5,7 @@ import uuid
 import time
 import re
 
-from ..layout.components import SystemMessage, ErrorBubble, AuthorLine, UserChatBubble, AgentChatBubble, AgentTransferLine, ToolCallBubble, ToolResponseBubble, WikitextBubble
+from ..layout.components import SystemMessage, ErrorBubble, AuthorLine, UserChatBubble, AgentChatBubble, AgentTransferLine, ToolCallBubble, ToolResponseBubble, WikitextBubble, ThinkingBubble
 from .utils import _parse_events_to_messages
 from .. import api_client
 
@@ -59,37 +59,52 @@ def register_chat_callbacks(app):
                     show_author = True
             
             author_line = AuthorLine(author) if show_author else None
+            
+            bubble = None
+            wrapper_class = "chat-message-wrapper"
 
             if role == 'user':
-                bubbles.append(UserChatBubble(content))
+                bubble = UserChatBubble(content)
+                wrapper_class += " user-message"
                 last_printed_author = None
             
             elif role == 'assistant':
+                wrapper_class += " ai-message"
                 if '```wiki' in content:
-                    bubbles.append(WikitextBubble(content, author_line=author_line))
+                    bubble = WikitextBubble(content, author_line=author_line)
                 else:
-                    bubbles.append(AgentChatBubble(content, author_line=author_line))
+                    bubble = AgentChatBubble(content, author_line=author_line)
 
             elif role == 'tool':
+                wrapper_class += " ai-message"
                 if tool_name == 'transfer_to_agent':
-                    bubbles.append(AgentTransferLine(author, tool_name, msg.get('input', '{}')))
+                    bubble = AgentTransferLine(author, tool_name, msg.get('input', '{}'))
                 else:
-                    bubbles.append(ToolCallBubble(tool_name, msg.get('input', '{}'), author_line=author_line))
+                    bubble = ToolCallBubble(tool_name, msg.get('input', '{}'), author_line=author_line)
             
             elif role == 'tool_response':
+                wrapper_class += " ai-message"
                 if tool_name != 'transfer_to_agent':
-                    bubbles.append(ToolResponseBubble(author, tool_name, msg.get('output', '{}'), author_line=author_line))
+                    bubble = ToolResponseBubble(author, tool_name, msg.get('output', '{}'), author_line=author_line)
 
             elif role == 'error':
-                bubbles.append(ErrorBubble(
+                wrapper_class += " ai-message"
+                bubble = ErrorBubble(
                     main_message=msg.get('main_message', 'An error occurred.'),
                     details=msg.get('details', '{}'),
                     author_line=author_line
-                ))
+                )
 
             elif role == 'system':
-                bubbles.append(SystemMessage(content))
+                bubble = SystemMessage(content)
+
+            elif role == 'thinking':
+                wrapper_class += " ai-message"
+                bubble = ThinkingBubble()
             
+            if bubble:
+                bubbles.append(html.Div(bubble, className=wrapper_class))
+
             if show_author:
                 last_printed_author = author
 
@@ -156,6 +171,7 @@ def register_chat_callbacks(app):
             new_messages[active_session_id] = []
         
         new_messages[active_session_id].append({"role": "user", "content": input_text})
+        new_messages[active_session_id].append({"role": "thinking"})
         
         trigger_data = {"user_input": input_text, "timestamp": time.time()}
         
@@ -193,6 +209,7 @@ def register_chat_callbacks(app):
             "new_message": {"role": "user", "parts": [{"text": trigger_data['user_input']}]}
         }
 
+        thinking_message_found = False
         for data, error in api_client.stream_agent_response(payload):
             if error:
                 if active_session_id not in new_messages:
@@ -207,6 +224,11 @@ def register_chat_callbacks(app):
                 new_sessions[active_session_id] = session_title
             
             if parsed_messages:
+                if not thinking_message_found:
+                    # Remove the thinking message
+                    new_messages[active_session_id] = [m for m in new_messages[active_session_id] if m.get('role') != 'thinking']
+                    thinking_message_found = True
+
                 if active_session_id not in new_messages:
                     new_messages[active_session_id] = []
                 new_messages[active_session_id].extend(parsed_messages)
@@ -214,33 +236,6 @@ def register_chat_callbacks(app):
             set_progress((new_messages, new_sessions))
         
         return new_messages, new_sessions, False
-
-    @app.callback(
-        [Output('thinking-indicator', 'style'),
-         Output('chat-history', 'style'),
-         Output('chat-history', 'className'),
-         Output('api-status-interval', 'disabled')],
-        Input('is-thinking-store', 'data'),
-        [State('thinking-indicator', 'style'),
-         State('chat-history', 'style'),
-         State('chat-history', 'className')]
-    )
-    def update_thinking_indicator(is_thinking, ti_style, ch_style, ch_className):
-        ch_className = ch_className or ""
-        disabled = False
-        if is_thinking:
-            ti_style['opacity'] = 1
-            ti_style['max-height'] = '100px'
-            ch_style['padding-bottom'] = '1em'
-            if "fade-out-bottom" not in ch_className:
-                ch_className += " fade-out-bottom"
-            disabled = True
-        else:
-            ti_style['opacity'] = 0
-            ti_style['max-height'] = '0px'
-            ch_style['padding-bottom'] = '0px'
-            ch_className = ch_className.replace(" fade-out-bottom", "")
-        return ti_style, ch_style, ch_className, disabled
 
     @app.callback(
         Output("profile-modal", "is_open"),

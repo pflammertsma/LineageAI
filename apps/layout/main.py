@@ -92,16 +92,6 @@ def create_layout(app):
         )]
     )
 
-    thinking_indicator = html.Div(
-        id="thinking-indicator",
-        className="align-items-center",
-        style={"transition": "opacity 0.3s, max-height 0.3s", "opacity": 0, "max-height": "0px"},
-        children=[
-            dbc.Spinner(size="sm", spinner_class_name="me-2"),
-            html.Span("Thinking…")
-        ]
-    )
-
     chat_input_area = html.Div(
         id="chat-input-area",
         className="p-3",
@@ -125,17 +115,6 @@ def create_layout(app):
         ]
     )
 
-    profile_modal = dbc.Modal([
-        dbc.ModalHeader("Fetch WikiTree Profile"),
-        dbc.ModalBody(
-            dbc.Input(id="wikitree-profile-id-input", placeholder="Enter WikiTree ID (e.g., Hoogstraten-45)")
-        ),
-        dbc.ModalFooter([
-            dbc.Button("Cancel", id="fetch-profile-cancel-btn", className="ms-auto", n_clicks=0),
-            dbc.Button("OK", id="fetch-profile-ok-btn", className="ms-2", n_clicks=0),
-        ]),
-    ], id="profile-modal", is_open=False)
-
     main_content = html.Div(
         id="main-content",
         className="d-flex flex-column",
@@ -143,7 +122,6 @@ def create_layout(app):
         children=[
             header,
             chat_history,
-            thinking_indicator,
             chat_input_area,
             dbc.Button(
                 html.I(className="bi bi-arrow-down-circle-fill fs-4"),
@@ -195,6 +173,17 @@ def create_layout(app):
             ),
         ],
     )
+
+    profile_modal = dbc.Modal([
+        dbc.ModalHeader("Fetch WikiTree Profile"),
+        dbc.ModalBody(
+            dbc.Input(id="wikitree-profile-id-input", placeholder="Enter WikiTree ID (e.g., Hoogstraten-45)")
+        ),
+        dbc.ModalFooter([
+            dbc.Button("Cancel", id="fetch-profile-cancel-btn", className="ms-auto", n_clicks=0),
+            dbc.Button("OK", id="fetch-profile-ok-btn", className="ms-2", n_clicks=0),
+        ]),
+    ], id="profile-modal", is_open=False)
 
     error_modal = dbc.Modal(
         [
