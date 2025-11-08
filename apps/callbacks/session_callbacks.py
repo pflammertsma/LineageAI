@@ -144,22 +144,22 @@ def register_session_callbacks(app):
         items = []
         for sid, name in reversed(list(sessions.items())):
             
-            button_content = html.I(className="bi bi-trash")
             if sid == deleting_session_id:
-                button_content = dbc.Spinner(size="sm", color="light")
+                control = dbc.Spinner(size="sm", color="light")
+            else:
+                control = dbc.DropdownMenu(
+                    [dbc.DropdownMenuItem("Delete", id={"type": "delete-session-btn", "index": sid})],
+                    label=html.I(className="bi bi-three-dots-vertical"),
+                    color="link",
+                    size="sm",
+                    align_end=True,
+                    className="session-overflow-menu"
+                )
 
             item = dbc.ListGroupItem(
                 [
                     html.Span(name, className="session-name"),
-                    dbc.Button(
-                        button_content,
-                        id={"type": "delete-session-btn", "index": sid},
-                        color="link",
-                        className="delete-session-btn",
-                        n_clicks=0,
-                        size="sm",
-                        disabled=(sid == deleting_session_id)
-                    ),
+                    control,
                 ],
                 id={"type": "session-btn", "index": sid},
                 action=True,

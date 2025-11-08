@@ -434,18 +434,36 @@ span.linenos.special {
     font-size: .75em
 }
 
-.session-list-item .delete-session-btn {
+.session-overflow-menu .dropdown-toggle {
     visibility: hidden;
 }
 
-.session-list-item:hover .delete-session-btn {
+.session-list-item:hover .session-overflow-menu .dropdown-toggle {
     visibility: visible;
 }
 
-.delete-session-btn i {
+.session-overflow-menu .dropdown-toggle::after {
+    display: none;
+}
+
+.session-overflow-menu .dropdown-toggle i {
     color: var(--text-primary);
 }
 
-.delete-session-btn:hover {
+.session-overflow-menu .dropdown-toggle:hover {
     background-color: var(--bg-surface);
+}
+
+.dropdown-menu {
+    background-color: var(--bg-background);
+    border-color: var(--border-color);
+}
+
+.dropdown-item {
+    color: var(--text-primary);
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
 }
