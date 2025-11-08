@@ -31,10 +31,11 @@ def register_chat_callbacks(app):
     @app.callback(
         Output('chat-history', 'children'),
         [Input('messages-store', 'data'),
-         Input('active-session-store', 'data')],
+         Input('active-session-store', 'data'),
+         Input('is-thinking-store', 'data')],
         State('sessions-store', 'data')
     )
-    def update_chat_history(messages_data, active_session_id, sessions):
+    def update_chat_history(messages_data, active_session_id, is_thinking, sessions):
         if not active_session_id:
             if sessions:
                 return SystemMessage("Loading session…", with_spinner=True)
@@ -45,7 +46,7 @@ def register_chat_callbacks(app):
             return SystemMessage("Restoring session…", with_spinner=True)
 
         messages = messages_data.get(active_session_id, [])
-        if not messages:
+        if not messages and not is_thinking:
             return SystemMessage("What can I help you with?")
 
         bubbles = []
@@ -102,16 +103,15 @@ def register_chat_callbacks(app):
 
             elif role == 'system':
                 bubble = SystemMessage(content)
-
-            elif role == 'thinking':
-                wrapper_class += " ai-message"
-                bubble = ThinkingBubble()
             
             if bubble:
                 bubbles.append(html.Div(bubble, className=wrapper_class))
 
             if show_author:
                 last_printed_author = author
+        
+        if is_thinking:
+            bubbles.append(html.Div(ThinkingBubble(), className="chat-message-wrapper ai-message"))
 
         return html.Div(bubbles, className="p-3")
 
@@ -176,7 +176,6 @@ def register_chat_callbacks(app):
             new_messages[active_session_id] = []
         
         new_messages[active_session_id].append({"role": "user", "content": input_text})
-        new_messages[active_session_id].append({"role": "thinking"})
         
         trigger_data = {"user_input": input_text, "timestamp": time.time()}
         
@@ -201,6 +200,12 @@ def register_chat_callbacks(app):
         prevent_initial_call=True
     )
     def stream_agent_response(set_progress, trigger_data, user_id, active_session_id, messages_data, sessions_data):
+        """
+        Streams the agent's response. An agent may respond with multiple messages
+        of different types over a period of time. This callback handles the
+        streaming of those messages to the client, showing a thinking indicator
+        until the full response is received.
+        """
         if not trigger_data or (active_session_id and active_session_id.startswith('error-')):
             raise dash.exceptions.PreventUpdate
 
@@ -214,7 +219,8 @@ def register_chat_callbacks(app):
             "new_message": {"role": "user", "parts": [{"text": trigger_data['user_input']}]}
         }
 
-        thinking_message_found = False
+        # The agent may respond with multiple messages. The thinking indicator
+        # should be displayed until all messages have been received.
         for data, error in api_client.stream_agent_response(payload):
             if error:
                 if active_session_id not in new_messages:
@@ -229,17 +235,16 @@ def register_chat_callbacks(app):
                 new_sessions[active_session_id] = session_title
             
             if parsed_messages:
-                if not thinking_message_found:
-                    # Remove the thinking message
-                    new_messages[active_session_id] = [m for m in new_messages[active_session_id] if m.get('role') != 'thinking']
-                    thinking_message_found = True
-
                 if active_session_id not in new_messages:
                     new_messages[active_session_id] = []
                 new_messages[active_session_id].extend(parsed_messages)
 
             set_progress((new_messages, new_sessions))
         
+        # Remove the thinking message after the stream is complete
+        if active_session_id in new_messages:
+            new_messages[active_session_id] = [m for m in new_messages[active_session_id] if m.get('role') != 'thinking']
+
         return new_messages, new_sessions, False
 
     @app.callback(

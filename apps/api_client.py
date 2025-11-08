@@ -51,10 +51,7 @@ def delete_session(user_id, session_id):
     """Deletes a session for a given user."""
     try:
         url = f"{API_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}"
-        print(f"Deleting session with URL: {url}")
         response = requests.delete(url, timeout=10)
-        print(f"Delete session response status code: {response.status_code}")
-        print(f"Delete session response text: {response.text}")
         response.raise_for_status()
         if response.status_code == 204:
             return None, None
