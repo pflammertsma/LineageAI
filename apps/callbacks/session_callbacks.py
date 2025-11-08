@@ -73,7 +73,7 @@ def register_session_callbacks(app):
         session_id = f"session-{int(time.time())}"
         _, error = api_client.create_session(user_id, session_id)
 
-        new_sessions = sessions_data.copy()
+        new_sessions = sessions_data.copy() if sessions_data is not None else {}
         new_messages = messages_data.copy()
 
         if not error:
@@ -106,7 +106,7 @@ def register_session_callbacks(app):
         session_id = f"session-{int(time.time())}"
         _, error = api_client.create_session(user_id, session_id)
 
-        new_sessions = sessions_data.copy()
+        new_sessions = sessions_data.copy() if sessions_data is not None else {}
         new_messages = messages_data.copy()
 
         if not error:
@@ -137,7 +137,10 @@ def register_session_callbacks(app):
          Input('deleting-session-store', 'data')]
     )
     def update_session_list(sessions, active_session_id, deleting_session_id):
-        if not sessions: 
+        if sessions is None:
+            loading_spinner = dbc.Spinner(size="sm")
+            return loading_spinner, loading_spinner
+        elif not sessions: 
             no_sessions_message = html.P("No sessions.", className="text-muted text-center p-3")
             return no_sessions_message, no_sessions_message
         
@@ -313,7 +316,10 @@ def register_session_callbacks(app):
             print(f"Failed to delete session: {error}")
             return dash.no_update, dash.no_update, dash.no_update, None
 
-        new_sessions = {sid: name for sid, name in sessions_data.items() if sid != session_to_delete}
+        if sessions_data:
+            new_sessions = {sid: name for sid, name in sessions_data.items() if sid != session_to_delete}
+        else:
+            new_sessions = {}
         new_messages = {sid: msgs for sid, msgs in messages_data.items() if sid != session_to_delete}
 
         new_active_session_id = active_session_id

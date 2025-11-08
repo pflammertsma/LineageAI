@@ -37,7 +37,9 @@ def register_chat_callbacks(app):
     )
     def update_chat_history(messages_data, active_session_id, is_thinking, sessions):
         if not active_session_id:
-            if sessions:
+            if sessions is None:
+                return SystemMessage("Loading session…", with_spinner=True)
+            elif sessions:
                 return SystemMessage("Loading session…", with_spinner=True)
             else:
                 return SystemMessage("You have no sessions. Create a new session to get started.")
@@ -210,7 +212,7 @@ def register_chat_callbacks(app):
             raise dash.exceptions.PreventUpdate
 
         new_messages = messages_data.copy()
-        new_sessions = sessions_data.copy()
+        new_sessions = sessions_data.copy() if sessions_data is not None else {}
 
         payload = {
             "app_name": api_client.APP_NAME,

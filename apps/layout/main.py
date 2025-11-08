@@ -54,7 +54,7 @@ def create_layout(app):
     store_components = html.Div([
         dcc.Store(id='user-id-store', storage_type='local'),
         dcc.Store(id='sidebar-collapsed-store', data=False),
-        dcc.Store(id='sessions-store', data={}),
+        dcc.Store(id='sessions-store', data=None),
         dcc.Store(id='active-session-store', data=None),
         dcc.Store(id='messages-store', data={}),
         dcc.Store(id='api-trigger-store', data=None),
